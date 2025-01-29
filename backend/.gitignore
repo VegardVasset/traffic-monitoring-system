@@ -1,0 +1,11 @@
+# Node.js
+/node_modules
+/dist
+/coverage
+*.log
+
+# TypeScript
+*.tsbuildinfo
+
+# Environment files
+.env
