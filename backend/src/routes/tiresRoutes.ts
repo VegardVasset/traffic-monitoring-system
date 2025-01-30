@@ -1,12 +1,10 @@
 import { Router } from "express";
-import { generateMockData } from "../data/generateData";
+import { mockDatabase } from "../server";
 
 const router = Router();
 
-router.get("/dynamic", (req, res) => {
-  const count = Number(req.query.count) || 10;
-  const data = generateMockData("tire_inspection", count);
-  res.json(data);
+router.get("/", (req, res) => {
+  res.json(mockDatabase.tire);
 });
 
 export default router;
