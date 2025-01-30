@@ -1,4 +1,5 @@
 import { faker } from "@faker-js/faker";
+import { MockRecord } from "../types";
 
 
 function getRandomTimestamp(): string {
@@ -9,13 +10,17 @@ function getRandomTimestamp(): string {
   return timestamp;
 }
 
-export function generateMockData(eventType: string, count: number) {
-  const mockData = [];
+export function generateMockData(
+  eventType: string,
+  count: number,
+  fixedTimes?: { creationTime: string; receptionTime: string }
+): MockRecord[] {
+  const mockData: MockRecord[] = [];
   for (let i = 0; i < count; i++) {
     mockData.push({
       id: i + 1,
-      creationTime: getRandomTimestamp(),
-      receptionTime: getRandomTimestamp(),
+      creationTime: fixedTimes?.creationTime || getRandomTimestamp(),
+      receptionTime: fixedTimes?.receptionTime || getRandomTimestamp(),
       eventType,
       laneId: `Lane_${faker.number.int({ min: 1, max: 5 })}`,
       edgeId: `Edge_${faker.number.int({ min: 1, max: 3 })}`,
