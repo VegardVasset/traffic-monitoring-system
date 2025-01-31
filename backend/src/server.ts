@@ -1,6 +1,14 @@
 import app from "./app";
 import { generateMockData } from "./data/generateData";
 import { MockRecord } from "./types";
+import { Server } from "socket.io";
+import http from "http";
+
+// Create an HTTP server and attach WebSocket to it
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: "*" }, // Allow all origins for development
+});
 
 // In-memory mock database
 const mockDatabase: {
@@ -22,7 +30,7 @@ function initializeMockDatabase() {
   console.log("Initial mock data generated successfully!");
 }
 
-// Function to get the next ID based on the length of the existing data
+// Function to get the next ID based on existing data
 function getNextId(eventType: string): number {
   switch (eventType) {
     case "ferry_counting":
@@ -36,15 +44,13 @@ function getNextId(eventType: string): number {
   }
 }
 
-// Add new mock data at regular intervals for each use case
+// Add new mock data at regular intervals and notify clients
 function continuouslyAddMockData() {
   console.log("Starting continuous mock data generation...");
   setInterval(() => {
-    // Get the current time
-    const now = new Date().toLocaleString("sv-SE", { timeZone: "Europe/Oslo" }).replace(" ", "T") + "Z";
+    const now = new Date().toISOString();
 
-
-    // Generate one new record for each event type with correct sequential IDs
+    // Generate new data for each event type
     const newFerryData = {
       ...generateMockData("ferry_counting", 1, {
         creationTime: now,
@@ -69,21 +75,45 @@ function continuouslyAddMockData() {
       id: getNextId("vehicle_passing"),
     };
 
+    // Add new data to the database
     mockDatabase.ferry.push(newFerryData);
     mockDatabase.tire.push(newTireData);
     mockDatabase.vehicle.push(newVehicleData);
 
-    console.log("New mock data added:", {
+    // Notify all connected clients with the new data
+    io.emit("newData", {
       ferry: newFerryData,
       tire: newTireData,
       vehicle: newVehicleData,
     });
-  }, 10000); 
+
+    console.log("New mock data added and sent to clients:", {
+      ferry: newFerryData,
+      tire: newTireData,
+      vehicle: newVehicleData,
+    });
+  }, 10000); // Generate new data every 10 seconds
 }
 
-const PORT = process.env.PORT || 3000;
+// Handle WebSocket connections
+io.on("connection", (socket) => {
+  console.log("Client connected:", socket.id);
 
-app.listen(PORT, () => {
+  // Send initial data to the client
+  socket.emit("initialData", {
+    ferry: mockDatabase.ferry,
+    tire: mockDatabase.tire,
+    vehicle: mockDatabase.vehicle,
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
+  });
+});
+
+const PORT = process.env.PORT || 4000;
+
+server.listen(PORT, () => {
   initializeMockDatabase();
   continuouslyAddMockData();
   console.log(`Server running on http://localhost:${PORT}`);
