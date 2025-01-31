@@ -1,34 +1,127 @@
-import express from "express";
-import cors from "cors";
-import { WebSocketServer } from "ws";
+import app from "./app";
+import { generateMockData } from "./data/generateData";
+import { MockRecord } from "./types";
+import { Server } from "socket.io";
+import http from "http";
 
-const app = express();
-const PORT = process.env.PORT || 5001;
+// Create an HTTP server and attach WebSocket to it
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: "*" }, // Allow all origins for development
+});
 
-app.use(cors());
-app.use(express.json());
+// In-memory mock database
+const mockDatabase: {
+  ferry: MockRecord[];
+  tire: MockRecord[];
+  vehicle: MockRecord[];
+} = {
+  ferry: [],
+  tire: [],
+  vehicle: [],
+};
 
+// Generate initial 1000 records for each use case
+function initializeMockDatabase() {
+  console.log("Generating initial mock data...");
+  mockDatabase.ferry = generateMockData("ferry_counting", 1000);
+  mockDatabase.tire = generateMockData("tire_inspection", 1000);
+  mockDatabase.vehicle = generateMockData("vehicle_passing", 1000);
+  console.log("Initial mock data generated successfully!");
+}
 
-const trafficData = [
-    { id: 1, type: "ferry", count: 200, timestamp: Date.now() },
-    { id: 2, type: "tire", worn_out: 5, timestamp: Date.now() },
-    { id: 3, type: "passage", vehicles: 150, timestamp: Date.now() }
-];
+// Function to get the next ID based on existing data
+function getNextId(eventType: string): number {
+  switch (eventType) {
+    case "ferry_counting":
+      return mockDatabase.ferry.length + 1;
+    case "tire_inspection":
+      return mockDatabase.tire.length + 1;
+    case "vehicle_passing":
+      return mockDatabase.vehicle.length + 1;
+    default:
+      return 1;
+  }
+}
 
-app.get("/api/data", (req, res) => {
-    res.json(trafficData);
+// Add new mock data at regular intervals and notify clients
+function continuouslyAddMockData() {
+  console.log("Starting continuous mock data generation...");
+  setInterval(() => {
+    const now = new Date().toISOString();
+
+    // Generate new data for each event type
+    const newFerryData = {
+      ...generateMockData("ferry_counting", 1, {
+        creationTime: now,
+        receptionTime: now,
+      })[0],
+      id: getNextId("ferry_counting"),
+    };
+
+    const newTireData = {
+      ...generateMockData("tire_inspection", 1, {
+        creationTime: now,
+        receptionTime: now,
+      })[0],
+      id: getNextId("tire_inspection"),
+    };
+
+    const newVehicleData = {
+      ...generateMockData("vehicle_passing", 1, {
+        creationTime: now,
+        receptionTime: now,
+      })[0],
+      id: getNextId("vehicle_passing"),
+    };
+
+    // Add new data to the database
+    mockDatabase.ferry.push(newFerryData);
+    mockDatabase.tire.push(newTireData);
+    mockDatabase.vehicle.push(newVehicleData);
+
+    // Notify all connected clients with the new data
+    io.emit("newData", {
+      ferry: newFerryData,
+      tire: newTireData,
+      vehicle: newVehicleData,
+    });
+  }, 10000); // Generate new data every 10 seconds
+}
+
+// Handle WebSocket connections
+io.on("connection", (socket) => {
+  console.log("Client connected:", socket.id);
+
+  // Listen for the "requestData" event from the client
+  socket.on("requestData", (eventType: string) => {
+    console.log(`Client requested data for: ${eventType}`);
+
+    // Send only the requested dataset
+    if (eventType === "ferry_counting") {
+      socket.emit("initialData", mockDatabase.ferry);
+    } else if (eventType === "tire_inspection") {
+      socket.emit("initialData", mockDatabase.tire);
+    } else if (eventType === "vehicle_passing") {
+      socket.emit("initialData", mockDatabase.vehicle);
+    } else {
+      socket.emit("error", { message: "Invalid event type requested" });
+    }
+  });
+
+  // Send new data updates to all clients (if relevant)
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
+  });
 });
 
 
-const wss = new WebSocketServer({ port: 8080 });
+const PORT = process.env.PORT || 4000;
 
-wss.on("connection", (ws) => {
-    console.log("Client connected");
-
-    setInterval(() => {
-        trafficData.forEach((entry) => (entry.timestamp = Date.now()));
-        ws.send(JSON.stringify(trafficData));
-    }, 5000);
+server.listen(PORT, () => {
+  initializeMockDatabase();
+  continuouslyAddMockData();
+  console.log(`Server running on http://localhost:${PORT}`);
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+export { mockDatabase };
