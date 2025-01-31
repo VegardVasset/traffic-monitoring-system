@@ -3,6 +3,7 @@ import { generateMockData } from "./data/generateData";
 import { MockRecord } from "./types";
 import { Server } from "socket.io";
 import http from "http";
+import { getReceptionTime } from "./data/generateData";
 
 // Create an HTTP server and attach WebSocket to it
 const server = http.createServer(app);
@@ -21,23 +22,23 @@ const mockDatabase: {
   vehicle: [],
 };
 
-// Generate initial 1000 records for each use case
+// Generate initial 1000 records for each entity type
 function initializeMockDatabase() {
   console.log("Generating initial mock data...");
-  mockDatabase.ferry = generateMockData("ferry_counting", 1000);
-  mockDatabase.tire = generateMockData("tire_inspection", 1000);
-  mockDatabase.vehicle = generateMockData("vehicle_passing", 1000);
+  mockDatabase.ferry = generateMockData("ferry", 1000);
+  mockDatabase.tire = generateMockData("tire", 1000);
+  mockDatabase.vehicle = generateMockData("vehicle", 1000);
   console.log("Initial mock data generated successfully!");
 }
 
 // Function to get the next ID based on existing data
-function getNextId(eventType: string): number {
-  switch (eventType) {
-    case "ferry_counting":
+function getNextId(entityType: string): number {
+  switch (entityType) {
+    case "ferry":
       return mockDatabase.ferry.length + 1;
-    case "tire_inspection":
+    case "tire":
       return mockDatabase.tire.length + 1;
-    case "vehicle_passing":
+    case "vehicle":
       return mockDatabase.vehicle.length + 1;
     default:
       return 1;
@@ -48,73 +49,63 @@ function getNextId(eventType: string): number {
 function continuouslyAddMockData() {
   console.log("Starting continuous mock data generation...");
   setInterval(() => {
-    const now = new Date().toISOString();
+    const creationTime = new Date().toISOString();
+    const receptionTime = getReceptionTime(creationTime); 
 
-    // Generate new data for each event type
+    
     const newFerryData = {
-      ...generateMockData("ferry_counting", 1, {
-        creationTime: now,
-        receptionTime: now,
-      })[0],
-      id: getNextId("ferry_counting"),
+      ...generateMockData("ferry", 1, { creationTime, receptionTime })[0],
+      id: getNextId("ferry"),
     };
 
     const newTireData = {
-      ...generateMockData("tire_inspection", 1, {
-        creationTime: now,
-        receptionTime: now,
-      })[0],
-      id: getNextId("tire_inspection"),
+      ...generateMockData("tire", 1, { creationTime, receptionTime })[0],
+      id: getNextId("tire"),
     };
 
     const newVehicleData = {
-      ...generateMockData("vehicle_passing", 1, {
-        creationTime: now,
-        receptionTime: now,
-      })[0],
-      id: getNextId("vehicle_passing"),
+      ...generateMockData("vehicle", 1, { creationTime, receptionTime })[0],
+      id: getNextId("vehicle"),
     };
 
-    // Add new data to the database
+    
     mockDatabase.ferry.push(newFerryData);
     mockDatabase.tire.push(newTireData);
     mockDatabase.vehicle.push(newVehicleData);
 
-    // Notify all connected clients with the new data
+    
     io.emit("newData", {
       ferry: newFerryData,
       tire: newTireData,
       vehicle: newVehicleData,
     });
-  }, 10000); // Generate new data every 10 seconds
+  }, 10000); 
 }
 
 // Handle WebSocket connections
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
-  // Listen for the "requestData" event from the client
-  socket.on("requestData", (eventType: string) => {
-    console.log(`Client requested data for: ${eventType}`);
 
-    // Send only the requested dataset
-    if (eventType === "ferry_counting") {
+  socket.on("requestData", (entityType: string) => {
+    console.log(`Client requested data for: ${entityType}`);
+
+    
+    if (entityType === "ferry") {
       socket.emit("initialData", mockDatabase.ferry);
-    } else if (eventType === "tire_inspection") {
+    } else if (entityType === "tire") {
       socket.emit("initialData", mockDatabase.tire);
-    } else if (eventType === "vehicle_passing") {
+    } else if (entityType === "vehicle") {
       socket.emit("initialData", mockDatabase.vehicle);
     } else {
-      socket.emit("error", { message: "Invalid event type requested" });
+      socket.emit("error", { message: "Invalid entity type requested" });
     }
   });
 
-  // Send new data updates to all clients (if relevant)
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
   });
 });
-
 
 const PORT = process.env.PORT || 4000;
 
