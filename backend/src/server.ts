@@ -86,12 +86,6 @@ function continuouslyAddMockData() {
       tire: newTireData,
       vehicle: newVehicleData,
     });
-
-    console.log("New mock data added and sent to clients:", {
-      ferry: newFerryData,
-      tire: newTireData,
-      vehicle: newVehicleData,
-    });
   }, 10000); // Generate new data every 10 seconds
 }
 
@@ -99,17 +93,28 @@ function continuouslyAddMockData() {
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
-  // Send initial data to the client
-  socket.emit("initialData", {
-    ferry: mockDatabase.ferry,
-    tire: mockDatabase.tire,
-    vehicle: mockDatabase.vehicle,
+  // Listen for the "requestData" event from the client
+  socket.on("requestData", (eventType: string) => {
+    console.log(`Client requested data for: ${eventType}`);
+
+    // Send only the requested dataset
+    if (eventType === "ferry_counting") {
+      socket.emit("initialData", mockDatabase.ferry);
+    } else if (eventType === "tire_inspection") {
+      socket.emit("initialData", mockDatabase.tire);
+    } else if (eventType === "vehicle_passing") {
+      socket.emit("initialData", mockDatabase.vehicle);
+    } else {
+      socket.emit("error", { message: "Invalid event type requested" });
+    }
   });
 
+  // Send new data updates to all clients (if relevant)
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
   });
 });
+
 
 const PORT = process.env.PORT || 4000;
 
