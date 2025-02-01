@@ -12,7 +12,7 @@ export const mockData = {
         corrected: false,
       },
     ],
-    tire: [
+    tires: [
       {
         id: 2,
         creationTime: "2025-01-30T08:32:10Z",
@@ -25,7 +25,7 @@ export const mockData = {
         corrected: true,
       },
     ],
-    vehicle: [
+    vehicles: [
       {
         id: 3,
         creationTime: "2025-01-30T08:35:22Z",
