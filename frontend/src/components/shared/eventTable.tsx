@@ -1,4 +1,3 @@
-// components/EventTable.tsx
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -21,8 +20,7 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
-import { ArrowUpDown, ChevronDown } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { ArrowUp, ArrowDown, ArrowUpDown, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -38,12 +36,14 @@ export interface Event {
   receptionTime: string;
   vehicleType: string;
   confidenceScore: number;
-  camera: string; // make sure your events include the camera property
+  camera: string;
 }
 
 interface EventTableProps {
   domain: string;
   selectedCamera: string;
+  selectedVehicleType: string;
+  isLive: boolean;
 }
 
 const columns: ColumnDef<Event>[] = [
@@ -71,49 +71,43 @@ const columns: ColumnDef<Event>[] = [
     enableHiding: false,
     meta: { disableSortBy: true },
   },
-  {
-    accessorKey: "id",
-    header: "ID",
-  },
+  { accessorKey: "id", header: "ID" },
   {
     accessorKey: "creationTime",
-    header: "Creation Time",
+    header: "Time",
     cell: (info) =>
       new Date(info.getValue() as string).toLocaleString(),
   },
-  {
-    accessorKey: "receptionTime",
-    header: "Reception Time",
-    cell: (info) =>
-      new Date(info.getValue() as string).toLocaleString(),
-  },
-  {
-    accessorKey: "vehicleType",
-    header: "Vehicle Type",
-  },
+  { accessorKey: "vehicleType", header: "Vehicle Type" },
+  { accessorKey: "camera", header: "Camera" },
   {
     accessorKey: "confidenceScore",
     header: "Confidence",
     cell: (info) =>
       `${((info.getValue() as number) * 100).toFixed(2)}%`,
   },
-  // Optionally add a camera column if you want it visible:
-  // {
-  //   accessorKey: "camera",
-  //   header: "Camera",
-  // },
 ];
 
-export default function EventTable({ domain, selectedCamera }: EventTableProps) {
-  const { liveData, error: socketError } = useSocket(domain);
+export default function EventTable({
+  domain,
+  selectedCamera,
+  selectedVehicleType,
+  isLive,
+}: EventTableProps) {
+  // Connect to socket only when live mode is active.
+  const { liveData, error: socketError } = useSocket(domain, isLive);
   const [apiData, setApiData] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  // State to "freeze" live data when live updates are turned off.
+  const [frozenLiveData, setFrozenLiveData] = useState<Event[]>([]);
+  // NEW: Flag to ensure we only fetch backlog events once when live mode is enabled.
+  const [backlogFetched, setBacklogFetched] = useState(false);
 
-  // Fetch API data
+  // Fetch initial API data on mount.
   useEffect(() => {
     async function fetchData() {
       try {
@@ -135,20 +129,70 @@ export default function EventTable({ domain, selectedCamera }: EventTableProps) 
     fetchData();
   }, [domain]);
 
-  // Combine live and API data (ensuring unique IDs)
+  // When live mode is turned off, freeze the liveData.
+  useEffect(() => {
+    if (!isLive) {
+      setFrozenLiveData(liveData);
+      // Reset backlogFetched so that if live mode is enabled again, a new backlog fetch occurs.
+      setBacklogFetched(false);
+    }
+  }, [isLive, liveData]);
+
+  // NEW: When live mode is enabled, fetch backlog events (only once) that occurred while we weren't live.
+  useEffect(() => {
+    if (isLive && !backlogFetched) {
+      // Determine the most recent event timestamp from our current API data and frozen live data.
+      const allEvents = [...apiData, ...frozenLiveData];
+      let lastTimestamp = 0;
+      if (allEvents.length > 0) {
+        lastTimestamp = Math.max(
+          ...allEvents.map((event) => new Date(event.creationTime).getTime())
+        );
+      }
+      // Fetch events that occurred after the last timestamp.
+      fetch(`http://localhost:4000/api/${domain}?after=${lastTimestamp}`)
+        .then((res) => res.json())
+        .then((backlog: Event[]) => {
+          if (backlog && backlog.length > 0) {
+            // Merge backlog events into our API data.
+            setApiData((prev) => [...prev, ...backlog]);
+          }
+          setBacklogFetched(true);
+        })
+        .catch((err) => {
+          console.error("Error fetching backlog events:", err);
+          setBacklogFetched(true);
+        });
+    }
+  }, [isLive, backlogFetched, domain]);
+
+  // Combine API data with live (or frozen) socket data.
   const combinedData = useMemo(() => {
     const uniqueData = new Map<number, Event>();
-    [...liveData, ...apiData].forEach((event) =>
+    const liveUsed = isLive ? liveData : frozenLiveData;
+    [...apiData, ...liveUsed].forEach((event) =>
       uniqueData.set(event.id, event)
     );
-    return Array.from(uniqueData.values());
-  }, [liveData, apiData]);
+    // Sort events chronologically.
+    return Array.from(uniqueData.values()).sort(
+      (a, b) =>
+        new Date(a.creationTime).getTime() - new Date(b.creationTime).getTime()
+    );
+  }, [apiData, liveData, frozenLiveData, isLive]);
 
-  // Filter the combined data based on the selected camera.
+  // Filter data by the selected camera and vehicle type.
   const filteredData = useMemo(() => {
-    if (selectedCamera === "all") return combinedData;
-    return combinedData.filter((event) => event.camera === selectedCamera);
-  }, [combinedData, selectedCamera]);
+    let data = combinedData;
+    if (selectedCamera !== "all") {
+      data = data.filter((record) => record.camera === selectedCamera);
+    }
+    if (selectedVehicleType !== "all") {
+      data = data.filter(
+        (record) => record.vehicleType === selectedVehicleType
+      );
+    }
+    return data;
+  }, [combinedData, selectedCamera, selectedVehicleType]);
 
   const table = useReactTable({
     data: filteredData,
@@ -160,11 +204,7 @@ export default function EventTable({ domain, selectedCamera }: EventTableProps) 
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
-    state: {
-      columnFilters,
-      columnVisibility,
-      pagination,
-    },
+    state: { columnFilters, columnVisibility, pagination },
     pageCount: Math.ceil(filteredData.length / pagination.pageSize),
     manualPagination: false,
     getRowId: (row) => row.id.toString(),
@@ -178,19 +218,8 @@ export default function EventTable({ domain, selectedCamera }: EventTableProps) 
 
   return (
     <div className="p-4 bg-white shadow rounded-lg overflow-x-auto">
-      <h2 className="text-xl font-semibold mb-2">📋 {domain} Events</h2>
-      {/* The event table no longer includes the camera selector */}
+      <h2 className="text-xl font-semibold mb-2">Event Table</h2>
       <div className="flex items-center py-4">
-        <Input
-          placeholder="Filter by event type..."
-          value={
-            (table.getColumn("vehicleType")?.getFilterValue() as string) ?? ""
-          }
-          onChange={(event) =>
-            table.getColumn("vehicleType")?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
@@ -217,25 +246,33 @@ export default function EventTable({ domain, selectedCamera }: EventTableProps) 
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id} className="bg-gray-100">
-              {headerGroup.headers.map((header) => (
-                <TableHead
-                  key={header.id}
-                  className="p-2 cursor-pointer"
-                  onClick={
-                    header.column.getCanSort()
-                      ? header.column.getToggleSortingHandler()
-                      : undefined
-                  }
-                >
-                  {flexRender(
-                    header.column.columnDef.header,
-                    header.getContext()
-                  )}
-                  {header.column.getCanSort() && (
-                    <ArrowUpDown className="ml-2 inline-block" />
-                  )}
-                </TableHead>
-              ))}
+              {headerGroup.headers.map((header) => {
+                const sorting = header.column.getIsSorted();
+                return (
+                  <TableHead
+                    key={header.id}
+                    className="p-2 cursor-pointer"
+                    onClick={
+                      header.column.getCanSort()
+                        ? header.column.getToggleSortingHandler()
+                        : undefined
+                    }
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+                    {header.column.getCanSort() &&
+                      (sorting === "asc" ? (
+                        <ArrowUp className="ml-2 inline-block" />
+                      ) : sorting === "desc" ? (
+                        <ArrowDown className="ml-2 inline-block" />
+                      ) : (
+                        <ArrowUpDown className="ml-2 inline-block" />
+                      ))}
+                  </TableHead>
+                );
+              })}
             </TableRow>
           ))}
         </TableHeader>

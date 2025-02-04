@@ -10,17 +10,17 @@ export default function Header() {
     <header className="bg-gray-900 text-white p-4 flex flex-col md:flex-row justify-center gap-6 border-b border-gray-700">
       <NavLink
         href="/ferry"
-        label="🚢 Ferry Counting"
+        label="Ferry Counter"
         active={pathname === "/ferry"}
       />
       <NavLink
-        href="/vehicles"
-        label="🚗 Vehicle Passing"
-        active={pathname === "/vehicles"}
+        href="/dts"
+        label="Detailed Traffic Statistics"
+        active={pathname === "/dts"}
       />
       <NavLink
         href="/tires"
-        label="🛞 Tire Scanning"
+        label="Tire Scanner"
         active={pathname === "/tires"}
       />
     </header>
