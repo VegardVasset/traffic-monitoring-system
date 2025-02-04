@@ -6,6 +6,7 @@ export interface MockRecord {
     | "buss" | "lastebil sylinder" | "person transport" | "camping kjøretøy" 
     | "lett industri" | "tilhenger" | "lastebil åpen" | "motorsykkel"
     | "traktor" | "lastebil lukket" | "myke trafikanter" | "utrykningskjøretøy";
+  camera: string;  
   laneId: string;
   edgeId: string;
   imageUrl: string;
