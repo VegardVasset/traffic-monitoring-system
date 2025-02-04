@@ -44,6 +44,7 @@ export function generateMockData(
       imageUrl: faker.image.url({ width: 640, height: 480 }),
       confidenceScore: parseFloat(faker.number.float({ min: 0.5, max: 1 }).toFixed(2)),
       corrected: faker.datatype.boolean(),
+      
     });
   }
   return mockData;
