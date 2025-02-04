@@ -17,10 +17,32 @@ export function getReceptionTime(creationTime: string): string {
   return creationDate.toISOString();
 }
 
-// Function to generate a random event type
-function getRandomEventType(): "lanepassing" | "count" | "none" {
-  const types: Array<"lanepassing" | "count" | "none"> = ["lanepassing", "count", "none"];
-  return types[Math.floor(Math.random() * types.length)];
+// Function to generate a weighted realistic vehicle type
+function getRandomVehicleType(): MockRecord["vehicleType"] {
+  const vehicleDistribution: { type: MockRecord["vehicleType"]; weight: number }[] = [
+    { type: "person transport", weight: 40 },   // Most common
+    { type: "buss", weight: 15 },               // Common
+    { type: "motorsykkel", weight: 10 },        // Fairly common
+    { type: "lastebil lukket", weight: 8 },     // Medium
+    { type: "lastebil åpen", weight: 5 },       // Less common
+    { type: "lett industri", weight: 5 },       // Less common
+    { type: "tilhenger", weight: 5 },           // Less common
+    { type: "camping kjøretøy", weight: 4 },    // Less common
+    { type: "utrykningskjøretøy", weight: 3 },  // Rare
+    { type: "lastebil sylinder", weight: 3 },   // Rare
+    { type: "myke trafikanter", weight: 2 },    // Very rare
+    { type: "traktor", weight: 0 }              
+  ];
+
+  // Create weighted probability distribution
+  const weightedList: MockRecord["vehicleType"][] = [];
+  vehicleDistribution.forEach(({ type, weight }) => {
+    for (let i = 0; i < weight; i++) {
+      weightedList.push(type);
+    }
+  });
+
+  return weightedList[Math.floor(Math.random() * weightedList.length)];
 }
 
 // Function to generate mock data
@@ -38,7 +60,7 @@ export function generateMockData(
       id: i + 1,
       creationTime,
       receptionTime,
-      eventType: getRandomEventType(), 
+      vehicleType: getRandomVehicleType(),  
       laneId: `Lane_${faker.number.int({ min: 1, max: 5 })}`,
       edgeId: `Edge_${faker.number.int({ min: 1, max: 3 })}`,
       imageUrl: faker.image.url({ width: 640, height: 480 }),
