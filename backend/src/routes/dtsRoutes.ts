@@ -4,7 +4,7 @@ import { mockDatabase } from "../server";
 const router = Router();
 
 router.get("/", (req, res) => {
-  res.json(mockDatabase.vehicles);
+  res.json(mockDatabase.dts);
 });
 
 export default router;
