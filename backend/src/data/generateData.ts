@@ -108,6 +108,7 @@ export function generateMockData(
       imageUrl: faker.image.url({ width: 640, height: 480 }),
       confidenceScore: getRealisticConfidenceScore(), 
       corrected: faker.datatype.boolean(),
+      
     });
   }
   return mockData;

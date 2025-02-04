@@ -1,3 +1,4 @@
+// components/EventTable.tsx
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -31,13 +32,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useSocket } from "@/hooks/useSocket";
 
-interface Event {
+export interface Event {
   id: number;
   creationTime: string;
   receptionTime: string;
   vehicleType: string;
   confidenceScore: number;
+  camera: string; // make sure your events include the camera property
 }
+
+interface EventTableProps {
+  domain: string;
+  selectedCamera: string;
+}
+
 const columns: ColumnDef<Event>[] = [
   {
     id: "select",
@@ -59,9 +67,9 @@ const columns: ColumnDef<Event>[] = [
         />
       </div>
     ),
-    enableSorting: false, // ✅ Disables sorting for this column
-    enableHiding: false, // ✅ Prevents hiding this column
-    meta: { disableSortBy: true }, // ✅ Extra safeguard to prevent sorting UI
+    enableSorting: false,
+    enableHiding: false,
+    meta: { disableSortBy: true },
   },
   {
     accessorKey: "id",
@@ -70,12 +78,14 @@ const columns: ColumnDef<Event>[] = [
   {
     accessorKey: "creationTime",
     header: "Creation Time",
-    cell: (info) => new Date(info.getValue() as string).toLocaleString(),
+    cell: (info) =>
+      new Date(info.getValue() as string).toLocaleString(),
   },
   {
     accessorKey: "receptionTime",
     header: "Reception Time",
-    cell: (info) => new Date(info.getValue() as string).toLocaleString(),
+    cell: (info) =>
+      new Date(info.getValue() as string).toLocaleString(),
   },
   {
     accessorKey: "vehicleType",
@@ -84,13 +94,17 @@ const columns: ColumnDef<Event>[] = [
   {
     accessorKey: "confidenceScore",
     header: "Confidence",
-    cell: (info) => `${((info.getValue() as number) * 100).toFixed(2)}%`,
+    cell: (info) =>
+      `${((info.getValue() as number) * 100).toFixed(2)}%`,
   },
+  // Optionally add a camera column if you want it visible:
+  // {
+  //   accessorKey: "camera",
+  //   header: "Camera",
+  // },
 ];
 
-
-
-export default function EventTable({ domain }: { domain: string }) {
+export default function EventTable({ domain, selectedCamera }: EventTableProps) {
   const { liveData, error: socketError } = useSocket(domain);
   const [apiData, setApiData] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,17 +113,20 @@ export default function EventTable({ domain }: { domain: string }) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 
-  // ✅ Fetch initial API data
+  // Fetch API data
   useEffect(() => {
     async function fetchData() {
       try {
         const res = await fetch(`http://localhost:4000/api/${domain}`);
-        if (!res.ok) throw new Error(`Failed to fetch data: ${res.statusText}`);
+        if (!res.ok)
+          throw new Error(`Failed to fetch data: ${res.statusText}`);
         const jsonData = await res.json();
         setApiData(jsonData);
       } catch (error) {
         setError(
-          error instanceof Error ? error.message : "An unknown error occurred"
+          error instanceof Error
+            ? error.message
+            : "An unknown error occurred"
         );
       } finally {
         setLoading(false);
@@ -118,17 +135,23 @@ export default function EventTable({ domain }: { domain: string }) {
     fetchData();
   }, [domain]);
 
-  // ✅ Correct row count calculation
+  // Combine live and API data (ensuring unique IDs)
   const combinedData = useMemo(() => {
-    const uniqueData = new Map();
+    const uniqueData = new Map<number, Event>();
     [...liveData, ...apiData].forEach((event) =>
       uniqueData.set(event.id, event)
-    ); // Ensure unique IDs
+    );
     return Array.from(uniqueData.values());
   }, [liveData, apiData]);
 
+  // Filter the combined data based on the selected camera.
+  const filteredData = useMemo(() => {
+    if (selectedCamera === "all") return combinedData;
+    return combinedData.filter((event) => event.camera === selectedCamera);
+  }, [combinedData, selectedCamera]);
+
   const table = useReactTable({
-    data: combinedData,
+    data: filteredData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -136,16 +159,16 @@ export default function EventTable({ domain }: { domain: string }) {
     getPaginationRowModel: getPaginationRowModel(),
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
-    onPaginationChange: setPagination, // ✅ Ensure pagination updates
+    onPaginationChange: setPagination,
     state: {
       columnFilters,
       columnVisibility,
       pagination,
     },
-    pageCount: Math.ceil(combinedData.length / pagination.pageSize), // ✅ Set correct page count
-    manualPagination: false, // ✅ Use automatic pagination
-    getRowId: (row) => row.id.toString(), // ✅ Ensure unique row IDs
-    enableRowSelection: true, // ✅ Enable selection
+    pageCount: Math.ceil(filteredData.length / pagination.pageSize),
+    manualPagination: false,
+    getRowId: (row) => row.id.toString(),
+    enableRowSelection: true,
   });
 
   if (loading) return <p className="text-gray-500">Loading...</p>;
@@ -156,6 +179,7 @@ export default function EventTable({ domain }: { domain: string }) {
   return (
     <div className="p-4 bg-white shadow rounded-lg overflow-x-auto">
       <h2 className="text-xl font-semibold mb-2">📋 {domain} Events</h2>
+      {/* The event table no longer includes the camera selector */}
       <div className="flex items-center py-4">
         <Input
           placeholder="Filter by event type..."
@@ -179,7 +203,9 @@ export default function EventTable({ domain }: { domain: string }) {
                 key={column.id}
                 className="capitalize"
                 checked={column.getIsVisible()}
-                onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                onCheckedChange={(value) =>
+                  column.toggleVisibility(!!value)
+                }
               >
                 {column.id}
               </DropdownMenuCheckboxItem>
@@ -193,14 +219,22 @@ export default function EventTable({ domain }: { domain: string }) {
             <TableRow key={headerGroup.id} className="bg-gray-100">
               {headerGroup.headers.map((header) => (
                 <TableHead
-                key={header.id}
-                className="p-2 cursor-pointer"
-                onClick={header.column.getCanSort() ? header.column.getToggleSortingHandler() : undefined}
-              >
-                {flexRender(header.column.columnDef.header, header.getContext())}
-                {header.column.getCanSort() && <ArrowUpDown className="ml-2 inline-block" />}
-              </TableHead>
-              
+                  key={header.id}
+                  className="p-2 cursor-pointer"
+                  onClick={
+                    header.column.getCanSort()
+                      ? header.column.getToggleSortingHandler()
+                      : undefined
+                  }
+                >
+                  {flexRender(
+                    header.column.columnDef.header,
+                    header.getContext()
+                  )}
+                  {header.column.getCanSort() && (
+                    <ArrowUpDown className="ml-2 inline-block" />
+                  )}
+                </TableHead>
               ))}
             </TableRow>
           ))}
@@ -210,7 +244,10 @@ export default function EventTable({ domain }: { domain: string }) {
             <TableRow key={row.id} className="hover:bg-gray-200">
               {row.getVisibleCells().map((cell) => (
                 <TableCell key={cell.id} className="p-2">
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  {flexRender(
+                    cell.column.columnDef.cell,
+                    cell.getContext()
+                  )}
                 </TableCell>
               ))}
             </TableRow>
@@ -220,7 +257,7 @@ export default function EventTable({ domain }: { domain: string }) {
       <div className="flex items-center justify-between py-4">
         <div className="text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {combinedData.length} row(s) selected.
+          {filteredData.length} row(s) selected.
         </div>
         <div className="space-x-2">
           <Button
