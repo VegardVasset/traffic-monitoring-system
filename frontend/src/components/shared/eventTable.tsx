@@ -35,7 +35,7 @@ interface Event {
   id: number;
   creationTime: string;
   receptionTime: string;
-  eventType: string;
+  vehicleType: string;
   confidenceScore: number;
 }
 const columns: ColumnDef<Event>[] = [
@@ -78,8 +78,8 @@ const columns: ColumnDef<Event>[] = [
     cell: (info) => new Date(info.getValue() as string).toLocaleString(),
   },
   {
-    accessorKey: "eventType",
-    header: "Event Type",
+    accessorKey: "vehicleType",
+    header: "Vehicle Type",
   },
   {
     accessorKey: "confidenceScore",
@@ -160,10 +160,10 @@ export default function EventTable({ domain }: { domain: string }) {
         <Input
           placeholder="Filter by event type..."
           value={
-            (table.getColumn("eventType")?.getFilterValue() as string) ?? ""
+            (table.getColumn("vehicleType")?.getFilterValue() as string) ?? ""
           }
           onChange={(event) =>
-            table.getColumn("eventType")?.setFilterValue(event.target.value)
+            table.getColumn("vehicleType")?.setFilterValue(event.target.value)
           }
           className="max-w-sm"
         />
