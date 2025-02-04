@@ -12,4 +12,5 @@ export interface MockRecord {
   imageUrl: string;
   confidenceScore: number;
   corrected: boolean;
+  tireType?: "Sommerdekk" | "Vinterdekk";
 }
