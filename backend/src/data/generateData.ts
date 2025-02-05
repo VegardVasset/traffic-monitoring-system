@@ -3,7 +3,7 @@ import { MockRecord } from "../types";
 
 // Define cameras for each domain
 const camerasByDomain: Record<string, { name: string; weight: number }[]> = {
-  counting: [
+  dts: [
     { name: "Os", weight: 50 },
     { name: "Hopseide", weight: 30 },
     { name: "Gedjne", weight: 20 },

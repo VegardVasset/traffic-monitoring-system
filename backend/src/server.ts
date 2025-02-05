@@ -15,7 +15,7 @@ const io = new Server(server, {
 const mockDatabase: Record<string, MockRecord[]> = {
   ferry: [],
   tires: [],
-  vehicles: [],
+  dts: [],
 };
 
 // Generate initial 1000 records for each entity type
@@ -23,7 +23,7 @@ function initializeMockDatabase() {
   console.log("Generating initial mock data...");
   mockDatabase.ferry = generateMockData("ferry", 1000);
   mockDatabase.tires = generateMockData("tires", 1000);
-  mockDatabase.vehicles = generateMockData("vehicles", 1000);
+  mockDatabase.dts = generateMockData("dts", 1000);
   console.log("Initial mock data generated successfully!");
 }
 
@@ -48,9 +48,9 @@ function continuouslyAddMockData() {
         ...generateMockData("tires", 1, { creationTime, receptionTime })[0],
         id: getNextId("tires"),
       },
-      vehicles: {
-        ...generateMockData("vehicles", 1, { creationTime, receptionTime })[0],
-        id: getNextId("vehicles"),
+      dts: {
+        ...generateMockData("dts", 1, { creationTime, receptionTime })[0],
+        id: getNextId("dts"),
       },
     };
 
@@ -62,7 +62,7 @@ function continuouslyAddMockData() {
     // Update database
     mockDatabase.ferry.push(newData.ferry);
     mockDatabase.tires.push(newData.tires);
-    mockDatabase.vehicles.push(newData.vehicles);
+    mockDatabase.dts.push(newData.dts);
   }, 10000); // New data every 10s
 }
 
@@ -77,8 +77,8 @@ router.get("/tires", (req: Request, res: Response) => {
   res.json(mockDatabase.tires);
 });
 
-router.get("/vehicles", (req: Request, res: Response) => {
-  res.json(mockDatabase.vehicles);
+router.get("/dts", (req: Request, res: Response) => {
+  res.json(mockDatabase.dts);
 });
 
 // Attach routes to Express app

@@ -40,3 +40,22 @@
 ✔ **Pagination, sorting, filtering, and selection fully functional**.  
 
 
+# Live Data Button Functionality Summary
+
+- **Initial State:**
+  - Live mode is off by default.
+  - Only historical API data is loaded.
+
+- **Enabling Live Mode:**
+  - Toggling the LIVE button sets `isLive` to `true`.
+  - A WebSocket connection is established to receive new events in real time.
+  - A one-time backlog fetch occurs: any events created after the latest timestamp in the current data (historical + frozen) are retrieved to fill in gaps.
+
+- **Disabling Live Mode:**
+  - Toggling the button off sets `isLive` to `false`.
+  - The current live data is "frozen" to retain the snapshot.
+  - The WebSocket connection is closed, stopping further live updates.
+
+- **Data Merging & Sorting:**
+  - Historical API data, backlog events, and live (or frozen) socket data are merged.
+  - The combined data is deduplicated and sorted chronologically for a seamless display.
