@@ -21,9 +21,9 @@ const mockDatabase: Record<string, MockRecord[]> = {
 // Generate initial 1000 records for each entity type
 function initializeMockDatabase() {
   console.log("Generating initial mock data...");
-  mockDatabase.ferry = generateMockData("ferry", 1000);
-  mockDatabase.tires = generateMockData("tires", 1000);
-  mockDatabase.dts = generateMockData("dts", 1000);
+  mockDatabase.ferry = generateMockData("ferry", 10000);
+  mockDatabase.tires = generateMockData("tires", 10000);
+  mockDatabase.dts = generateMockData("dts", 10000);
   console.log("Initial mock data generated successfully!");
 }
 
