@@ -10,7 +10,7 @@ const camerasByDomain: Record<string, { name: string; weight: number }[]> = {
   ],
   tires: [
     { name: "Bergen Parkering", weight: 40 },
-    { name: "Oslo parking", weight: 35 },
+    { name: "Oslo Parkering", weight: 35 },
     { name: "Vardø", weight: 25 },
   ],
   ferry: [

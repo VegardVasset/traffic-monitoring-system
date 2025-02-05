@@ -59,8 +59,8 @@ const vehicleTypes = [
 
 const cameras: Camera[] = [
   { id: "Os", name: "Os" },
-  { id: "Manheller", name: "Manheller" },
-  { id: "Lavik", name: "Lavik" },
+  { id: "Hopseide", name: "Hopseide" },
+  { id: "Gedjne", name: "Gedjne" },
 ];
 
 export default function DtsOverviewPage() {

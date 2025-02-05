@@ -57,9 +57,9 @@ const vehicleTypes = [
 ];
 
 const cameras: Camera[] = [
-  { id: "Os", name: "Os" },
-  { id: "Manheller", name: "Manheller" },
-  { id: "Lavik", name: "Lavik" },
+  { id: "Bergen Parkering", name: "Bergen Parkering" },
+  { id: "Oslo Parkering", name: "Oslo Parkering" },
+  { id: "Vardø", name: "Vardø" },
 ];
 
 export default function TiresOverviewPage() {

@@ -7,7 +7,7 @@ import EventTable from "@/components/shared/eventTable";
 // Use the camera names for the tires domain as defined in your backend.
 const tiresCameras: Camera[] = [
   { id: "Bergen Parkering", name: "Bergen Parkering" },
-  { id: "Oslo parking", name: "Oslo parking" },
+  { id: "Oslo Parkering", name: "Oslo Parkering" },
   { id: "Vardø", name: "Vardø" },
 ];
 
