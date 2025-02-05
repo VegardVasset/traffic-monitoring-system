@@ -20,6 +20,10 @@ const camerasByDomain: Record<string, { name: string; weight: number }[]> = {
   ],
 };
 
+function getRandomTireType(): "Sommerdekk" | "Vinterdekk" {
+  return Math.random() < 0.5 ? "Sommerdekk" : "Vinterdekk";
+}
+
 // Helper to generate random timestamps over the last year
 function getRandomTimestamp(): string {
   const start = new Date();
@@ -50,7 +54,7 @@ function getRandomVehicleType(): MockRecord["vehicleType"] {
     { type: "utrykningskjøretøy", weight: 3 },
     { type: "lastebil sylinder", weight: 3 },
     { type: "myke trafikanter", weight: 2 },
-    { type: "traktor", weight: 0 } // 🚨 Never appears
+    { type: "traktor", weight: 0 } 
   ];
 
   // Create weighted probability distribution
@@ -97,19 +101,25 @@ export function generateMockData(
     const creationTime = fixedTimes?.creationTime || getRandomTimestamp();
     const receptionTime = fixedTimes?.receptionTime || getReceptionTime(creationTime);
 
-    mockData.push({
+    const record: MockRecord = {
       id: i + 1,
       creationTime,
       receptionTime,
-      vehicleType: getRandomVehicleType(),  
-      camera: getRandomCamera(entityType),  
+      vehicleType: getRandomVehicleType(),
+      camera: getRandomCamera(entityType),
       laneId: `Lane_${faker.number.int({ min: 1, max: 5 })}`,
       edgeId: `Edge_${faker.number.int({ min: 1, max: 3 })}`,
       imageUrl: faker.image.url({ width: 640, height: 480 }),
-      confidenceScore: getRealisticConfidenceScore(), 
+      confidenceScore: getRealisticConfidenceScore(),
       corrected: faker.datatype.boolean(),
-      
-    });
+    };
+
+    
+    if (entityType === "tires") {
+      record.tireType = getRandomTireType();
+    }
+
+    mockData.push(record);
   }
   return mockData;
 }
