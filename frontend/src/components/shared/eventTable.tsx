@@ -37,6 +37,7 @@ export interface Event {
   vehicleType: string;
   confidenceScore: number;
   camera: string;
+  tireType?: "Sommerdekk" | "Vinterdekk"; // ✅ Optional for tires only
 }
 
 interface EventTableProps {
@@ -46,47 +47,59 @@ interface EventTableProps {
   isLive: boolean;
 }
 
-const columns: ColumnDef<Event>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <div className="px-2">
-        <input
-          type="checkbox"
-          checked={table.getIsAllRowsSelected()}
-          onChange={table.getToggleAllRowsSelectedHandler()}
-        />
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="px-2">
-        <input
-          type="checkbox"
-          checked={row.getIsSelected()}
-          onChange={row.getToggleSelectedHandler()}
-        />
-      </div>
-    ),
-    enableSorting: false,
-    enableHiding: false,
-    meta: { disableSortBy: true },
-  },
-  { accessorKey: "id", header: "ID" },
-  {
-    accessorKey: "creationTime",
-    header: "Time",
-    cell: (info) =>
-      new Date(info.getValue() as string).toLocaleString(),
-  },
-  { accessorKey: "vehicleType", header: "Vehicle Type" },
-  { accessorKey: "camera", header: "Camera" },
-  {
-    accessorKey: "confidenceScore",
-    header: "Confidence",
-    cell: (info) =>
-      `${((info.getValue() as number) * 100).toFixed(2)}%`,
-  },
-];
+// ✅ Dynamically generate columns based on the domain
+const getColumns = (domain: string): ColumnDef<Event>[] => {
+  const baseColumns: ColumnDef<Event>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <div className="px-2">
+          <input
+            type="checkbox"
+            checked={table.getIsAllRowsSelected()}
+            onChange={table.getToggleAllRowsSelectedHandler()}
+          />
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="px-2">
+          <input
+            type="checkbox"
+            checked={row.getIsSelected()}
+            onChange={row.getToggleSelectedHandler()}
+          />
+        </div>
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    { accessorKey: "id", header: "ID" },
+    {
+      accessorKey: "creationTime",
+      header: "Time",
+      cell: (info) => new Date(info.getValue() as string).toLocaleString(),
+    },
+    { accessorKey: "vehicleType", header: "Vehicle Type" },
+    { accessorKey: "camera", header: "Camera" },
+    {
+      accessorKey: "confidenceScore",
+      header: "Confidence",
+      cell: (info) =>
+        `${((info.getValue() as number) * 100).toFixed(2)}%`,
+    },
+  ];
+
+  // ✅ Add `tireType` column only for "tires" domain
+  if (domain === "tires") {
+    baseColumns.push({
+      accessorKey: "tireType",
+      header: "Tire Type",
+      cell: (info) => info.getValue() || "N/A", // Show "N/A" if missing
+    });
+  }
+
+  return baseColumns;
+};
 
 export default function EventTable({
   domain,
@@ -94,7 +107,6 @@ export default function EventTable({
   selectedVehicleType,
   isLive,
 }: EventTableProps) {
-  // Connect to socket only when live mode is active.
   const { liveData, error: socketError } = useSocket(domain, isLive);
   const [apiData, setApiData] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,9 +114,7 @@ export default function EventTable({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-  // State to "freeze" live data when live updates are turned off.
   const [frozenLiveData, setFrozenLiveData] = useState<Event[]>([]);
-  // NEW: Flag to ensure we only fetch backlog events once when live mode is enabled.
   const [backlogFetched, setBacklogFetched] = useState(false);
 
   // Fetch initial API data on mount.
@@ -118,9 +128,7 @@ export default function EventTable({
         setApiData(jsonData);
       } catch (error) {
         setError(
-          error instanceof Error
-            ? error.message
-            : "An unknown error occurred"
+          error instanceof Error ? error.message : "An unknown error occurred"
         );
       } finally {
         setLoading(false);
@@ -129,19 +137,17 @@ export default function EventTable({
     fetchData();
   }, [domain]);
 
-  // When live mode is turned off, freeze the liveData.
+  // Freeze live data when live mode is turned off
   useEffect(() => {
     if (!isLive) {
       setFrozenLiveData(liveData);
-      // Reset backlogFetched so that if live mode is enabled again, a new backlog fetch occurs.
       setBacklogFetched(false);
     }
   }, [isLive, liveData]);
 
-  // NEW: When live mode is enabled, fetch backlog events (only once) that occurred while we weren't live.
+  // Fetch backlog events when live mode is turned on
   useEffect(() => {
     if (isLive && !backlogFetched) {
-      // Determine the most recent event timestamp from our current API data and frozen live data.
       const allEvents = [...apiData, ...frozenLiveData];
       let lastTimestamp = 0;
       if (allEvents.length > 0) {
@@ -149,12 +155,10 @@ export default function EventTable({
           ...allEvents.map((event) => new Date(event.creationTime).getTime())
         );
       }
-      // Fetch events that occurred after the last timestamp.
       fetch(`http://localhost:4000/api/${domain}?after=${lastTimestamp}`)
         .then((res) => res.json())
         .then((backlog: Event[]) => {
           if (backlog && backlog.length > 0) {
-            // Merge backlog events into our API data.
             setApiData((prev) => [...prev, ...backlog]);
           }
           setBacklogFetched(true);
@@ -166,21 +170,20 @@ export default function EventTable({
     }
   }, [isLive, backlogFetched, domain]);
 
-  // Combine API data with live (or frozen) socket data.
+  // Combine API data with live or frozen socket data
   const combinedData = useMemo(() => {
     const uniqueData = new Map<number, Event>();
     const liveUsed = isLive ? liveData : frozenLiveData;
     [...apiData, ...liveUsed].forEach((event) =>
       uniqueData.set(event.id, event)
     );
-    // Sort events chronologically.
     return Array.from(uniqueData.values()).sort(
       (a, b) =>
         new Date(a.creationTime).getTime() - new Date(b.creationTime).getTime()
     );
   }, [apiData, liveData, frozenLiveData, isLive]);
 
-  // Filter data by the selected camera and vehicle type.
+  // Filter data by the selected camera and vehicle type
   const filteredData = useMemo(() => {
     let data = combinedData;
     if (selectedCamera !== "all") {
@@ -196,7 +199,7 @@ export default function EventTable({
 
   const table = useReactTable({
     data: filteredData,
-    columns,
+    columns: getColumns(domain), // ✅ Dynamically generate columns
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -218,7 +221,7 @@ export default function EventTable({
 
   return (
     <div className="p-4 bg-white shadow rounded-lg overflow-x-auto">
-      <h2 className="text-xl font-semibold mb-2">Event Table</h2>
+      <h2 className="text-xl font-semibold mb-2">{domain} Events</h2>
       <div className="flex items-center py-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
