@@ -54,7 +54,7 @@ function getRandomVehicleType(): MockRecord["vehicleType"] {
     { type: "utrykningskjøretøy", weight: 3 },
     { type: "lastebil sylinder", weight: 3 },
     { type: "myke trafikanter", weight: 2 },
-    { type: "traktor", weight: 0 } // 🚨 Never appears
+    { type: "traktor", weight: 0 } 
   ];
 
   // Create weighted probability distribution

@@ -11,14 +11,14 @@ const io = new Server(server, {
   cors: { origin: "*" }, // Allow all origins for development
 });
 
-// ✅ In-memory mock database
+// In-memory mock database
 const mockDatabase: Record<string, MockRecord[]> = {
   ferry: [],
   tires: [],
   vehicles: [],
 };
 
-// ✅ Generate initial 1000 records for each entity type
+// Generate initial 1000 records for each entity type
 function initializeMockDatabase() {
   console.log("Generating initial mock data...");
   mockDatabase.ferry = generateMockData("ferry", 1000);
@@ -27,12 +27,12 @@ function initializeMockDatabase() {
   console.log("Initial mock data generated successfully!");
 }
 
-// ✅ Function to get the next ID safely
+// Function to get the next ID safely
 function getNextId(entityType: keyof typeof mockDatabase): number {
   return (mockDatabase[entityType]?.length ?? 0) + 1;
 }
 
-// ✅ Add new mock data at regular intervals and notify clients
+// Add new mock data at regular intervals and notify clients
 function continuouslyAddMockData() {
   console.log("Starting continuous mock data generation...");
   setInterval(() => {
@@ -54,19 +54,19 @@ function continuouslyAddMockData() {
       },
     };
 
-    // ✅ Fix: Broadcast only to relevant WebSocket rooms
+    // Fix: Broadcast only to relevant WebSocket rooms
     (Object.keys(newData) as Array<keyof typeof newData>).forEach((entity) => {
       io.to(entity).emit("newData", newData[entity]); // Only send data for that entity
     });
 
-    // ✅ Update database
+    // Update database
     mockDatabase.ferry.push(newData.ferry);
     mockDatabase.tires.push(newData.tires);
     mockDatabase.vehicles.push(newData.vehicles);
   }, 10000); // New data every 10s
 }
 
-// ✅ API routes for fetching initial data
+// API routes for fetching initial data
 const router = express.Router();
 
 router.get("/ferry", (req: Request, res: Response) => {
@@ -84,7 +84,7 @@ router.get("/vehicles", (req: Request, res: Response) => {
 // Attach routes to Express app
 app.use("/api", router);
 
-// ✅ WebSocket handling (Only send relevant data)
+// WebSocket handling (Only send relevant data)
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
@@ -104,7 +104,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// ✅ Start server
+// Start server
 const PORT = process.env.PORT || 4000;
 
 server.listen(PORT, () => {
