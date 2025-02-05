@@ -110,15 +110,16 @@ export default function DtsOverviewPage() {
       const eventDate = event.creationTime.substring(0, 10);
       const afterStart = eventDate >= startDate;
       const beforeEnd = eventDate <= endDate;
-      const matchCamera = selectedCamera === "all" || event.camera === selectedCamera;
+      const matchCamera =
+        selectedCamera === "all" || event.camera === selectedCamera;
       const matchVehicle =
-        selectedVehicleType === "all" || event.vehicleType === selectedVehicleType;
+        selectedVehicleType === "all" ||
+        event.vehicleType === selectedVehicleType;
       return afterStart && beforeEnd && matchCamera && matchVehicle;
     });
   }, [data, selectedCamera, selectedVehicleType, startDate, endDate]);
 
-  if (loading)
-    return <p className="text-gray-500">Loading overview data...</p>;
+  if (loading) return <p className="text-gray-500">Loading overview data...</p>;
 
   return (
     <div className="p-6">
@@ -146,14 +147,24 @@ export default function DtsOverviewPage() {
       </div>
 
       {/* Event summary */}
-      <EventSummary count={filteredData.length} startDate={startDate} endDate={endDate} />
+      <EventSummary
+        count={filteredData.length}
+        startDate={startDate}
+        endDate={endDate}
+      />
 
       {/* Visualizations */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Time Series Chart Container */}
         <div className="bg-white shadow rounded-lg p-4">
           <TimeSeriesChart data={filteredData} vehicleTypes={vehicleTypes} />
         </div>
-        <VehicleDistributionChart data={filteredData} />
+
+        {/* Vehicle Distribution Chart Container */}
+        <div className="bg-white shadow rounded-lg p-4">
+          <VehicleDistributionChart data={filteredData} />
+        </div>
       </div>
     </div>
   );

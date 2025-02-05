@@ -82,25 +82,26 @@ const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ data, vehicleTypes })
     return colors[index % colors.length];
   }
 
-  // Toggle the visibility of a given vehicle type.
-  const toggleVehicleType = (type: string) => {
-    setEnabledTypes((prev) => ({ ...prev, [type]: !prev[type] }));
-  };
+
 
   return (
     <div>
-      <div className="mb-4">
+     
+      
+      {/* Wrap the chart in a responsive container */}
+      <div className="relative w-full" style={{ height: "400px" }}>
+        <Line
+          data={chartData}
+          options={{
+            responsive: true,
+            maintainAspectRatio: false, // Disable the aspect ratio to allow custom sizing
+            plugins: {
+              legend: { position: "top" },
+              title: { display: true, text: "Events Over Time by Vehicle Type" },
+            },
+          }}
+        />
       </div>
-      <Line
-        data={chartData}
-        options={{
-          responsive: true,
-          plugins: {
-            legend: { position: "top" },
-            title: { display: true, text: "Events Over Time by Vehicle Type" },
-          },
-        }}
-      />
     </div>
   );
 };
