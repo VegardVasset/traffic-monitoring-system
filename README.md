@@ -59,3 +59,20 @@
 - **Data Merging & Sorting:**
   - Historical API data, backlog events, and live (or frozen) socket data are merged.
   - The combined data is deduplicated and sorted chronologically for a seamless display.
+
+#  Adding and Using Distinct Data Fields in Mock Data  
+
+##  1. Modify the `MockRecord` Interface  
+- Add the new field in `types.ts` as optional (`?`) to ensure it only applies to relevant domains.  
+
+##  2. Create a Generator Function  
+- Define a function in `generateData.ts` to generate random values for the new field.  
+
+##  3. Update `generateMockData()`  
+- Add the new field conditionally based on `entityType` to ensure it appears only for the correct domain.  
+
+## 4. Ensure Frontend Displays the Field  
+- Modify `getColumns(domain)` in `EventTable.tsx` to dynamically include the field only for the relevant domain.  
+
+This keeps the system **flexible and scalable** while ensuring each domain has its unique data fields.  
+

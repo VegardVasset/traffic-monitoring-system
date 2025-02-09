@@ -20,6 +20,17 @@ const camerasByDomain: Record<string, { name: string; weight: number }[]> = {
   ],
 };
 
+function getRandomTireCondition(): number {
+  return faker.number.int({ min: 1, max: 5 });
+}
+
+
+// Function to generate a random passenger count (1-5)
+function getRandomPassengerCount(): number {
+  return faker.number.int({ min: 1, max: 5 });
+}
+
+
 function getRandomTireType(): "Sommerdekk" | "Vinterdekk" {
   return Math.random() < 0.5 ? "Sommerdekk" : "Vinterdekk";
 }
@@ -118,6 +129,15 @@ export function generateMockData(
     if (entityType === "tires") {
       record.tireType = getRandomTireType();
     }
+
+    if (entityType === "ferry") {
+      record.passengerCount = getRandomPassengerCount();
+    }
+
+    if (entityType === "tires") {
+      record.tireCondition = getRandomTireCondition();
+    }
+    
 
     mockData.push(record);
   }
