@@ -1,0 +1,41 @@
+name: Frontend Tests
+
+on:
+  push:
+    branches:
+      - main
+      - setup-tests
+  pull_request:
+    branches:
+      - main
+      - setup-tests
+
+jobs:
+  frontend-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the code from the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Navigate to the frontend folder
+      - name: Navigate to frontend
+        working-directory: ./frontend
+        run: pwd
+
+      # Set up Node.js environment
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18' # Use your Node.js version
+
+      # Install dependencies
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm install
+
+      # Run tests
+      - name: Run frontend tests
+        working-directory: ./frontend
+        run: npm test
