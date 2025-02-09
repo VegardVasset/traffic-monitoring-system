@@ -37,7 +37,8 @@ export interface Event {
   vehicleType: string;
   confidenceScore: number;
   camera: string;
-  tireType?: "Sommerdekk" | "Vinterdekk"; // ✅ Optional for tires only
+  tireType?: "Sommerdekk" | "Vinterdekk"; // Optional for tires only
+  passengerCount?: number; // ✅ Optional for ferry only
 }
 
 interface EventTableProps {
@@ -94,6 +95,15 @@ const getColumns = (domain: string): ColumnDef<Event>[] => {
     baseColumns.push({
       accessorKey: "tireType",
       header: "Tire Type",
+      cell: (info) => info.getValue() || "N/A", // Show "N/A" if missing
+    });
+  }
+
+  // ✅ Add `passengerCount` column only for "ferry" domain
+  if (domain === "ferry") {
+    baseColumns.push({
+      accessorKey: "passengerCount",
+      header: "Passenger Count",
       cell: (info) => info.getValue() || "N/A", // Show "N/A" if missing
     });
   }

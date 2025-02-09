@@ -13,4 +13,5 @@ export interface MockRecord {
   confidenceScore: number;
   corrected: boolean;
   tireType?: "Sommerdekk" | "Vinterdekk";
+  passengerCount?: number;
 }
