@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 
@@ -13,8 +15,13 @@ export interface FilterComponentProps {
   vehicleTypes: string[];
   selectedVehicleType: string;
   setSelectedVehicleType: (value: string) => void;
+  binSize: "hour" | "day" | "week";
+  setBinSize: (value: "hour" | "day" | "week") => void;
   isLive: boolean;
   setIsLive: (value: boolean) => void;
+
+  /** Add this prop to optionally show/hide the Bin Size dropdown */
+  showBinSize?: boolean;
 }
 
 export default function FilterComponent({
@@ -24,8 +31,11 @@ export default function FilterComponent({
   vehicleTypes,
   selectedVehicleType,
   setSelectedVehicleType,
+  binSize,
+  setBinSize,
   isLive,
   setIsLive,
+  showBinSize = true, // default is true (show it)
 }: FilterComponentProps) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-4 py-4">
@@ -48,6 +58,7 @@ export default function FilterComponent({
           ))}
         </select>
       </div>
+
       {/* Vehicle Type Dropdown */}
       <div className="flex items-center">
         <label htmlFor="vehicleType-select" className="mr-2 font-medium">
@@ -67,6 +78,26 @@ export default function FilterComponent({
           ))}
         </select>
       </div>
+
+      {/* Bin Size Dropdown (conditionally rendered) */}
+      {showBinSize && (
+        <div className="flex items-center">
+          <label htmlFor="bin-size-select" className="mr-2 font-medium">
+            Bin Size:
+          </label>
+          <select
+            id="bin-size-select"
+            value={binSize}
+            onChange={(e) => setBinSize(e.target.value as "hour" | "day" | "week")}
+            className="border rounded p-1"
+          >
+            <option value="hour">Hourly</option>
+            <option value="day">Daily</option>
+            <option value="week">Weekly</option>
+          </select>
+        </div>
+      )}
+
       {/* LIVE Button */}
       <div>
         <Button

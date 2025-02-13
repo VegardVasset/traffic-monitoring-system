@@ -240,7 +240,7 @@ export default function EventTable({
 
   return (
     <div className="p-4 bg-white shadow rounded-lg overflow-x-auto">
-      <h2 className="text-xl font-semibold mb-2">{domain} Events</h2>
+      <h2 className="text-xl font-semibold mb-2">Passings</h2>
       <div className="flex items-center py-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
