@@ -1,33 +1,56 @@
 "use client";
-import { useEffect, useState } from "react";
-import { fetchTrafficData } from "./lib/api";
-import { Button } from "@/components/ui/button"
 
+import React from 'react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { motion } from 'framer-motion';
 
-export default function Home() {
-    const [data, setData] = useState([]);
+const Homepage: React.FC = () => {
+  const cardData = [
+    {
+      title: "Ferry Passenger Counting",
+      description: "Monitor real-time ferry passenger counts and optimize boarding efficiency."
+    },
+    {
+      title: "Tire Condition Monitoring",
+      description: "Ensure road safety with automatic tire inspections and alerts."
+    },
+    {
+      title: "Traffic Flow Analytics",
+      description: "Gain insights into vehicle traffic patterns for improved traffic management."
+    }
+  ];
 
-    useEffect(() => {
-        async function loadData() {
-            const result = await fetchTrafficData();
-            setData(result);
-        }
-        loadData();
-    }, []);
+  return (
+    <div className="min-h-screen bg-gray-100 p-6">
+      <header className="text-center py-6">
+        <h1 className="text-4xl font-bold text-gray-800 mb-4">
+          Welcome to the Traffic Monitoring Dashboard
+        </h1>
+        <p className="text-lg text-gray-600">
+          Efficient, real-time insights into traffic patterns, vehicle monitoring, and ferry passenger counts.
+        </p>
+      </header>
 
-    return (
-      <div className="p-4">
-        <h1 className="text-2xl font-bold">Traffic Monitoring Dashboard</h1>
-        <ul>
-          {data.map((item, index) => (
-            <li key={index} className="border p-2 mt-2">
-              {JSON.stringify(item)}
-            </li>
-          ))}
-        </ul>
-        <div>
-          <Button>Click me</Button>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {cardData.map(({ title, description }) => (
+          <Card key={title}>
+            <CardContent>
+              <h2 className="text-xl font-semibold text-gray-700">{title}</h2>
+              <p className="text-gray-500 mb-4">{description}</p>
+              <Button>Learn More</Button>
+            </CardContent>
+          </Card>
+        ))}
       </div>
-    );
-}
+
+      <motion.div className="mt-12 text-center" whileHover={{ scale: 1.05 }}>
+        <Button className="px-6 py-3 text-lg font-semibold bg-blue-600 text-white rounded-xl shadow-lg">
+          Explore Dashboard
+        </Button>
+      </motion.div>
+    </div>
+  );
+};
+
+export default Homepage;
