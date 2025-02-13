@@ -1,54 +1,74 @@
 "use client";
 
-import React from 'react';
+import React from "react";
+import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { motion } from 'framer-motion';
 
 const Homepage: React.FC = () => {
   const cardData = [
     {
       title: "Ferry Passenger Counting",
-      description: "Monitor real-time ferry passenger counts and optimize boarding efficiency."
+      description:
+        "Monitor real-time ferry passenger counts and optimize boarding efficiency.",
     },
     {
       title: "Tire Condition Monitoring",
-      description: "Ensure road safety with automatic tire inspections and alerts."
+      description: "Ensure road safety with automatic tire inspections and alerts.",
     },
     {
       title: "Traffic Flow Analytics",
-      description: "Gain insights into vehicle traffic patterns for improved traffic management."
-    }
+      description:
+        "Gain insights into vehicle traffic patterns for improved traffic management.",
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <header className="text-center py-6">
-        <h1 className="text-4xl font-bold text-gray-800 mb-4">
+    <div className="min-h-screen bg-gradient-to-b from-white via-blue-50 to-blue-100 p-6">
+      {/* Fading Header */}
+      <header className="text-center max-w-4xl mx-auto py-10">
+        <motion.h1
+          className="text-4xl md:text-5xl font-extrabold text-gray-800 mb-4"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+        >
           Welcome to the Traffic Monitoring Dashboard
-        </h1>
-        <p className="text-lg text-gray-600">
-          Efficient, real-time insights into traffic patterns, vehicle monitoring, and ferry passenger counts.
-        </p>
+        </motion.h1>
+        <motion.p
+          className="text-lg md:text-xl text-gray-600"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.2 }}
+        >
+          Efficient, real-time insights into traffic patterns, vehicle monitoring,
+          and ferry passenger counts.
+        </motion.p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Card Grid */}
+      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
         {cardData.map(({ title, description }) => (
-          <Card key={title}>
-            <CardContent>
-              <h2 className="text-xl font-semibold text-gray-700">{title}</h2>
-              <p className="text-gray-500 mb-4">{description}</p>
-              <Button>Learn More</Button>
-            </CardContent>
-          </Card>
+          <motion.div
+            key={title}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="flex"
+          >
+            <Card className="w-full hover:shadow-xl transition-shadow bg-white rounded-2xl">
+              <CardContent>
+                <h2 className="text-xl font-semibold text-gray-700 mb-2">
+                  {title}
+                </h2>
+                <p className="text-gray-500 mb-6">{description}</p>
+                <Button className="bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+                  Learn More
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
         ))}
       </div>
-
-      <motion.div className="mt-12 text-center" whileHover={{ scale: 1.05 }}>
-        <Button className="px-6 py-3 text-lg font-semibold bg-blue-600 text-white rounded-xl shadow-lg">
-          Explore Dashboard
-        </Button>
-      </motion.div>
     </div>
   );
 };
