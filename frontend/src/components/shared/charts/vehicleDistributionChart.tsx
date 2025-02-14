@@ -1,14 +1,20 @@
-// components/charts/VehicleDistributionChart.tsx
 "use client";
 
 import React, { useMemo } from "react";
 import { Pie } from "react-chartjs-2";
-import { ChartData } from "chart.js";
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+// Register required Chart.js components
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 export interface Event {
   id: number;
   vehicleType: string;
-  // add other fields as needed
 }
 
 export interface VehicleDistributionChartProps {
@@ -16,7 +22,7 @@ export interface VehicleDistributionChartProps {
 }
 
 const VehicleDistributionChart: React.FC<VehicleDistributionChartProps> = ({ data }) => {
-  // Aggregate counts per vehicle type.
+  // Aggregate vehicle type counts
   const distribution = useMemo(() => {
     const counts: Record<string, number> = {};
     data.forEach((event) => {
@@ -28,7 +34,7 @@ const VehicleDistributionChart: React.FC<VehicleDistributionChartProps> = ({ dat
   const labels = Object.keys(distribution);
   const values = labels.map((label) => distribution[label]);
 
-  const chartData: ChartData<"pie"> = {
+  const chartData = {
     labels,
     datasets: [
       {
@@ -38,32 +44,24 @@ const VehicleDistributionChart: React.FC<VehicleDistributionChartProps> = ({ dat
     ],
   };
 
-  // Utility: Get a color from a preset palette.
-  function getColor(index: number, opacity: number = 0.6) {
+  // Utility: Get color from a preset palette
+  function getColor(index: number) {
     const colors = [
-      `rgba(75,192,192,${opacity})`,
-      `rgba(255,99,132,${opacity})`,
-      `rgba(54,162,235,${opacity})`,
-      `rgba(255,206,86,${opacity})`,
-      `rgba(153,102,255,${opacity})`,
-      `rgba(255,159,64,${opacity})`,
-      `rgba(199,199,199,${opacity})`,
-      `rgba(83,102,255,${opacity})`,
-      `rgba(255,102,102,${opacity})`,
-      `rgba(102,255,102,${opacity})`,
+      "#4bc0c0", "#ff6384", "#36a2eb", "#ffce56", "#9966ff",
+      "#ff9f40", "#c9cbcf", "#8366ff", "#ff6666", "#66ff66"
     ];
     return colors[index % colors.length];
   }
 
   return (
-    <div className="bg-white shadow rounded-lg p-4">
+    <div className="p-4 bg-white shadow rounded-lg">
       <h3 className="text-lg font-medium mb-4">Vehicle Distribution</h3>
       <Pie
         data={chartData}
         options={{
           responsive: true,
           plugins: {
-            legend: { position: "bottom" },
+            legend: { position: "bottom" }, // ✅ Legend stays at the bottom
             title: { display: true, text: "Vehicle Distribution" },
           },
         }}
