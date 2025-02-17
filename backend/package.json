@@ -8,6 +8,9 @@
     "start": "node dist/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "engines" : {
+    "node" : "22.x"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -17,7 +20,6 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "socket.io": "^4.8.1",
     "uuid": "^11.0.5",
     "ws": "^8.18.0"
   },
@@ -25,7 +27,6 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.13.4",
-    "@types/socket.io": "^3.0.1",
     "@types/ws": "^8.5.14",
     "nodemon": "^3.1.9",
     "ts-node": "^10.9.2",
