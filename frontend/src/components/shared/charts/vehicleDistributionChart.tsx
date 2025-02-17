@@ -8,8 +8,9 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import type { ChartOptions } from "chart.js";
+import { getChartColor } from "@/lib/chartUtils";
 
-// Register required Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 export interface Event {
@@ -22,7 +23,7 @@ export interface VehicleDistributionChartProps {
 }
 
 const VehicleDistributionChart: React.FC<VehicleDistributionChartProps> = ({ data }) => {
-  // Aggregate vehicle type counts
+  // 1) Aggregate vehicle-type counts
   const distribution = useMemo(() => {
     const counts: Record<string, number> = {};
     data.forEach((event) => {
@@ -31,41 +32,61 @@ const VehicleDistributionChart: React.FC<VehicleDistributionChartProps> = ({ dat
     return counts;
   }, [data]);
 
+  // 2) Chart labels & values
   const labels = Object.keys(distribution);
   const values = labels.map((label) => distribution[label]);
 
-  const chartData = {
-    labels,
-    datasets: [
-      {
-        data: values,
-        backgroundColor: labels.map((_, index) => getColor(index)),
+  // 3) Build chartData
+  const chartData = useMemo(() => {
+    return {
+      labels,
+      datasets: [
+        {
+          data: values,
+          backgroundColor: labels.map((_, i) => getChartColor(i, 0.8)),
+        },
+      ],
+    };
+  }, [labels, values]);
+
+  // 4) Chart options
+  const pieChartOptions: ChartOptions<"pie"> = {
+    responsive: true,
+    maintainAspectRatio: false, // Fill the parent's height
+    layout: {
+      padding: {
+        bottom: 30, // some extra space for the legend
       },
-    ],
+    },
+    plugins: {
+      legend: {
+        display: false,
+        position: "bottom",
+        onClick: () => {},
+        labels: {
+          pointStyle: "circle",
+          usePointStyle: true,
+          font: {
+            size: 12,
+          },
+          padding: 10,
+        },
+      },
+      title: {
+        display: false,
+      },
+    },
+    animation: {
+      duration: 0,
+    },
   };
 
-  // Utility: Get color from a preset palette
-  function getColor(index: number) {
-    const colors = [
-      "#4bc0c0", "#ff6384", "#36a2eb", "#ffce56", "#9966ff",
-      "#ff9f40", "#c9cbcf", "#8366ff", "#ff6666", "#66ff66"
-    ];
-    return colors[index % colors.length];
-  }
-
   return (
-    <div className="p-4 bg-white shadow rounded-lg">
+    <div className="flex flex-col w-full h-full">
       <h3 className="text-lg font-medium mb-4">Vehicle Distribution</h3>
-      <Pie
-        data={chartData}
-        options={{
-          responsive: true,
-          plugins: {
-            legend: { position: "bottom" }, // ✅ Legend stays at the bottom
-            title: { display: true, text: "Vehicle Distribution" },
-          },
-        }}
-      />
+      <div className="flex-1 relative">
+        <Pie data={chartData} options={pieChartOptions} />
+      </div>
     </div>
   );
 };

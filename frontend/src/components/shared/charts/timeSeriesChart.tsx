@@ -12,8 +12,9 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import type { ChartOptions } from "chart.js";
+import { getChartColor } from "@/lib/chartUtils";
 
-// Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 export interface Event {
@@ -24,34 +25,36 @@ export interface Event {
 
 export interface TimeSeriesChartProps {
   data: Event[];
-  vehicleTypes: string[];
   binSize: "hour" | "day" | "week";
 }
 
-// Define a type for the aggregated data entries
 type AggregatedDataEntry = {
   date: string;
-} & {
-  [key: string]: number | string;
-};
+} & { [key: string]: number | string };
 
-const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ data, vehicleTypes, binSize }) => {
-  // Binning function based on binSize
+const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ data, binSize }) => {
+  // 1) Derive vehicle types from the data
+  const vehicleTypes = useMemo(() => {
+    const types = new Set<string>();
+    data.forEach((e) => types.add(e.vehicleType));
+    return Array.from(types);
+  }, [data]);
+
+  // 2) Binning function
   const binningFunction = useMemo(() => {
     const binFormat: Record<"hour" | "day" | "week", (date: Date) => string> = {
-      hour: (date) => date.toISOString().substring(0, 13), // "YYYY-MM-DDTHH"
-      day: (date) => date.toISOString().substring(0, 10),  // "YYYY-MM-DD"
+      hour: (date) => date.toISOString().substring(0, 13),
+      day: (date) => date.toISOString().substring(0, 10),
       week: (date) => {
         const startOfWeek = new Date(date);
-        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Start of the week
-        return startOfWeek.toISOString().substring(0, 10); // "YYYY-MM-DD"
+        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+        return startOfWeek.toISOString().substring(0, 10);
       },
     };
-
-    return binFormat[binSize] || binFormat["day"]; // Default to "day" if binSize is undefined
+    return binFormat[binSize] ?? binFormat.day;
   }, [binSize]);
 
-  // Aggregate data based on binning function
+  // 3) Aggregate data
   const aggregatedData: AggregatedDataEntry[] = useMemo(() => {
     const binnedCounts: Record<string, Record<string, number>> = {};
 
@@ -75,13 +78,13 @@ const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ data, vehicleTypes, b
     }));
   }, [data, vehicleTypes, binningFunction]);
 
-  // Prepare datasets for Chart.js
+  // 4) Build datasets
   const datasets = useMemo(() => {
     return vehicleTypes.map((type, index) => ({
       label: type,
-      data: aggregatedData.map((entry) => (entry[type] as number) || 0),
-      borderColor: getColor(index),
-      backgroundColor: getColor(index, 0.5),
+      data: aggregatedData.map((row) => (row[type] as number) || 0),
+      borderColor: getChartColor(index),
+      backgroundColor: getChartColor(index, 0.5),
       fill: false,
     }));
   }, [aggregatedData, vehicleTypes]);
@@ -91,38 +94,27 @@ const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ data, vehicleTypes, b
     datasets,
   };
 
-  // Utility: Get color from a preset palette
-  function getColor(index: number, opacity: number = 1) {
-    const colors = [
-      `rgba(75,192,192,${opacity})`,
-      `rgba(255,99,132,${opacity})`,
-      `rgba(54,162,235,${opacity})`,
-      `rgba(255,206,86,${opacity})`,
-      `rgba(153,102,255,${opacity})`,
-      `rgba(255,159,64,${opacity})`,
-      `rgba(199,199,199,${opacity})`,
-      `rgba(83,102,255,${opacity})`,
-      `rgba(255,102,102,${opacity})`,
-      `rgba(102,255,102,${opacity})`,
-    ];
-    return colors[index % colors.length];
-  }
+  // 5) Chart options
+  const lineChartOptions: ChartOptions<"line"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "bottom",
+        onClick: () => {},
+      },
+      title: {
+        display: true,
+        text: `Binned by ${binSize}`,
+      },
+    },
+  };
 
   return (
-    <div className="p-4 bg-white shadow rounded-lg">
-      <h2 className="text-xl font-semibold mb-4">Events Over Time</h2>
-      <div className="relative w-full" style={{ height: "400px" }}>
-        <Line
-          data={chartData}
-          options={{
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { position: "top" },
-              title: { display: true, text: `Binned by ${binSize}` },
-            },
-          }}
-        />
+    <div className="flex flex-col w-full h-full">
+      <h2 className="text-xl font-semibold mb-4">Passings Over Time</h2>
+      <div className="flex-1 relative">
+        <Line data={chartData} options={lineChartOptions} />
       </div>
     </div>
   );
