@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import FilterComponent, { Camera } from "@/components/shared/filterComponent";
+import FilterComponent from "@/components/shared/filterComponent";
 import PeriodFilter from "@/components/shared/periodFilter";
 import EventSummary from "@/components/shared/eventSummary";
 import TimeSeriesChart from "@/components/shared/charts/timeSeriesChart";

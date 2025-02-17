@@ -8,7 +8,7 @@ import { io } from "socket.io-client";
 const SOCKET_URL = "https://traffic-monitoring-system-production.up.railway.app";
 
 export function useSocket(domain: string, isLive: boolean) {
-  const [liveData, setLiveData] = useState<any[]>([]);
+  const [liveData, setLiveData] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
