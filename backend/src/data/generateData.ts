@@ -1,7 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { MockRecord } from "../types";
 
-// Define cameras for each domain
+// Cameras for each domain
 const camerasByDomain: Record<string, { name: string; weight: number }[]> = {
   dts: [
     { name: "Os", weight: 50 },
@@ -24,18 +24,14 @@ function getRandomTireCondition(): number {
   return faker.number.int({ min: 1, max: 5 });
 }
 
-
-// Function to generate a random passenger count (1-5)
 function getRandomPassengerCount(): number {
   return faker.number.int({ min: 1, max: 5 });
 }
-
 
 function getRandomTireType(): "Sommerdekk" | "Vinterdekk" {
   return Math.random() < 0.5 ? "Sommerdekk" : "Vinterdekk";
 }
 
-// Helper to generate random timestamps over the last year
 function getRandomTimestamp(): string {
   const start = new Date();
   start.setFullYear(start.getFullYear() - 1); 
@@ -43,15 +39,13 @@ function getRandomTimestamp(): string {
   return faker.date.between({ from: start, to: end }).toISOString();
 }
 
-// Function to add a random delay to mimic real-world delays
 export function getReceptionTime(creationTime: string): string {
   const creationDate = new Date(creationTime);
-  const delaySeconds = faker.number.int({ min: 2, max: 10 }); 
+  const delaySeconds = faker.number.int({ min: 2, max: 10 });
   creationDate.setSeconds(creationDate.getSeconds() + delaySeconds);
   return creationDate.toISOString();
 }
 
-// Function to generate a random vehicle type
 function getRandomVehicleType(): MockRecord["vehicleType"] {
   const vehicleDistribution: { type: MockRecord["vehicleType"]; weight: number }[] = [
     { type: "person transport", weight: 40 },
@@ -65,45 +59,40 @@ function getRandomVehicleType(): MockRecord["vehicleType"] {
     { type: "utrykningskjøretøy", weight: 3 },
     { type: "lastebil sylinder", weight: 3 },
     { type: "myke trafikanter", weight: 2 },
-    { type: "traktor", weight: 0 } 
+    { type: "traktor", weight: 0 },
   ];
 
-  // Create weighted probability distribution
   const weightedList: MockRecord["vehicleType"][] = [];
   vehicleDistribution.forEach(({ type, weight }) => {
     for (let i = 0; i < weight; i++) {
       weightedList.push(type);
     }
   });
-
   return weightedList[Math.floor(Math.random() * weightedList.length)];
 }
 
-// Function to select a camera based on domain
 function getRandomCamera(entityType: string): string {
   const validCameras = camerasByDomain[entityType] || [];
   const weightedList: string[] = [];
-
   validCameras.forEach(({ name, weight }) => {
     for (let i = 0; i < weight; i++) {
       weightedList.push(name);
     }
   });
-
   return weightedList[Math.floor(Math.random() * weightedList.length)];
 }
 
-// Function to generate a confidence score (mostly 90-100%)
 function getRealisticConfidenceScore(): number {
-  const highConfidence = faker.number.float({ min: 0.90, max: 1 }).toFixed(2);
-  const occasionalLowerConfidence = faker.number.float({ min: 0.80, max: 0.89 }).toFixed(2);
-  
+  const highConfidence = faker.number.float({ min: 0.9, max: 1 }).toFixed(2);
+  const occasionalLowerConfidence = faker.number.float({ min: 0.8, max: 0.89 }).toFixed(2);
   return Math.random() < 0.9 ? parseFloat(highConfidence) : parseFloat(occasionalLowerConfidence);
 }
 
-// Function to generate mock data
+/**
+ * Generate an array of mock records for the given entityType.
+ */
 export function generateMockData(
-  entityType: string, // ferry, tire, or vehicle
+  entityType: "ferry" | "tires" | "dts",
   count: number,
   fixedTimes?: { creationTime: string; receptionTime: string }
 ): MockRecord[] {
@@ -125,19 +114,14 @@ export function generateMockData(
       corrected: faker.datatype.boolean(),
     };
 
-    
     if (entityType === "tires") {
       record.tireType = getRandomTireType();
+      record.tireCondition = getRandomTireCondition();
     }
 
     if (entityType === "ferry") {
       record.passengerCount = getRandomPassengerCount();
     }
-
-    if (entityType === "tires") {
-      record.tireCondition = getRandomTireCondition();
-    }
-    
 
     mockData.push(record);
   }
