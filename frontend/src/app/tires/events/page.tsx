@@ -8,7 +8,8 @@ export default function TiresEventsPage() {
     <EventTemplate
       domain="tires"
       title="Tire Scanner"
-      apiUrl="http://localhost:4000/api/tires"
+      apiUrl="https://traffic-monitoring-system-production.up.railway.app/api/tires"
     />
   );
 }
+

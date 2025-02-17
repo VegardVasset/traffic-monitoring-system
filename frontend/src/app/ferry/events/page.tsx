@@ -1,5 +1,5 @@
-"use client";
 
+"use client";
 import React from "react";
 import EventTemplate from "@/components/shared/pageTemplates/eventTemplate";
 
@@ -8,7 +8,7 @@ export default function FerryEventsPage() {
     <EventTemplate
       domain="ferry"
       title="Ferry Counter"
-      apiUrl="http://localhost:4000/api/ferry"
+      apiUrl="https://traffic-monitoring-system-production.up.railway.app/api/ferry"
     />
   );
 }

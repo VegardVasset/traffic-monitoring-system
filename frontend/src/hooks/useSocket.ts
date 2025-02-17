@@ -1,36 +1,38 @@
+// useSocket.ts
 "use client";
 
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
-const SOCKET_URL = "http://localhost:4000"; // Adjust if needed
+// Hardcode your Railway domain here:
+const SOCKET_URL = "https://traffic-monitoring-system-production.up.railway.app";
 
 export function useSocket(domain: string, isLive: boolean) {
   const [liveData, setLiveData] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isLive) {
-      // Do not open a socket connection when live updates are off.
-      return;
-    }
-    const socket = io(SOCKET_URL);
+    if (!isLive) return;
+
+    // Initialize the Socket.IO client
+    const socket = io(SOCKET_URL, {
+      transports: ["websocket", "polling"],
+    });
 
     socket.on("connect", () => {
       console.log(`Connected to WebSocket for ${domain}`);
-      socket.emit("requestData", domain); // Request initial data from backend
+      // Request initial data for the given domain
+      socket.emit("requestData", domain);
     });
 
     socket.on("initialData", (initialData) => {
-      console.log(`Received initial data for ${domain}:`, initialData);
-      setLiveData(initialData); // Set initial data from the backend
+      setLiveData(initialData);
     });
 
     socket.on("newData", (newData) => {
-      console.log(`Received new data for ${domain}:`, newData);
       if (newData) {
-        // Prepend the new event and keep only the latest 100 items.
-        setLiveData((prevData) => [newData, ...prevData].slice(0, 100));
+        // Prepend the new event and limit to the last 100 items
+        setLiveData((prev) => [newData, ...prev].slice(0, 100));
       }
     });
 
@@ -39,8 +41,8 @@ export function useSocket(domain: string, isLive: boolean) {
       console.error("WebSocket Error:", errorMessage);
     });
 
-    // Clean up by disconnecting the socket when the component unmounts or when isLive changes.
     return () => {
+      // Disconnect when the component unmounts or isLive changes to false
       socket.disconnect();
     };
   }, [domain, isLive]);
