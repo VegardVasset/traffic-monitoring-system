@@ -1,6 +1,7 @@
 {
   "name": "backend",
   "version": "1.0.0",
+  "packageManager": "npm@9.8.0",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/server.ts",
