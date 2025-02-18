@@ -45,11 +45,11 @@ export interface Event {
 interface EventTableProps {
   domain: string;
   selectedCamera: string;
-  selectedVehicleType: string;
+  // UPDATED: use an array for multi-select vehicle types
+  selectedVehicleTypes: string[];
   isLive: boolean;
 }
 
-// Dynamically generate columns based on the domain
 const getColumns = (domain: string): ColumnDef<Event>[] => {
   const baseColumns: ColumnDef<Event>[] = [
     {
@@ -91,7 +91,6 @@ const getColumns = (domain: string): ColumnDef<Event>[] => {
     },
   ];
 
-  //  Add `tireType` column only for "tires" domain
   if (domain === "tires") {
     baseColumns.push(
       {
@@ -106,14 +105,12 @@ const getColumns = (domain: string): ColumnDef<Event>[] => {
       }
     );
   }
-  
 
-  // Add `passengerCount` column only for "ferry" domain
   if (domain === "ferry") {
     baseColumns.push({
       accessorKey: "passengerCount",
       header: "Passenger Count",
-      cell: (info) => info.getValue() || "N/A", // Show "N/A" if missing
+      cell: (info) => info.getValue() || "N/A",
     });
   }
 
@@ -125,7 +122,7 @@ const RAILWAY_URL = "https://traffic-monitoring-system-production.up.railway.app
 export default function EventTable({
   domain,
   selectedCamera,
-  selectedVehicleType,
+  selectedVehicleTypes,
   isLive,
 }: EventTableProps) {
   const { liveData, error: socketError } = useSocket(domain, isLive);
@@ -190,7 +187,7 @@ export default function EventTable({
           setBacklogFetched(true);
         });
     }
-  }, [isLive, backlogFetched, domain]);
+  }, [isLive, backlogFetched, domain, apiData, frozenLiveData]);
 
   // Combine API data with live or frozen socket data
   const combinedData = useMemo(() => {
@@ -205,23 +202,24 @@ export default function EventTable({
     );
   }, [apiData, liveData, frozenLiveData, isLive]);
 
-  // Filter data by the selected camera and vehicle type
+  // Filter data by the selected camera and vehicle types
   const filteredData = useMemo(() => {
     let data = combinedData;
     if (selectedCamera !== "all") {
       data = data.filter((record) => record.camera === selectedCamera);
     }
-    if (selectedVehicleType !== "all") {
-      data = data.filter(
-        (record) => record.vehicleType === selectedVehicleType
+    // If no vehicle types are selected, show all; otherwise filter
+    if (selectedVehicleTypes.length > 0) {
+      data = data.filter((record) =>
+        selectedVehicleTypes.includes(record.vehicleType)
       );
     }
     return data;
-  }, [combinedData, selectedCamera, selectedVehicleType]);
+  }, [combinedData, selectedCamera, selectedVehicleTypes]);
 
   const table = useReactTable({
     data: filteredData,
-    columns: getColumns(domain), // ✅ Dynamically generate columns
+    columns: getColumns(domain),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),

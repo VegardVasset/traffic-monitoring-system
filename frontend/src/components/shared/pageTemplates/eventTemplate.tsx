@@ -29,7 +29,7 @@ export default function EventTemplate({
 }: EventTemplateProps) {
   // Filter state
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
-  const [selectedVehicleType, setSelectedVehicleType] = useState<string>("all");
+  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
   const [binSize, setBinSize] = useState<"hour" | "day" | "week">("day");
   const [isLive, setIsLive] = useState<boolean>(false);
 
@@ -84,8 +84,8 @@ export default function EventTemplate({
         selectedCamera={selectedCamera}
         setSelectedCamera={setSelectedCamera}
         vehicleTypes={derivedVehicleTypes}
-        selectedVehicleType={selectedVehicleType}
-        setSelectedVehicleType={setSelectedVehicleType}
+        selectedVehicleTypes={selectedVehicleTypes}
+        setSelectedVehicleTypes={setSelectedVehicleTypes}
         binSize={binSize}
         setBinSize={setBinSize}
         isLive={isLive}
@@ -99,7 +99,7 @@ export default function EventTemplate({
       <EventTable
         domain={domain}
         selectedCamera={selectedCamera}
-        selectedVehicleType={selectedVehicleType}
+        selectedVehicleTypes={selectedVehicleTypes}
         isLive={isLive}
       />
     </div>
