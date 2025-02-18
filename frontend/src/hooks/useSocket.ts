@@ -4,7 +4,6 @@
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
-// Hardcode your Railway domain here:
 const SOCKET_URL = "https://traffic-monitoring-system-production.up.railway.app";
 
 export function useSocket(domain: string, isLive: boolean) {
