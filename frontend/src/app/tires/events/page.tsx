@@ -8,7 +8,8 @@ export default function TiresEventsPage() {
     <EventTemplate
       domain="tires"
       title="Tire Scanner"
-      apiUrl="http://localhost:4000/api/tires"
+      apiUrl={`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tires`}
     />
   );
 }
+

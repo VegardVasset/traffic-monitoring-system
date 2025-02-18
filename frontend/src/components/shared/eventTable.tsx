@@ -137,7 +137,9 @@ export default function EventTable({
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch(`http://localhost:4000/api/${domain}`);
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/${domain}`
+        );
         if (!res.ok)
           throw new Error(`Failed to fetch data: ${res.statusText}`);
         const jsonData = await res.json();
@@ -151,7 +153,8 @@ export default function EventTable({
       }
     }
     fetchData();
-  }, [domain]);
+  }, [domain]); // <-- added apiData and frozenLiveData
+  
 
   // Freeze live data when live mode is turned off
   useEffect(() => {
@@ -171,7 +174,9 @@ export default function EventTable({
           ...allEvents.map((event) => new Date(event.creationTime).getTime())
         );
       }
-      fetch(`http://localhost:4000/api/${domain}?after=${lastTimestamp}`)
+      fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/${domain}?after=${lastTimestamp}`
+      )
         .then((res) => res.json())
         .then((backlog: Event[]) => {
           if (backlog && backlog.length > 0) {

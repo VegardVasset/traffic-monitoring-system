@@ -76,3 +76,5 @@
 
 This keeps the system **flexible and scalable** while ensuring each domain has its unique data fields.  
 
+## Production deployment using Vercel and Railwind
+
