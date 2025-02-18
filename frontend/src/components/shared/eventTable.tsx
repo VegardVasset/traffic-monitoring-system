@@ -153,7 +153,7 @@ export default function EventTable({
       }
     }
     fetchData();
-  }, [domain, apiData, frozenLiveData]); // <-- added apiData and frozenLiveData
+  }, [domain]); // <-- added apiData and frozenLiveData
   
 
   // Freeze live data when live mode is turned off
