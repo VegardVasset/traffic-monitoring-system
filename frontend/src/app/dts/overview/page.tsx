@@ -8,7 +8,7 @@ export default function DtsOverviewPage() {
   return (
     <OverviewTemplate
       domainTitle="DTS Scanner"
-      apiUrl="https://traffic-monitoring-system-production.up.railway.app/api/dts"
+      apiUrl={`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/dts`}
       defaultBinSize="day"
     />
   );

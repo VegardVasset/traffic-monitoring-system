@@ -117,8 +117,6 @@ const getColumns = (domain: string): ColumnDef<Event>[] => {
   return baseColumns;
 };
 
-const RAILWAY_URL = "https://traffic-monitoring-system-production.up.railway.app";
-
 export default function EventTable({
   domain,
   selectedCamera,
@@ -139,7 +137,9 @@ export default function EventTable({
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch(`${RAILWAY_URL}/api/${domain}`);
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/${domain}`
+        );
         if (!res.ok)
           throw new Error(`Failed to fetch data: ${res.statusText}`);
         const jsonData = await res.json();
@@ -174,7 +174,9 @@ export default function EventTable({
           ...allEvents.map((event) => new Date(event.creationTime).getTime())
         );
       }
-      fetch(`${RAILWAY_URL}/api/${domain}?after=${lastTimestamp}`)
+      fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/${domain}?after=${lastTimestamp}`
+      )
         .then((res) => res.json())
         .then((backlog: Event[]) => {
           if (backlog && backlog.length > 0) {

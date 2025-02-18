@@ -4,8 +4,6 @@
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
-const SOCKET_URL = "https://traffic-monitoring-system-production.up.railway.app";
-
 export function useSocket(domain: string, isLive: boolean) {
   const [liveData, setLiveData] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [error, setError] = useState<string | null>(null);
@@ -14,7 +12,7 @@ export function useSocket(domain: string, isLive: boolean) {
     if (!isLive) return;
 
     // Initialize the Socket.IO client
-    const socket = io(SOCKET_URL, {
+    const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
       transports: ["websocket", "polling"],
     });
 

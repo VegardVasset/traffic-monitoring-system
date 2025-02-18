@@ -8,7 +8,7 @@ export default function FerryEventsPage() {
     <EventTemplate
       domain="ferry"
       title="Ferry Counter"
-      apiUrl="https://traffic-monitoring-system-production.up.railway.app/api/ferry"
+      apiUrl={`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/ferry`}
     />
   );
 }

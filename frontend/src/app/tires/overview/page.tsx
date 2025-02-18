@@ -8,7 +8,7 @@ export default function TiresOverviewPage() {
   return (
     <OverviewTemplate
       domainTitle="Tire Scanner"
-      apiUrl="https://traffic-monitoring-system-production.up.railway.app/api/tires"
+      apiUrl={`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/ferry`}
       defaultBinSize="day"
     />
   );

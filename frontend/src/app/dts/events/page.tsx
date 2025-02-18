@@ -7,7 +7,7 @@ export default function DtsEventsPage() {
     <EventTemplate
       domain="dts"
       title="Detailed Traffic Statistics"
-      apiUrl="https://traffic-monitoring-system-production.up.railway.app/api/dts"
+      apiUrl={`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/dts`}
     />
   );
 }
