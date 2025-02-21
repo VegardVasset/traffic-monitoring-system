@@ -76,7 +76,7 @@ export default function EventTemplate({
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-4">{title}</h1>
+      <h1 className="text-3xl font-bold mb-4">Passings</h1>
 
       {/* Filter component WITHOUT the bin size */}
       <FilterComponent

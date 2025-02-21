@@ -35,21 +35,22 @@ export default function Header() {
 
         {/* Navigation Links */}
         <nav className="flex items-center space-x-4">
-          <NavLink
-            href="/ferry"
-            label="Ferry Counter"
-            active={pathname === "/ferry"}
-          />
-          <NavLink
-            href="/dts"
-            label="Detailed Traffic Statistics"
-            active={pathname === "/dts"}
-          />
-          <NavLink
-            href="/tires"
-            label="Tire Scanner"
-            active={pathname === "/tires"}
-          />
+        <NavLink
+  href="/ferry"
+  label="Ferry Counter"
+  active={pathname.startsWith("/ferry")}
+/>
+<NavLink
+  href="/dts"
+  label="Detailed Traffic Statistics"
+  active={pathname.startsWith("/dts")}
+/>
+<NavLink
+  href="/tires"
+  label="Tire Scanner"
+  active={pathname.startsWith("/tires")}
+/>
+
         </nav>
       </div>
     </header>

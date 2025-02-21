@@ -1,5 +1,5 @@
 // app/dts/layout.tsx
-import DomainLayout from "@/components/shared/domainLayout";
+import DomainLayout from "@/components/layout/domainLayout";
 import { ReactNode } from "react";
 import { domainConfigs } from "@/config/domainConfig";
 
