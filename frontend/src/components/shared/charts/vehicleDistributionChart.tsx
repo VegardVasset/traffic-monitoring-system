@@ -22,7 +22,7 @@ export interface VehicleDistributionChartProps {
   data: Event[];
 }
 
-const VehicleDistributionChart: React.FC<VehicleDistributionChartProps> = ({ data }) => {
+export default function VehicleDistributionChart({ data }: VehicleDistributionChartProps) {
   // 1) Aggregate vehicle-type counts
   const distribution = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -89,6 +89,4 @@ const VehicleDistributionChart: React.FC<VehicleDistributionChartProps> = ({ dat
       </div>
     </div>
   );
-};
-
-export default VehicleDistributionChart;
+}

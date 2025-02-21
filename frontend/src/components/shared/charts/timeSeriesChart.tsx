@@ -32,7 +32,7 @@ type AggregatedDataEntry = {
   date: string;
 } & { [key: string]: number | string };
 
-const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ data, binSize }) => {
+export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps) {
   // 1) Derive vehicle types from the data
   const vehicleTypes = useMemo(() => {
     const types = new Set<string>();
@@ -118,6 +118,4 @@ const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ data, binSize }) => {
       </div>
     </div>
   );
-};
-
-export default TimeSeriesChart;
+}
