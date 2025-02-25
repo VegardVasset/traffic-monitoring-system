@@ -64,7 +64,6 @@ export default function EventTemplate({ domain }: EventTemplateProps) {
         domain={domain}
         selectedCamera={selectedCamera}
         selectedVehicleTypes={selectedVehicleTypes}
-        isLive={isLive}
       />
     </div>
   );

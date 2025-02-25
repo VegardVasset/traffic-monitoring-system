@@ -46,7 +46,6 @@ interface EventTableProps {
   domain: string;
   selectedCamera: string;
   selectedVehicleTypes: string[];
-  isLive: boolean;
 }
 
 const getColumns = (domain: string): ColumnDef<Event>[] => {
@@ -120,7 +119,6 @@ export default function EventTable({
   domain,
   selectedCamera,
   selectedVehicleTypes,
-  isLive,
 }: EventTableProps) {
   // Get centralized data from DataContext
   const { data, loading, error } = useData();
