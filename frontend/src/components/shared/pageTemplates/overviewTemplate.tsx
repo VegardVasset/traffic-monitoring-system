@@ -11,21 +11,20 @@ import { useData } from "@/context/DataContext";
 interface OverviewTemplateProps {
   domainTitle: string;
   defaultBinSize?: "hour" | "day" | "week";
+  children?: React.ReactNode;
 }
 
 export default function OverviewTemplate({
   domainTitle,
   defaultBinSize = "day",
+  children,
 }: OverviewTemplateProps) {
-  // Get data and live toggle state from the DataProvider context.
   const { data, loading, isLive, setIsLive } = useData();
 
-  // Local UI state for filters
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
   const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
   const [binSize, setBinSize] = useState<"hour" | "day" | "week">(defaultBinSize);
 
-  // Date range for the period filter
   const today = new Date().toISOString().substring(0, 10);
   const oneMonthAgo = new Date(new Date().setMonth(new Date().getMonth() - 1))
     .toISOString()
@@ -38,7 +37,6 @@ export default function OverviewTemplate({
     setEndDate(end);
   }, []);
 
-  // Derive unique vehicle types and cameras from the data
   const derivedVehicleTypes = useMemo(() => {
     const types = new Set<string>();
     data.forEach((event) => types.add(event.vehicleType));
@@ -53,7 +51,6 @@ export default function OverviewTemplate({
     return Array.from(cams, ([id, name]) => ({ id, name }));
   }, [data]);
 
-  // Apply the filters to the data
   const filteredData = useMemo(() => {
     return data.filter((event) => {
       const eventDate = event.creationTime.substring(0, 10);
@@ -66,7 +63,6 @@ export default function OverviewTemplate({
     });
   }, [data, selectedCamera, selectedVehicleTypes, startDate, endDate]);
 
-  // If we are in REST mode and data is still loading, show a loading message.
   if (loading && !isLive) {
     return <p className="text-gray-500">Loading {domainTitle} data...</p>;
   }
@@ -75,7 +71,6 @@ export default function OverviewTemplate({
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-4">{domainTitle} Overview</h1>
 
-      {/* Filter Component */}
       <FilterComponent
         cameras={derivedCameras}
         selectedCamera={selectedCamera}
@@ -90,7 +85,6 @@ export default function OverviewTemplate({
         showLiveButton={true}
       />
 
-      {/* Period Filter */}
       <div className="mt-6">
         <PeriodFilter
           startDate={startDate}
@@ -113,6 +107,9 @@ export default function OverviewTemplate({
           <VehicleDistributionChart data={filteredData} />
         </div>
       </div>
+
+      {/* Render any additional children (like our TireConditionChart) */}
+      {children && <div className="mt-8">{children}</div>}
     </div>
   );
 }
