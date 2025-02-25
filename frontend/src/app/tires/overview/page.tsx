@@ -1,16 +1,14 @@
 "use client";
 
-// TiresOverviewPage.tsx
 import React from "react";
 import OverviewTemplate from "@/components/shared/pageTemplates/overviewTemplate";
+import { DataProvider } from "@/context/DataContext";
 
 export default function TiresOverviewPage() {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tires`;
   return (
-    <OverviewTemplate
-      domainTitle="Tire Scanner"
-      apiUrl={`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/ferry`}
-      defaultBinSize="day"
-    />
+    <DataProvider apiUrl={apiUrl} domain="tires">
+      <OverviewTemplate domainTitle="Tire Scanner" defaultBinSize="day" />
+    </DataProvider>
   );
 }
-

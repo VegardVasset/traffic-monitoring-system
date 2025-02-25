@@ -1,41 +1,31 @@
 "use client";
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import FilterComponent from "@/components/shared/filterComponent";
 import PeriodFilter from "@/components/shared/periodFilter";
 import EventSummary from "@/components/shared/eventSummary";
 import TimeSeriesChart from "@/components/shared/charts/timeSeriesChart";
 import VehicleDistributionChart from "@/components/shared/charts/vehicleDistributionChart";
-
-export interface BaseEvent {
-  id: number;
-  creationTime: string;
-  receptionTime: string;
-  vehicleType: string;
-  camera: string;
-}
+import { useData } from "@/context/DataContext";
 
 interface OverviewTemplateProps {
-  apiUrl: string;
   domainTitle: string;
   defaultBinSize?: "hour" | "day" | "week";
 }
 
 export default function OverviewTemplate({
-  apiUrl,
   domainTitle,
   defaultBinSize = "day",
 }: OverviewTemplateProps) {
+  // Get data and live toggle state from the DataProvider context.
+  const { data, loading, isLive, setIsLive } = useData();
+
+  // Local UI state for filters
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
   const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
   const [binSize, setBinSize] = useState<"hour" | "day" | "week">(defaultBinSize);
-  const [isLive, setIsLive] = useState<boolean>(false);
 
+  // Date range for the period filter
   const today = new Date().toISOString().substring(0, 10);
   const oneMonthAgo = new Date(new Date().setMonth(new Date().getMonth() - 1))
     .toISOString()
@@ -43,30 +33,12 @@ export default function OverviewTemplate({
   const [startDate, setStartDate] = useState<string>(oneMonthAgo);
   const [endDate, setEndDate] = useState<string>(today);
 
-  const [data, setData] = useState<BaseEvent[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetch(apiUrl);
-        if (!res.ok) throw new Error("Failed to fetch data");
-        const jsonData = await res.json();
-        setData(jsonData);
-      } catch (error) {
-        console.error(`Error fetching ${domainTitle} data:`, error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, [apiUrl, isLive, domainTitle]);
-
   const handlePeriodChange = useCallback((start: string, end: string) => {
     setStartDate(start);
     setEndDate(end);
   }, []);
 
+  // Derive unique vehicle types and cameras from the data
   const derivedVehicleTypes = useMemo(() => {
     const types = new Set<string>();
     data.forEach((event) => types.add(event.vehicleType));
@@ -81,6 +53,7 @@ export default function OverviewTemplate({
     return Array.from(cams, ([id, name]) => ({ id, name }));
   }, [data]);
 
+  // Apply the filters to the data
   const filteredData = useMemo(() => {
     return data.filter((event) => {
       const eventDate = event.creationTime.substring(0, 10);
@@ -93,7 +66,8 @@ export default function OverviewTemplate({
     });
   }, [data, selectedCamera, selectedVehicleTypes, startDate, endDate]);
 
-  if (loading) {
+  // If we are in REST mode and data is still loading, show a loading message.
+  if (loading && !isLive) {
     return <p className="text-gray-500">Loading {domainTitle} data...</p>;
   }
 
@@ -101,7 +75,7 @@ export default function OverviewTemplate({
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-4">{domainTitle} Overview</h1>
 
-      {/* Filters: hide the live button by passing showLiveButton={false} */}
+      {/* Filter Component */}
       <FilterComponent
         cameras={derivedCameras}
         selectedCamera={selectedCamera}
@@ -113,7 +87,7 @@ export default function OverviewTemplate({
         setBinSize={setBinSize}
         isLive={isLive}
         setIsLive={setIsLive}
-        showLiveButton={false}
+        showLiveButton={true}
       />
 
       {/* Period Filter */}
@@ -125,14 +99,15 @@ export default function OverviewTemplate({
         />
       </div>
 
-      <EventSummary count={filteredData.length} startDate={startDate} endDate={endDate} />
+      <EventSummary
+        count={filteredData.length}
+        startDate={startDate}
+        endDate={endDate}
+      />
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 h-[500px]">
         <div className="bg-white shadow rounded-lg p-4 overflow-hidden">
-          <TimeSeriesChart
-            data={filteredData}
-            binSize={binSize}
-          />
+          <TimeSeriesChart data={filteredData} binSize={binSize} />
         </div>
         <div className="bg-white shadow rounded-lg p-4 overflow-hidden">
           <VehicleDistributionChart data={filteredData} />
