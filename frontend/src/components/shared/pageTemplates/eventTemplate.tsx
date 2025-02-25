@@ -16,15 +16,12 @@ export interface BaseEvent {
 interface EventTemplateProps {
   /** Domain identifier (e.g., "dts", "ferry", "tires") */
   domain: string;
-  /** Title for the page header */
-  title: string;
   /** API endpoint from which to fetch events */
   apiUrl: string;
 }
 
 export default function EventTemplate({
   domain,
-  title,
   apiUrl,
 }: EventTemplateProps) {
   // Filter state

@@ -11,7 +11,6 @@ export interface NavItem {
 }
 
 interface SidebarProps {
-  title: string;
   navItems: NavItem[];
   open: boolean; // Is the full sidebar open?
   onOpen: () => void; // Function to open it
@@ -20,7 +19,6 @@ interface SidebarProps {
 }
 
 export default function Sidebar({
-  title,
   navItems,
   open,
   onOpen,
