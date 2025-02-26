@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import FilterComponent, { Camera } from "@/components/shared/filterComponent";
+import FilterPanel, { Camera } from "@/components/shared/filterPanel";
 import EventTable from "@/components/shared/eventTable";
 
 export interface BaseEvent {
@@ -79,7 +79,7 @@ export default function EventTemplate({
       <h1 className="text-3xl font-bold mb-4">Passings</h1>
 
       {/* Filter component WITHOUT the bin size */}
-      <FilterComponent
+      <FilterPanel
         cameras={derivedCameras}
         selectedCamera={selectedCamera}
         setSelectedCamera={setSelectedCamera}

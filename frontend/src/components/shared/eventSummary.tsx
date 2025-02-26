@@ -1,22 +1,16 @@
-// components/EventSummary.tsx
+"use client";
+
 import React from "react";
 
 interface EventSummaryProps {
   count: number;
-  startDate: string;
-  endDate: string;
 }
 
-export default function EventSummary({
-  count,
-  startDate,
-  endDate,
-}: EventSummaryProps) {
+export default function EventSummary({ count }: EventSummaryProps) {
   return (
-    <div className="mt-4">
-      <p className="text-lg font-semibold">
-        Total events from {startDate} to {endDate}: {count}
-      </p>
+    <div className="text-left">
+      {/* Just show the number */}
+      <p className="text-3xl font-bold">{count}</p>
     </div>
   );
 }

@@ -60,7 +60,7 @@ export default function VehicleDistributionChart({ data }: VehicleDistributionCh
     },
     plugins: {
       legend: {
-        display: false,
+        display: false, // or true if you want the legend always
         position: "bottom",
         onClick: () => {},
         labels: {
