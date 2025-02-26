@@ -1,5 +1,8 @@
-// components/PeriodFilter.tsx
+"use client";
+
 import React from "react";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface PeriodFilterProps {
   startDate: string;
@@ -21,29 +24,32 @@ export default function PeriodFilter({
   };
 
   return (
-    <div className="flex items-center gap-4">
-      <div>
-        <label htmlFor="startDate" className="mr-2 font-medium">
-          Start Date:
-        </label>
-        <input
+    <div className="flex flex-col md:flex-row gap-4 text-sm">
+      {/* Start Date */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+        <Label htmlFor="startDate" className="whitespace-nowrap">
+          Start
+        </Label>
+        <Input
           id="startDate"
           type="date"
           value={startDate}
           onChange={handleStartDateChange}
-          className="border rounded p-1"
+          className="w-full sm:w-[140px] h-8 text-sm mt-1 sm:mt-0"
         />
       </div>
-      <div>
-        <label htmlFor="endDate" className="mr-2 font-medium">
-          End Date:
-        </label>
-        <input
+
+      {/* End Date */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+        <Label htmlFor="endDate" className="whitespace-nowrap">
+          End
+        </Label>
+        <Input
           id="endDate"
           type="date"
           value={endDate}
           onChange={handleEndDateChange}
-          className="border rounded p-1"
+          className="w-full sm:w-[140px] h-8 text-sm mt-1 sm:mt-0"
         />
       </div>
     </div>
