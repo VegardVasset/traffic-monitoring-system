@@ -105,12 +105,12 @@ export default function OverviewTemplate({
 
   return (
     <div className="px-0 md:px-6 py-4 md:py-6 w-full">
-      <h1 className="text-2xl md:text-3xl font-bold mb-4">
+      <h1 className="text-1xl md:text-3xl font-bold mb-4">
         {domainTitle} Overview
       </h1>
 
       {/* ===================== Desktop Filters ===================== */}
-      <div className="hidden md:block">
+      <div className="hidden lg:block">
         <div className="flex flex-col md:flex-row gap-6 mb-6">
           {/* Date Range Card */}
           <Card className="w-full md:max-w-md">
@@ -127,7 +127,7 @@ export default function OverviewTemplate({
           </Card>
 
           {/* Event Summary Card */}
-          <Card className="w-full md:max-w-md">
+          <Card className="w-full md:max-w-xs">
             <CardHeader>
               <CardTitle>Passings for chosen period</CardTitle>
             </CardHeader>
@@ -154,7 +154,7 @@ export default function OverviewTemplate({
       </div>
 
       {/* ===================== Mobile Drawer Trigger ===================== */}
-      <div className="block md:hidden mb-4">
+      <div className="block lg:hidden mb-4">
         <Button variant="outline" onClick={() => setMobileFilterOpen(true)}>
           Open Filters
         </Button>
@@ -218,13 +218,13 @@ export default function OverviewTemplate({
       </Sheet>
 
       {/* ===================== Charts ===================== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-        <div className="bg-white shadow rounded-lg p-4 overflow-hidden h-auto md:min-h-[600px] xl:min-h-[700px]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+        <div className="bg-white shadow rounded-lg p-4 overflow-hidden h-auto md:min-h-[400px] xl:min-h-[580px]">
           <TimeSeriesChart data={filteredData} binSize={binSize} />
         </div>
         <div
           className="bg-white shadow rounded-lg  p-2 overflow-hidden 
-                min-h-[300px] md:min-h-[400px] xl:min-h-[700px]"
+                h-auto md:min-h-[400px] xl:min-h-[580px]"
         >
           <VehicleDistributionChart data={filteredData} />
         </div>

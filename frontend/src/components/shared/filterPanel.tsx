@@ -115,6 +115,7 @@ export default function FilterPanel({
         <div className="flex flex-wrap gap-4 text-sm">
 
           {/* CAMERA SELECT */}
+
           <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
             <Label htmlFor="camera-select" className="whitespace-nowrap">
               Camera

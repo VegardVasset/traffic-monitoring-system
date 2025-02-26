@@ -80,7 +80,7 @@ export default function VehicleDistributionChart({
 
   return (
     <div className="flex flex-col w-full h-full">
-      <h2 className="text-base md:text-xl font-semibold mb-4">
+      <h2 className="text-xs md:text-xl font-semibold mb-4">
         Vehicle Distribution
       </h2>
       <div className="flex-1 relative">

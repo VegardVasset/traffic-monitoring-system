@@ -24,7 +24,7 @@ export default function PeriodFilter({
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-4 text-sm">
+    <div className="flex flex-col gap-4 text-sm">
       {/* Start Date */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
         <Label htmlFor="startDate" className="whitespace-nowrap">
