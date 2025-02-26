@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import FilterComponent, { Camera } from "@/components/shared/filterComponent";
+import React, { useEffect, useMemo, useState } from "react";
+import FilterPanel, { Camera } from "@/components/shared/filterPanel";
 import EventTable from "@/components/shared/eventTable";
 import { useData } from "@/context/DataContext";
 import { BaseEvent } from "@/context/DataContext"; // Reuse the BaseEvent type from your context
@@ -44,8 +44,8 @@ export default function EventTemplate({ domain }: EventTemplateProps) {
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-4">Passings</h1>
 
-      {/* Filter component WITHOUT the bin size dropdown */}
-      <FilterComponent
+      {/* Filter component WITHOUT the bin size */}
+      <FilterPanel
         cameras={derivedCameras}
         selectedCamera={selectedCamera}
         setSelectedCamera={setSelectedCamera}
