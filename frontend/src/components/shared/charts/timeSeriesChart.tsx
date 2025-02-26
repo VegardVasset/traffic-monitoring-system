@@ -109,6 +109,11 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
       borderColor: getChartColor(index),
       backgroundColor: getChartColor(index, 0.5),
       fill: false,
+
+      // Make lines thinner and points smaller:
+      borderWidth: 1,   // 1px line thickness
+      pointRadius: 1,   // smaller circles for data points
+      pointHoverRadius: 4, 
     }));
   }, [aggregatedData, vehicleTypes]);
 
@@ -123,19 +128,22 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
   const lineChartOptions: ChartOptions<"line"> = useMemo(
     () => ({
       responsive: true,
-      maintainAspectRatio: false,
+      maintainAspectRatio: false, // Enable aspect ratio control
+   
       scales: {
         x: {
           ticks: {
             font: {
-              size: isMobile ? 10 : 12,
+              size: isMobile ? 8 : 12,
             },
+            autoSkip: true,
+            maxTicksLimit: isMobile ? 4 : 10,
           },
         },
         y: {
           ticks: {
             font: {
-              size: isMobile ? 10 : 12,
+              size: isMobile ? 8 : 12,
             },
           },
         },
@@ -144,11 +152,16 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
         legend: {
           display: !isMobile,
           position: "bottom",
-          onClick: () => {},
           labels: {
+            boxWidth: isMobile ? 8 : 12,
             font: {
-              size: isMobile ? 10 : 12,
+              size: isMobile ? 8 : 12,
             },
+          },
+        },
+        tooltip: {
+          bodyFont: {
+            size: isMobile ? 8 : 12,
           },
         },
       },
@@ -159,13 +172,16 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
 
   return (
     <div className="flex flex-col w-full h-full">
-      <h2 className="text-xl font-semibold mb-4">Passings Over Time ({binSize})</h2>
+      <h2 className="text-base md:text-xl font-semibold mb-4">
+  Passings Over Time ({binSize})
+</h2>
+
       {/* 
         Give the chart container a set height (responsive via Tailwind).
         For example,  h-64 on mobile, h-96 on medium screens, etc.
         This ensures the chart has space to fill. 
       */}
-      <div className="flex-1 relative h-64 md:h-96">
+      <div className="flex-1 relative h-full">
         <Line data={chartData} options={lineChartOptions} />
       </div>
     </div>

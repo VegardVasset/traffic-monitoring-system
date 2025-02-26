@@ -46,8 +46,12 @@ export default function OverviewTemplate({
 
   // Local UI state for filters and bin size.
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
-  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
-  const [binSize, setBinSize] = useState<"hour" | "day" | "week">(defaultBinSize);
+  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>(
+    []
+  );
+  const [binSize, setBinSize] = useState<"hour" | "day" | "week">(
+    defaultBinSize
+  );
 
   // Date range: from 1 month ago to today.
   const today = new Date().toISOString().substring(0, 10);
@@ -82,7 +86,8 @@ export default function OverviewTemplate({
     return data.filter((event) => {
       const eventDate = event.creationTime.substring(0, 10);
       const withinDateRange = eventDate >= startDate && eventDate <= endDate;
-      const matchCamera = selectedCamera === "all" || event.camera === selectedCamera;
+      const matchCamera =
+        selectedCamera === "all" || event.camera === selectedCamera;
       const matchVehicle =
         selectedVehicleTypes.length === 0 ||
         selectedVehicleTypes.includes(event.vehicleType);
@@ -99,8 +104,10 @@ export default function OverviewTemplate({
   }
 
   return (
-    <div className="px-2 md:px-6 py-4 md:py-6 w-full">
-      <h1 className="text-2xl md:text-3xl font-bold mb-4">{domainTitle} Overview</h1>
+    <div className="px-0 md:px-6 py-4 md:py-6 w-full">
+      <h1 className="text-2xl md:text-3xl font-bold mb-4">
+        {domainTitle} Overview
+      </h1>
 
       {/* ===================== Desktop Filters ===================== */}
       <div className="hidden md:block">
@@ -212,10 +219,13 @@ export default function OverviewTemplate({
 
       {/* ===================== Charts ===================== */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-        <div className="bg-white shadow rounded-lg p-4 overflow-hidden min-h-[500px] md:min-h-[600px] xl:min-h-[700px]">
+        <div className="bg-white shadow rounded-lg p-4 overflow-hidden h-auto md:min-h-[600px] xl:min-h-[700px]">
           <TimeSeriesChart data={filteredData} binSize={binSize} />
         </div>
-        <div className="bg-white shadow rounded-lg p-4 overflow-hidden min-h-[300px] md:min-h-[400px] xl:min-h-[700px]">
+        <div
+          className="bg-white shadow rounded-lg  p-2 overflow-hidden 
+                min-h-[300px] md:min-h-[400px] xl:min-h-[700px]"
+        >
           <VehicleDistributionChart data={filteredData} />
         </div>
       </div>

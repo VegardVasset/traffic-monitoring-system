@@ -12,7 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="bg-gray-100 text-gray-900">
         <Header /> {/* Now the header appears on every page */}
-        <main className="p-6">{children}</main> {/* Page content here */}
+        <main className="p-0">{children}</main> {/* Page content here */}
       </body>
     </html>
   );
