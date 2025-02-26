@@ -116,7 +116,7 @@ export default function OverviewTemplate({
   }
 
   return (
-    <div className="px-2 md:px-6 py-4 md:py-6 w-full">
+    <div className="px-0 md:px-6 py-4 md:py-6 w-full">
       <h1 className="text-2xl md:text-3xl font-bold mb-4">{domainTitle} Overview</h1>
 
       {/* ===================== Desktop Filters ===================== */}
@@ -235,11 +235,14 @@ export default function OverviewTemplate({
         3. Each chart container uses `h-full` internally to fill up the space.
       */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-        <div className="bg-white shadow rounded-lg p-4 overflow-hidden 
-                min-h-[500px] md:min-h-[600px] xl:min-h-[700px]">
+        <div className="
+    bg-white shadow rounded-lg p-4
+ overflow-hidden
+    h-auto md:min-h-[600px] xl:min-h-[700px]
+  ">
           <TimeSeriesChart data={filteredData} binSize={binSize} />
         </div>
-        <div className="bg-white shadow rounded-lg p-4 overflow-hidden 
+        <div className="bg-white shadow rounded-lg  p-2 overflow-hidden 
                 min-h-[300px] md:min-h-[400px] xl:min-h-[700px]">
   <VehicleDistributionChart data={filteredData} />
 </div>

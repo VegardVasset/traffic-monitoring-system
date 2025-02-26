@@ -2,12 +2,7 @@
 
 import React, { useMemo } from "react";
 import { Pie } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  ArcElement,
-  Tooltip,
-  Legend,
-} from "chart.js";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import type { ChartOptions } from "chart.js";
 import { getChartColor } from "@/lib/chartUtils";
 
@@ -22,7 +17,9 @@ export interface VehicleDistributionChartProps {
   data: Event[];
 }
 
-export default function VehicleDistributionChart({ data }: VehicleDistributionChartProps) {
+export default function VehicleDistributionChart({
+  data,
+}: VehicleDistributionChartProps) {
   // 1) Aggregate vehicle-type counts
   const distribution = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -83,7 +80,9 @@ export default function VehicleDistributionChart({ data }: VehicleDistributionCh
 
   return (
     <div className="flex flex-col w-full h-full">
-      <h3 className="text-lg font-medium mb-4">Vehicle Distribution</h3>
+      <h2 className="text-base md:text-xl font-semibold mb-4">
+        Vehicle Distribution
+      </h2>
       <div className="flex-1 relative">
         <Pie data={chartData} options={pieChartOptions} />
       </div>
