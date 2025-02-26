@@ -6,7 +6,7 @@ import { domainConfigs } from "@/config/domainConfig";
 export default function TiresLayout({ children }: { children: ReactNode }) {
   const config = domainConfigs.tires;
   return (
-    <DomainLayout title={config.title} navItems={config.navItems}>
+    <DomainLayout navItems={config.navItems}>
       {children}
     </DomainLayout>
   );
