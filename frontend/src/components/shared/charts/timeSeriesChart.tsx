@@ -153,6 +153,7 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
         },
       },
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [isMobile, binSize]
   );
 

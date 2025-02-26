@@ -1,15 +1,13 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-
+import React, { useCallback, useMemo, useState } from "react";
 import FilterPanel from "@/components/shared/filterPanel";
 import PeriodFilter from "@/components/shared/periodFilter";
 import EventSummary from "@/components/shared/eventSummary";
 import TimeSeriesChart from "@/components/shared/charts/timeSeriesChart";
 import VehicleDistributionChart from "@/components/shared/charts/vehicleDistributionChart";
-import { useData } from "@/context/DataContext";
 
-// ShadCN UI
+// ShadCN UI components:
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +18,8 @@ import {
   SheetTitle,
   SheetClose,
 } from "@/components/ui/sheet";
+
+import { useData } from "@/context/DataContext";
 
 export interface BaseEvent {
   id: number;
@@ -32,6 +32,7 @@ export interface BaseEvent {
 interface OverviewTemplateProps {
   domainTitle: string;
   defaultBinSize?: "hour" | "day" | "week";
+  /** Adding the children prop so TS recognizes it. */
   children?: React.ReactNode;
 }
 
@@ -40,18 +41,19 @@ export default function OverviewTemplate({
   defaultBinSize = "day",
   children,
 }: OverviewTemplateProps) {
+  // Use the centralized data from DataContext.
   const { data, loading, isLive, setIsLive } = useData();
 
+  // Local UI state for filters and bin size.
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
   const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
   const [binSize, setBinSize] = useState<"hour" | "day" | "week">(defaultBinSize);
 
-  // Default date range: from 1 month ago to today
+  // Date range: from 1 month ago to today.
   const today = new Date().toISOString().substring(0, 10);
   const oneMonthAgo = new Date(new Date().setMonth(new Date().getMonth() - 1))
     .toISOString()
     .substring(0, 10);
-
   const [startDate, setStartDate] = useState<string>(oneMonthAgo);
   const [endDate, setEndDate] = useState<string>(today);
 
@@ -60,14 +62,13 @@ export default function OverviewTemplate({
     setEndDate(end);
   }, []);
 
-  // Derive unique vehicle types
+  // Derive unique vehicle types and cameras from the provided data.
   const derivedVehicleTypes = useMemo(() => {
     const types = new Set<string>();
     data.forEach((event) => types.add(event.vehicleType));
     return Array.from(types);
   }, [data]);
 
-  // Derive unique cameras
   const derivedCameras = useMemo(() => {
     const cams = new Map<string, string>();
     data.forEach((event) => {
@@ -76,13 +77,12 @@ export default function OverviewTemplate({
     return Array.from(cams, ([id, name]) => ({ id, name }));
   }, [data]);
 
-  // Filtered data
+  // Apply filtering based on date range, selected camera, and vehicle types.
   const filteredData = useMemo(() => {
     return data.filter((event) => {
       const eventDate = event.creationTime.substring(0, 10);
       const withinDateRange = eventDate >= startDate && eventDate <= endDate;
-      const matchCamera =
-        selectedCamera === "all" || event.camera === selectedCamera;
+      const matchCamera = selectedCamera === "all" || event.camera === selectedCamera;
       const matchVehicle =
         selectedVehicleTypes.length === 0 ||
         selectedVehicleTypes.includes(event.vehicleType);
@@ -90,6 +90,9 @@ export default function OverviewTemplate({
       return withinDateRange && matchCamera && matchVehicle;
     });
   }, [data, selectedCamera, selectedVehicleTypes, startDate, endDate]);
+
+  // Mobile filter drawer state.
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   if (loading && !isLive) {
     return <p className="text-gray-500">Loading {domainTitle} data...</p>;
@@ -202,31 +205,23 @@ export default function OverviewTemplate({
           </div>
         </SheetContent>
 
-        {/* We use SheetTrigger as a placeholder; the button above calls setMobileFilterOpen(true). */}
         <SheetTrigger asChild>
           <div />
         </SheetTrigger>
       </Sheet>
 
       {/* ===================== Charts ===================== */}
-      {/*
-        1. We wrap both chart containers in a grid.
-        2. We give them a larger minimum height, e.g. 500px or 600px.
-        3. Each chart container uses `h-full` internally to fill up the space.
-      */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-        <div className="bg-white shadow rounded-lg p-4 overflow-hidden 
-                min-h-[500px] md:min-h-[600px] xl:min-h-[700px]">
+        <div className="bg-white shadow rounded-lg p-4 overflow-hidden min-h-[500px] md:min-h-[600px] xl:min-h-[700px]">
           <TimeSeriesChart data={filteredData} binSize={binSize} />
         </div>
-        <div className="bg-white shadow rounded-lg p-4 overflow-hidden 
-                min-h-[300px] md:min-h-[400px] xl:min-h-[700px]">
-  <VehicleDistributionChart data={filteredData} />
-</div>
+        <div className="bg-white shadow rounded-lg p-4 overflow-hidden min-h-[300px] md:min-h-[400px] xl:min-h-[700px]">
+          <VehicleDistributionChart data={filteredData} />
+        </div>
       </div>
 
-      {/* Render any additional children (like our TireConditionChart) */}
-      {children && <div className="mt-8">{children}</div>}
+      {/* Render children (e.g., TireConditionChart) if provided */}
+      {children && <div className="mt-6">{children}</div>}
     </div>
   );
 }

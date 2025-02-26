@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import FilterPanel, { Camera } from "@/components/shared/filterPanel";
 import EventTable from "@/components/shared/eventTable";
 import { useData } from "@/context/DataContext";
