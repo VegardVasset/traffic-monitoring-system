@@ -34,3 +34,16 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## How fetching works How It All Works Together
+DataProvider (DataContext):
+On mount, if live mode is off and data isn’t already loaded, it fetches data from the API.
+If live mode is enabled, it connects to the socket and updates the data as new events come in.
+This centralized logic ensures that every component using useData() has the latest data and consistent state.
+EventTemplate:
+Consumes the shared data from DataContext.
+Passes filtering state (camera, vehicle types, etc.) down to the EventTable.
+EventTable:
+Uses useData() to get the data.
+Applies additional filtering based on user selections.
+Renders the table using TanStack Table with pagination, sorting, etc.
+Displays loading or error states based on what the DataProvider provides.

@@ -1,14 +1,13 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-
+import React, { useCallback, useMemo, useState } from "react";
 import FilterPanel from "@/components/shared/filterPanel";
 import PeriodFilter from "@/components/shared/periodFilter";
 import EventSummary from "@/components/shared/eventSummary";
 import TimeSeriesChart from "@/components/shared/charts/timeSeriesChart";
 import VehicleDistributionChart from "@/components/shared/charts/vehicleDistributionChart";
 
-// ShadCN UI
+// ShadCN UI components:
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +19,8 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 
+import { useData } from "@/context/DataContext";
+
 export interface BaseEvent {
   id: number;
   creationTime: string;
@@ -29,65 +30,49 @@ export interface BaseEvent {
 }
 
 interface OverviewTemplateProps {
-  apiUrl: string;
   domainTitle: string;
   defaultBinSize?: "hour" | "day" | "week";
+  /** Adding the children prop so TS recognizes it. */
+  children?: React.ReactNode;
 }
 
 export default function OverviewTemplate({
-  apiUrl,
   domainTitle,
   defaultBinSize = "day",
+  children,
 }: OverviewTemplateProps) {
-  const [selectedCamera, setSelectedCamera] = useState<string>("all");
-  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
-  const [binSize, setBinSize] = useState<"hour" | "day" | "week">(defaultBinSize);
-  const [isLive, setIsLive] = useState<boolean>(false);
+  // Use the centralized data from DataContext.
+  const { data, loading, isLive, setIsLive } = useData();
 
-  // Default date range: from 1 month ago to today
+  // Local UI state for filters and bin size.
+  const [selectedCamera, setSelectedCamera] = useState<string>("all");
+  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>(
+    []
+  );
+  const [binSize, setBinSize] = useState<"hour" | "day" | "week">(
+    defaultBinSize
+  );
+
+  // Date range: from 1 month ago to today.
   const today = new Date().toISOString().substring(0, 10);
   const oneMonthAgo = new Date(new Date().setMonth(new Date().getMonth() - 1))
     .toISOString()
     .substring(0, 10);
-
   const [startDate, setStartDate] = useState<string>(oneMonthAgo);
   const [endDate, setEndDate] = useState<string>(today);
-
-  const [data, setData] = useState<BaseEvent[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  // State to control the mobile drawer
-  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetch(apiUrl);
-        if (!res.ok) throw new Error("Failed to fetch data");
-        const jsonData = await res.json();
-        setData(jsonData);
-      } catch (error) {
-        console.error(`Error fetching ${domainTitle} data:`, error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, [apiUrl, isLive, domainTitle]);
 
   const handlePeriodChange = useCallback((start: string, end: string) => {
     setStartDate(start);
     setEndDate(end);
   }, []);
 
-  // Derive unique vehicle types
+  // Derive unique vehicle types and cameras from the provided data.
   const derivedVehicleTypes = useMemo(() => {
     const types = new Set<string>();
     data.forEach((event) => types.add(event.vehicleType));
     return Array.from(types);
   }, [data]);
 
-  // Derive unique cameras
   const derivedCameras = useMemo(() => {
     const cams = new Map<string, string>();
     data.forEach((event) => {
@@ -96,7 +81,7 @@ export default function OverviewTemplate({
     return Array.from(cams, ([id, name]) => ({ id, name }));
   }, [data]);
 
-  // Filtered data
+  // Apply filtering based on date range, selected camera, and vehicle types.
   const filteredData = useMemo(() => {
     return data.filter((event) => {
       const eventDate = event.creationTime.substring(0, 10);
@@ -111,13 +96,18 @@ export default function OverviewTemplate({
     });
   }, [data, selectedCamera, selectedVehicleTypes, startDate, endDate]);
 
-  if (loading) {
+  // Mobile filter drawer state.
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
+  if (loading && !isLive) {
     return <p className="text-gray-500">Loading {domainTitle} data...</p>;
   }
 
   return (
     <div className="px-0 md:px-6 py-4 md:py-6 w-full">
-      <h1 className="text-2xl md:text-3xl font-bold mb-4">{domainTitle} Overview</h1>
+      <h1 className="text-2xl md:text-3xl font-bold mb-4">
+        {domainTitle} Overview
+      </h1>
 
       {/* ===================== Desktop Filters ===================== */}
       <div className="hidden md:block">
@@ -222,31 +212,26 @@ export default function OverviewTemplate({
           </div>
         </SheetContent>
 
-        {/* We use SheetTrigger as a placeholder; the button above calls setMobileFilterOpen(true). */}
         <SheetTrigger asChild>
           <div />
         </SheetTrigger>
       </Sheet>
 
       {/* ===================== Charts ===================== */}
-      {/*
-        1. We wrap both chart containers in a grid.
-        2. We give them a larger minimum height, e.g. 500px or 600px.
-        3. Each chart container uses `h-full` internally to fill up the space.
-      */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-        <div className="
-    bg-white shadow rounded-lg p-4
- overflow-hidden
-    h-auto md:min-h-[600px] xl:min-h-[700px]
-  ">
+        <div className="bg-white shadow rounded-lg p-4 overflow-hidden h-auto md:min-h-[600px] xl:min-h-[700px]">
           <TimeSeriesChart data={filteredData} binSize={binSize} />
         </div>
-        <div className="bg-white shadow rounded-lg  p-2 overflow-hidden 
-                min-h-[300px] md:min-h-[400px] xl:min-h-[700px]">
-  <VehicleDistributionChart data={filteredData} />
-</div>
+        <div
+          className="bg-white shadow rounded-lg  p-2 overflow-hidden 
+                min-h-[300px] md:min-h-[400px] xl:min-h-[700px]"
+        >
+          <VehicleDistributionChart data={filteredData} />
+        </div>
       </div>
+
+      {/* Render children (e.g., TireConditionChart) if provided */}
+      {children && <div className="mt-6">{children}</div>}
     </div>
   );
 }
