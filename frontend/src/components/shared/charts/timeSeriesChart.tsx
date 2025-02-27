@@ -33,7 +33,7 @@ type AggregatedDataEntry = {
 } & { [key: string]: number | string };
 
 // Custom hook to detect mobile screens
-function useIsMobile(maxWidth = 768) {
+function useIsMobile(maxWidth = 550) {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -109,13 +109,12 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
       borderColor: getChartColor(index),
       backgroundColor: getChartColor(index, 0.5),
       fill: false,
-
-      // Make lines thinner and points smaller:
-      borderWidth: 1,   // 1px line thickness
-      pointRadius: 1,   // smaller circles for data points
-      pointHoverRadius: 4, 
+      // Use different values depending on screen size
+      borderWidth: isMobile ? 1 : 2,
+      pointRadius: isMobile ? 1 : 2,
+      pointHoverRadius: isMobile ? 3 : 4,
     }));
-  }, [aggregatedData, vehicleTypes]);
+  }, [aggregatedData, vehicleTypes, isMobile]);
 
   // 5) Chart data
   const chartData = {
@@ -155,7 +154,7 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
           labels: {
             boxWidth: isMobile ? 8 : 12,
             font: {
-              size: isMobile ? 8 : 12,
+              size: isMobile ? 8 : 14,
             },
           },
         },

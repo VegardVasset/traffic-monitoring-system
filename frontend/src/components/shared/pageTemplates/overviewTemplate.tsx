@@ -45,8 +45,12 @@ export default function OverviewTemplate({
 
   // Local state for filters
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
-  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
-  const [binSize, setBinSize] = useState<"hour" | "day" | "week">(defaultBinSize);
+  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>(
+    []
+  );
+  const [binSize, setBinSize] = useState<"hour" | "day" | "week">(
+    defaultBinSize
+  );
 
   // Default date range: 1 month ago until today
   const today = new Date().toISOString().substring(0, 10);
@@ -129,22 +133,22 @@ export default function OverviewTemplate({
         </Card>
 
         {/* FilterPanel Card (desktop only, pinned to the right) */}
-        
-          <Card className="p-3 hidden lg:block">
-            <FilterPanel
-              cameras={derivedCameras}
-              selectedCamera={selectedCamera}
-              setSelectedCamera={setSelectedCamera}
-              vehicleTypes={derivedVehicleTypes}
-              selectedVehicleTypes={selectedVehicleTypes}
-              setSelectedVehicleTypes={setSelectedVehicleTypes}
-              binSize={binSize}
-              setBinSize={setBinSize}
-              isLive={isLive}
-              setIsLive={setIsLive}
-              showLiveButton={false}
-            />
-          </Card>
+
+        <Card className="p-3 hidden lg:block">
+          <FilterPanel
+            cameras={derivedCameras}
+            selectedCamera={selectedCamera}
+            setSelectedCamera={setSelectedCamera}
+            vehicleTypes={derivedVehicleTypes}
+            selectedVehicleTypes={selectedVehicleTypes}
+            setSelectedVehicleTypes={setSelectedVehicleTypes}
+            binSize={binSize}
+            setBinSize={setBinSize}
+            isLive={isLive}
+            setIsLive={setIsLive}
+            showLiveButton={false}
+          />
+        </Card>
       </div>
 
       {/* =============== MOBILE FILTER SHEET =============== */}
@@ -195,12 +199,20 @@ export default function OverviewTemplate({
       </Sheet>
 
       {/* =============== CHARTS =============== */}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
-        <div className="bg-white shadow rounded-lg p-2 overflow-hidden h-auto md:min-h-[400px] xl:min-h-[580px]">
-          <TimeSeriesChart data={filteredData} binSize={binSize} />
+        {/* TimeSeriesChart Container (1:1 ratio) */}
+        <div className="aspect-square relative w-full">
+          <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
+            <TimeSeriesChart data={filteredData} binSize={binSize} />
+          </div>
         </div>
-        <div className="bg-white shadow rounded-lg p-2 overflow-hidden h-auto md:min-h-[400px] xl:min-h-[580px]">
-          <VehicleDistributionChart data={filteredData} />
+
+        {/* VehicleDistributionChart Container (1:1 ratio) */}
+        <div className="aspect-square relative w-full">
+          <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
+            <VehicleDistributionChart data={filteredData} />
+          </div>
         </div>
       </div>
 

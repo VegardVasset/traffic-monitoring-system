@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Pie } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels"; // Import the plugin
@@ -22,6 +22,18 @@ export interface VehicleDistributionChartProps {
 export default function VehicleDistributionChart({
   data,
 }: VehicleDistributionChartProps) {
+  // Hook to detect if screen is mobile
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 550); // adjust the breakpoint as needed
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   // 1) Aggregate vehicle-type counts
   const distribution = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -48,18 +60,18 @@ export default function VehicleDistributionChart({
     };
   }, [labels, values]);
 
-  // 4) Chart options (with datalabels configuration)
+  // 4) Chart options (with responsive datalabels configuration)
   const pieChartOptions: ChartOptions<"pie"> = {
     responsive: true,
     maintainAspectRatio: false, // Fill the parent's height
     layout: {
       padding: {
-        bottom: 30, // some extra space for the legend
+        bottom: 30, // extra space for the legend
       },
     },
     plugins: {
       legend: {
-        display: false, // or true if you want the legend always
+        display: false,
         position: "bottom",
         onClick: () => {},
         labels: {
@@ -76,7 +88,6 @@ export default function VehicleDistributionChart({
       },
       datalabels: {
         formatter: (value, context) => {
-          // Cast the data to number[]
           const dataArr = context.chart.data.datasets[0].data as number[];
           const total = dataArr.reduce((acc, val) => acc + val, 0);
           const percentage = (((value as number) / total) * 100).toFixed(1) + "%";
@@ -85,9 +96,10 @@ export default function VehicleDistributionChart({
         color: "black",
         font: {
           weight: "bold",
+          // Use a smaller font size on mobile
+          size: isMobile ? 8 : 10,
         },
       },
-      
     },
     animation: {
       duration: 0,
