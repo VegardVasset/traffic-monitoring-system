@@ -3,10 +3,12 @@
 import React, { useMemo } from "react";
 import { Pie } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import ChartDataLabels from "chartjs-plugin-datalabels"; // Import the plugin
 import type { ChartOptions } from "chart.js";
 import { getChartColor } from "@/lib/chartUtils";
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+// Register the necessary components and plugin
+ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels);
 
 export interface Event {
   id: number;
@@ -46,7 +48,7 @@ export default function VehicleDistributionChart({
     };
   }, [labels, values]);
 
-  // 4) Chart options
+  // 4) Chart options (with datalabels configuration)
   const pieChartOptions: ChartOptions<"pie"> = {
     responsive: true,
     maintainAspectRatio: false, // Fill the parent's height
@@ -72,6 +74,20 @@ export default function VehicleDistributionChart({
       title: {
         display: false,
       },
+      datalabels: {
+        formatter: (value, context) => {
+          // Cast the data to number[]
+          const dataArr = context.chart.data.datasets[0].data as number[];
+          const total = dataArr.reduce((acc, val) => acc + val, 0);
+          const percentage = (((value as number) / total) * 100).toFixed(1) + "%";
+          return percentage;
+        },
+        color: "black",
+        font: {
+          weight: "bold",
+        },
+      },
+      
     },
     animation: {
       duration: 0,
@@ -80,7 +96,7 @@ export default function VehicleDistributionChart({
 
   return (
     <div className="flex flex-col w-full h-full">
-      <h2 className="text-xs md:text-xl font-semibold mb-4">
+      <h2 className="ml-4 text-xs md:text-xl font-semibold mb-4">
         Vehicle Distribution
       </h2>
       <div className="flex-1 relative">

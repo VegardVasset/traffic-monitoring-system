@@ -164,6 +164,9 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
             size: isMobile ? 8 : 12,
           },
         },
+        datalabels: {
+          display: false, // Disable datalabels for this chart
+        },
       },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -172,7 +175,7 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
 
   return (
     <div className="flex flex-col w-full h-full">
-      <h2 className="text-xs md:text-xl font-semibold mb-4">
+      <h2 className="ml-4 text-xs md:text-xl font-semibold mb-4">
   Passings Over Time ({binSize})
 </h2>
 

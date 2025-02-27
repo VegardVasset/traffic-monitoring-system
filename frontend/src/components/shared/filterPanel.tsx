@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/card";
 
 export interface Camera {
   id: string;
@@ -46,6 +47,8 @@ interface FilterPanelProps {
 
   showBinSize?: boolean;
   showLiveButton?: boolean;
+  // New prop to decide whether to wrap in a Card
+  useCardWrapper?: boolean;
 }
 
 export default function FilterPanel({
@@ -61,6 +64,7 @@ export default function FilterPanel({
   setIsLive,
   showBinSize = true,
   showLiveButton = true,
+  useCardWrapper = false, // default behavior: no card wrapper
 }: FilterPanelProps) {
   const [vehiclePopoverOpen, setVehiclePopoverOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -96,7 +100,8 @@ export default function FilterPanel({
     setSelectedVehicleTypes([]);
   }
 
-  return (
+  // The actual content of your FilterPanel
+  const content = (
     <div className="text-xs">
       <div className="mb-1 font-bold">Filters</div>
       <div className="flex flex-wrap gap-3 text-xs">
@@ -128,7 +133,10 @@ export default function FilterPanel({
 
         {/* VEHICLE TYPE MULTI-SELECT */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
-          <Label htmlFor="vehicle-type" className="whitespace-nowrap text-xs">
+          <Label
+            htmlFor="vehicle-type"
+            className="whitespace-nowrap text-xs"
+          >
             Vehicle Type
           </Label>
           <Popover
@@ -193,12 +201,17 @@ export default function FilterPanel({
         {/* BIN SIZE SELECT */}
         {showBinSize && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
-            <Label htmlFor="bin-size-select" className="whitespace-nowrap text-xs">
-            Time Interval
+            <Label
+              htmlFor="bin-size-select"
+              className="whitespace-nowrap text-xs"
+            >
+              Time Interval
             </Label>
             <Select
               value={binSize}
-              onValueChange={(val) => setBinSize(val as "hour" | "day" | "week")}
+              onValueChange={(val) =>
+                setBinSize(val as "hour" | "day" | "week")
+              }
             >
               <SelectTrigger
                 id="bin-size-select"
@@ -218,7 +231,10 @@ export default function FilterPanel({
         {/* LIVE SWITCH */}
         {showLiveButton && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
-            <Label htmlFor="live-switch" className="whitespace-nowrap text-xs">
+            <Label
+              htmlFor="live-switch"
+              className="whitespace-nowrap text-xs"
+            >
               Live Mode
             </Label>
             <Switch
@@ -231,5 +247,13 @@ export default function FilterPanel({
         )}
       </div>
     </div>
+  );
+
+  // If the component should be wrapped in a Card (for example, on desktop),
+  // return the Card-wrapped content. Otherwise, return the content directly.
+  return useCardWrapper ? (
+    <Card className="p-3 mb-4">{content}</Card>
+  ) : (
+    content
   );
 }

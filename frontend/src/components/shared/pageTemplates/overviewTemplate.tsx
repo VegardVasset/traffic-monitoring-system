@@ -45,12 +45,8 @@ export default function OverviewTemplate({
 
   // Local state for filters
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
-  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>(
-    []
-  );
-  const [binSize, setBinSize] = useState<"hour" | "day" | "week">(
-    defaultBinSize
-  );
+  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
+  const [binSize, setBinSize] = useState<"hour" | "day" | "week">(defaultBinSize);
 
   // Default date range: 1 month ago until today
   const today = new Date().toISOString().substring(0, 10);
@@ -103,20 +99,38 @@ export default function OverviewTemplate({
 
   return (
     <div className="px-2 md:px-4 py-2 md:py-4 w-full">
-      {/* Page Title */}
-      <h1 className="text-base md:text-2xl font-bold mb-2">
-        {domainTitle} Overview
-      </h1>
+      {/* =============== TITLE + MOBILE FILTER BUTTON =============== */}
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-base md:text-2xl font-bold">
+          {domainTitle} Overview
+        </h1>
+        {/* Mobile button to open the filter sheet (hidden on desktop) */}
+        <div className="block lg:hidden">
+          <Button variant="outline" onClick={() => setMobileFilterOpen(true)}>
+            Open Filters
+          </Button>
+        </div>
+      </div>
 
-      {/* ================== DESKTOP LAYOUT (lg+) ================== */}
-      <div className="hidden lg:block mb-4">
-        <Card className="p-4">
-          {/* 
-            On lg+ screens: flex row, gap-4, left-aligned, no forced widths
-            On smaller screens (if forced to appear?), they'd stack
-          */}
-          <div className="flex flex-col lg:flex-row gap-4 items-start justify-start">
-            {/* Filters */}
+      {/* =============== PERIOD, EVENT SUMMARY, FILTER PANEL ROW =============== */}
+      <div className="flex flex-wrap items-start gap-4 mb-4">
+        {/* Period Filter Card */}
+        <Card className="p-3 max-w-sm w-full hidden lg:block">
+          <PeriodFilter
+            startDate={startDate}
+            endDate={endDate}
+            onChange={handlePeriodChange}
+          />
+        </Card>
+
+        {/* Event Summary Card */}
+        <Card className="p-3 max-w-sm w-full hidden lg:block">
+          <EventSummary count={filteredData.length} />
+        </Card>
+
+        {/* FilterPanel Card (desktop only, pinned to the right) */}
+        
+          <Card className="p-3 hidden lg:block">
             <FilterPanel
               cameras={derivedCameras}
               selectedCamera={selectedCamera}
@@ -130,40 +144,16 @@ export default function OverviewTemplate({
               setIsLive={setIsLive}
               showLiveButton={false}
             />
-
-            {/* Period Filter */}
-            <div className="self-end">
-              <PeriodFilter
-                startDate={startDate}
-                endDate={endDate}
-                onChange={handlePeriodChange}
-              />
-            </div>
-
-            {/* Summary */}
-            <div className="ml-auto self-end">
-              <EventSummary count={filteredData.length} />
-            </div>
-          
-        
-          </div>
-        </Card>
+          </Card>
       </div>
 
-      {/* ================== MOBILE LAYOUT (drawer) ================== */}
-      <div className="block lg:hidden mb-4">
-        <Button variant="outline" onClick={() => setMobileFilterOpen(true)}>
-          Open Filters
-        </Button>
-      </div>
-
+      {/* =============== MOBILE FILTER SHEET =============== */}
       <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
         <SheetContent side="right" className="w-[85%] sm:w-[360px] p-2 text-xs">
           <SheetHeader>
             <SheetTitle>{domainTitle} Filters</SheetTitle>
           </SheetHeader>
 
-          {/* Single Card that stacks everything vertically on mobile */}
           <Card className="p-4 mt-4">
             <div className="flex flex-col gap-4 w-full">
               {/* FilterPanel */}
@@ -204,7 +194,7 @@ export default function OverviewTemplate({
         </SheetTrigger>
       </Sheet>
 
-      {/* ================== CHARTS ================== */}
+      {/* =============== CHARTS =============== */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
         <div className="bg-white shadow rounded-lg p-2 overflow-hidden h-auto md:min-h-[400px] xl:min-h-[580px]">
           <TimeSeriesChart data={filteredData} binSize={binSize} />
