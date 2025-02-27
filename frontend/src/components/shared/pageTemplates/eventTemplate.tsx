@@ -1,63 +1,29 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-import FilterComponent, { Camera } from "@/components/shared/filterComponent";
+import React, { useMemo, useState } from "react";
+import FilterPanel, { Camera } from "@/components/shared/filterPanel";
 import EventTable from "@/components/shared/eventTable";
-
-export interface BaseEvent {
-  id: number;
-  creationTime: string;
-  receptionTime: string;
-  vehicleType: string;
-  camera: string;
-  // ... any other fields you use
-}
+import { useData } from "@/context/DataContext";
+import { BaseEvent } from "@/context/DataContext"; // Reuse the BaseEvent type from your context
 
 interface EventTemplateProps {
   /** Domain identifier (e.g., "dts", "ferry", "tires") */
   domain: string;
-  /** Title for the page header */
-  title: string;
-  /** API endpoint from which to fetch events */
-  apiUrl: string;
 }
 
-export default function EventTemplate({
-  domain,
-  title,
-  apiUrl,
-}: EventTemplateProps) {
-  // Filter state
+export default function EventTemplate({ domain }: EventTemplateProps) {
+  // Local filter state
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
   const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
   const [binSize, setBinSize] = useState<"hour" | "day" | "week">("day");
-  const [isLive, setIsLive] = useState<boolean>(false);
 
-  // Data fetching state
-  const [data, setData] = useState<BaseEvent[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  // Fetch events from the API
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetch(apiUrl);
-        if (!res.ok) throw new Error("Failed to fetch data");
-        const jsonData = await res.json();
-        setData(jsonData);
-      } catch (error) {
-        console.error(`Error fetching ${domain} events:`, error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, [apiUrl, isLive, domain]);
+  // Get shared data and live mode state from the DataContext
+  const { data, loading, isLive, setIsLive } = useData();
 
   // Derive unique cameras from the events data
   const derivedCameras: Camera[] = useMemo(() => {
     const camMap = new Map<string, string>();
-    data.forEach((event) => {
+    data.forEach((event: BaseEvent) => {
       camMap.set(event.camera, event.camera);
     });
     return Array.from(camMap, ([id, name]) => ({ id, name }));
@@ -66,7 +32,7 @@ export default function EventTemplate({
   // Derive unique vehicle types from the events data
   const derivedVehicleTypes: string[] = useMemo(() => {
     const types = new Set<string>();
-    data.forEach((event) => types.add(event.vehicleType));
+    data.forEach((event: BaseEvent) => types.add(event.vehicleType));
     return Array.from(types);
   }, [data]);
 
@@ -76,10 +42,10 @@ export default function EventTemplate({
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-4">{title}</h1>
+      <h1 className="text-3xl font-bold mb-4">Passings</h1>
 
       {/* Filter component WITHOUT the bin size */}
-      <FilterComponent
+      <FilterPanel
         cameras={derivedCameras}
         selectedCamera={selectedCamera}
         setSelectedCamera={setSelectedCamera}
@@ -90,8 +56,6 @@ export default function EventTemplate({
         setBinSize={setBinSize}
         isLive={isLive}
         setIsLive={setIsLive}
-
-        /** Pass showBinSize={false} to remove the dropdown */
         showBinSize={false}
       />
 
@@ -100,7 +64,6 @@ export default function EventTemplate({
         domain={domain}
         selectedCamera={selectedCamera}
         selectedVehicleTypes={selectedVehicleTypes}
-        isLive={isLive}
       />
     </div>
   );

@@ -1,32 +1,60 @@
 // src/config/domainConfig.ts
-import { NavItem } from "@/components/shared/domainLayout";
+
+import { NavItem } from "@/components/layout/sidebar";
+import { ChartBarSquareIcon, TruckIcon } from "@heroicons/react/24/outline";
+import React from "react";
 
 export interface DomainConfig {
   title: string;
   navItems: NavItem[];
 }
 
+
 export const domainConfigs: Record<string, DomainConfig> = {
   dts: {
     title: "Detailed Traffic Statistics",
     navItems: [
-      { label: "Overview", href: "/dts/overview" },
-      { label: "Passings", href: "/dts/events" },
-      // ...other tabs if needed
+      {
+        label: "Overview",
+        href: "/dts/overview",
+        icon: React.createElement(ChartBarSquareIcon, { className: "w-6 h-6" }),
+      },
+      {
+        label: "Passings",
+        href: "/dts/events",
+        icon: React.createElement(TruckIcon, { className: "w-6 h-6" }),
+      },
+      // ...add more items as needed
     ],
   },
   ferry: {
     title: "Ferry Counter",
     navItems: [
-      { label: "Overview", href: "/ferry/overview" },
-      { label: "Passings", href: "/ferry/events" },
+      {
+        label: "Overview",
+        href: "/ferry/overview",
+        icon: React.createElement(ChartBarSquareIcon, { className: "w-6 h-6" }),
+      },
+      {
+        label: "Passings",
+        href: "/ferry/events",
+        icon: React.createElement(TruckIcon, { className: "w-6 h-6" }),
+      },
     ],
   },
   tires: {
     title: "Tire Scanner",
     navItems: [
-      { label: "Overview", href: "/tires/overview" },
-      { label: "Passings", href: "/tires/events" },
+      {
+        label: "Overview",
+        href: "/tires/overview",
+        icon: React.createElement(ChartBarSquareIcon, { className: "w-6 h-6" }),
+      },
+      {
+        label: "Passings",
+        href: "/tires/events",
+        icon: React.createElement(TruckIcon, { className: "w-6 h-6" }),
+      },
     ],
   },
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -28,7 +28,7 @@ import {
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
-import { useSocket } from "@/hooks/useSocket";
+import { useData } from "@/context/DataContext";
 
 export interface Event {
   id: number;
@@ -37,17 +37,15 @@ export interface Event {
   vehicleType: string;
   confidenceScore: number;
   camera: string;
-  tireType?: "Sommerdekk" | "Vinterdekk"; 
+  tireType?: "Sommerdekk" | "Vinterdekk";
   tireCondition?: number;
-  passengerCount?: number; 
+  passengerCount?: number;
 }
 
 interface EventTableProps {
   domain: string;
   selectedCamera: string;
-  // UPDATED: use an array for multi-select vehicle types
   selectedVehicleTypes: string[];
-  isLive: boolean;
 }
 
 const getColumns = (domain: string): ColumnDef<Event>[] => {
@@ -121,103 +119,28 @@ export default function EventTable({
   domain,
   selectedCamera,
   selectedVehicleTypes,
-  isLive,
 }: EventTableProps) {
-  const { liveData, error: socketError } = useSocket(domain, isLive);
-  const [apiData, setApiData] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-  const [frozenLiveData, setFrozenLiveData] = useState<Event[]>([]);
-  const [backlogFetched, setBacklogFetched] = useState(false);
+  // Get centralized data from DataContext
+  const { data, loading, error } = useData();
 
-  // Fetch initial API data on mount.
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/${domain}`
-        );
-        if (!res.ok)
-          throw new Error(`Failed to fetch data: ${res.statusText}`);
-        const jsonData = await res.json();
-        setApiData(jsonData);
-      } catch (error) {
-        setError(
-          error instanceof Error ? error.message : "An unknown error occurred"
-        );
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, [domain]); // <-- added apiData and frozenLiveData
-  
-
-  // Freeze live data when live mode is turned off
-  useEffect(() => {
-    if (!isLive) {
-      setFrozenLiveData(liveData);
-      setBacklogFetched(false);
-    }
-  }, [isLive, liveData]);
-
-  // Fetch backlog events when live mode is turned on
-  useEffect(() => {
-    if (isLive && !backlogFetched) {
-      const allEvents = [...apiData, ...frozenLiveData];
-      let lastTimestamp = 0;
-      if (allEvents.length > 0) {
-        lastTimestamp = Math.max(
-          ...allEvents.map((event) => new Date(event.creationTime).getTime())
-        );
-      }
-      fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/${domain}?after=${lastTimestamp}`
-      )
-        .then((res) => res.json())
-        .then((backlog: Event[]) => {
-          if (backlog && backlog.length > 0) {
-            setApiData((prev) => [...prev, ...backlog]);
-          }
-          setBacklogFetched(true);
-        })
-        .catch((err) => {
-          console.error("Error fetching backlog events:", err);
-          setBacklogFetched(true);
-        });
-    }
-  }, [isLive, backlogFetched, domain, apiData, frozenLiveData]);
-
-  // Combine API data with live or frozen socket data
-  const combinedData = useMemo(() => {
-    const uniqueData = new Map<number, Event>();
-    const liveUsed = isLive ? liveData : frozenLiveData;
-    [...apiData, ...liveUsed].forEach((event) =>
-      uniqueData.set(event.id, event)
-    );
-    return Array.from(uniqueData.values()).sort(
-      (a, b) =>
-        new Date(a.creationTime).getTime() - new Date(b.creationTime).getTime()
-    );
-  }, [apiData, liveData, frozenLiveData, isLive]);
-
-  // Filter data by the selected camera and vehicle types
+  // Here we assume that your data (from DataProvider) is compatible with the Event interface.
+  // If necessary, adjust or type-cast accordingly.
   const filteredData = useMemo(() => {
-    let data = combinedData;
+    let dataArr = data as Event[];
     if (selectedCamera !== "all") {
-      data = data.filter((record) => record.camera === selectedCamera);
+      dataArr = dataArr.filter((record) => record.camera === selectedCamera);
     }
-    // If no vehicle types are selected, show all; otherwise filter
     if (selectedVehicleTypes.length > 0) {
-      data = data.filter((record) =>
+      dataArr = dataArr.filter((record) =>
         selectedVehicleTypes.includes(record.vehicleType)
       );
     }
-    return data;
-  }, [combinedData, selectedCamera, selectedVehicleTypes]);
+    return dataArr;
+  }, [data, selectedCamera, selectedVehicleTypes]);
+
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 
   const table = useReactTable({
     data: filteredData,
@@ -236,14 +159,11 @@ export default function EventTable({
     enableRowSelection: true,
   });
 
-  if (loading) return <p className="text-gray-500">Loading...</p>;
+  if (loading) return <p className="text-gray-500">Loading events...</p>;
   if (error) return <p className="text-red-500">Error: {error}</p>;
-  if (socketError)
-    return <p className="text-red-500">WebSocket Error: {socketError}</p>;
 
   return (
     <div className="p-4 bg-white shadow rounded-lg overflow-x-auto">
-      <h2 className="text-xl font-semibold mb-2">Passings</h2>
       <div className="flex items-center py-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -257,9 +177,7 @@ export default function EventTable({
                 key={column.id}
                 className="capitalize"
                 checked={column.getIsVisible()}
-                onCheckedChange={(value) =>
-                  column.toggleVisibility(!!value)
-                }
+                onCheckedChange={(value) => column.toggleVisibility(!!value)}
               >
                 {column.id}
               </DropdownMenuCheckboxItem>
@@ -306,10 +224,7 @@ export default function EventTable({
             <TableRow key={row.id} className="hover:bg-gray-200">
               {row.getVisibleCells().map((cell) => (
                 <TableCell key={cell.id} className="p-2">
-                  {flexRender(
-                    cell.column.columnDef.cell,
-                    cell.getContext()
-                  )}
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </TableCell>
               ))}
             </TableRow>
@@ -318,8 +233,7 @@ export default function EventTable({
       </Table>
       <div className="flex items-center justify-between py-4">
         <div className="text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {filteredData.length} row(s) selected.
+          {table.getFilteredSelectedRowModel().rows.length} of {filteredData.length} row(s) selected.
         </div>
         <div className="space-x-2">
           <Button

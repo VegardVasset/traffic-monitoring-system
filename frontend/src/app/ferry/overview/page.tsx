@@ -1,13 +1,14 @@
 "use client";
+
 import React from "react";
 import OverviewTemplate from "@/components/shared/pageTemplates/overviewTemplate";
+import { DataProvider } from "@/context/DataContext";
 
-export default function FerryOverviewPage() {
+export default function TiresOverviewPage() {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/ferry`;
   return (
-    <OverviewTemplate
-      domainTitle="Ferry"
-      apiUrl={`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/ferry`}
-      defaultBinSize="day"
-    />
+    <DataProvider apiUrl={apiUrl} domain="ferry">
+      <OverviewTemplate domainTitle="Ferry Counter" defaultBinSize="day" />
+    </DataProvider>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -32,7 +32,26 @@ type AggregatedDataEntry = {
   date: string;
 } & { [key: string]: number | string };
 
-const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ data, binSize }) => {
+// Custom hook to detect mobile screens
+function useIsMobile(maxWidth = 768) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkSize = () => {
+      setIsMobile(window.innerWidth <= maxWidth);
+    };
+    checkSize();
+    window.addEventListener("resize", checkSize);
+    return () => window.removeEventListener("resize", checkSize);
+  }, [maxWidth]);
+
+  return isMobile;
+}
+
+export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps) {
+  // Detect if on mobile
+  const isMobile = useIsMobile();
+
   // 1) Derive vehicle types from the data
   const vehicleTypes = useMemo(() => {
     const types = new Set<string>();
@@ -47,7 +66,11 @@ const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ data, binSize }) => {
       day: (date) => date.toISOString().substring(0, 10),
       week: (date) => {
         const startOfWeek = new Date(date);
-        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
+
+        let day = startOfWeek.getDay(); // 0..6, with 0 = Sunday
+        if (day === 0) day = 7; // Make Sunday day 7
+        startOfWeek.setDate(startOfWeek.getDate() - (day - 1));
         return startOfWeek.toISOString().substring(0, 10);
       },
     };
@@ -86,38 +109,81 @@ const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({ data, binSize }) => {
       borderColor: getChartColor(index),
       backgroundColor: getChartColor(index, 0.5),
       fill: false,
+
+      // Make lines thinner and points smaller:
+      borderWidth: 1,   // 1px line thickness
+      pointRadius: 1,   // smaller circles for data points
+      pointHoverRadius: 4, 
     }));
   }, [aggregatedData, vehicleTypes]);
 
+  // 5) Chart data
   const chartData = {
     labels: aggregatedData.map((entry) => entry.date),
     datasets,
   };
 
-  // 5) Chart options
-  const lineChartOptions: ChartOptions<"line"> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "bottom",
-        onClick: () => {},
+  // 6) Chart options
+  // We dynamically set font sizes and whether the legend is displayed.
+  const lineChartOptions: ChartOptions<"line"> = useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false, // Enable aspect ratio control
+   
+      scales: {
+        x: {
+          ticks: {
+            font: {
+              size: isMobile ? 8 : 12,
+            },
+            autoSkip: true,
+            maxTicksLimit: isMobile ? 4 : 10,
+          },
+        },
+        y: {
+          ticks: {
+            font: {
+              size: isMobile ? 8 : 12,
+            },
+          },
+        },
       },
-      title: {
-        display: true,
-        text: `Binned by ${binSize}`,
+      plugins: {
+        legend: {
+          display: !isMobile,
+          position: "bottom",
+          labels: {
+            boxWidth: isMobile ? 8 : 12,
+            font: {
+              size: isMobile ? 8 : 12,
+            },
+          },
+        },
+        tooltip: {
+          bodyFont: {
+            size: isMobile ? 8 : 12,
+          },
+        },
       },
-    },
-  };
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isMobile, binSize]
+  );
 
   return (
     <div className="flex flex-col w-full h-full">
-      <h2 className="text-xl font-semibold mb-4">Passings Over Time</h2>
-      <div className="flex-1 relative">
+      <h2 className="text-base md:text-xl font-semibold mb-4">
+  Passings Over Time ({binSize})
+</h2>
+
+      {/* 
+        Give the chart container a set height (responsive via Tailwind).
+        For example,  h-64 on mobile, h-96 on medium screens, etc.
+        This ensures the chart has space to fill. 
+      */}
+      <div className="flex-1 relative h-full">
         <Line data={chartData} options={lineChartOptions} />
       </div>
     </div>
   );
-};
-
-export default TimeSeriesChart;
+}

@@ -21,8 +21,25 @@ const camerasByDomain: Record<string, { name: string; weight: number }[]> = {
 };
 
 function getRandomTireCondition(): number {
-  return faker.number.int({ min: 1, max: 5 });
+  const weightedValues: number[] = [];
+
+  const distribution = [
+    { value: 5, weight: 50 },
+    { value: 4, weight: 30 },
+    { value: 3, weight: 15 },
+    { value: 2, weight: 4 },
+    { value: 1, weight: 1 },
+  ];
+
+  distribution.forEach(({ value, weight }) => {
+    for (let i = 0; i < weight; i++) {
+      weightedValues.push(value);
+    }
+  });
+
+  return weightedValues[Math.floor(Math.random() * weightedValues.length)];
 }
+
 
 function getRandomPassengerCount(): number {
   return faker.number.int({ min: 1, max: 5 });
