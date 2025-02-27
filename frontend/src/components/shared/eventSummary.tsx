@@ -8,9 +8,9 @@ interface EventSummaryProps {
 
 export default function EventSummary({ count }: EventSummaryProps) {
   return (
-    <div className="text-left">
-      {/* Just show the number */}
-      <p className="text-3xl font-bold">{count}</p>
+    <div className="text-xs">
+      <div className="mb-1 font-bold">Passings for chosen period</div>
+      <p className="text-left text-xl font-bold">{count}</p>
     </div>
   );
 }

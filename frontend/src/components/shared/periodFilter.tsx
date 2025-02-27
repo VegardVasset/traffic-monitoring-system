@@ -24,33 +24,34 @@ export default function PeriodFilter({
   };
 
   return (
-    <div className="flex flex-col gap-4 text-sm">
-      {/* Start Date */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-        <Label htmlFor="startDate" className="whitespace-nowrap">
-          Start
-        </Label>
-        <Input
-          id="startDate"
-          type="date"
-          value={startDate}
-          onChange={handleStartDateChange}
-          className="w-full sm:w-[140px] h-8 text-sm mt-1 sm:mt-0"
-        />
-      </div>
+    <div className="text-xs">   
+      {/* Row format: Start and End side by side */}
+      <div className="flex flex-row flex-wrap gap-3">
+        <div className="flex flex-row gap-1">
+          <Label htmlFor="startDate" className="text-xs self-center">
+            Start
+          </Label>
+          <Input
+            id="startDate"
+            type="date"
+            value={startDate}
+            onChange={handleStartDateChange}
+            className="w-[130px] h-7 text-xs"
+          />
+        </div>
 
-      {/* End Date */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-        <Label htmlFor="endDate" className="whitespace-nowrap">
-          End
-        </Label>
-        <Input
-          id="endDate"
-          type="date"
-          value={endDate}
-          onChange={handleEndDateChange}
-          className="w-full sm:w-[140px] h-8 text-sm mt-1 sm:mt-0"
-        />
+        <div className="flex flex-row gap-1">
+          <Label htmlFor="endDate" className="text-xs self-center">
+            End
+          </Label>
+          <Input
+            id="endDate"
+            type="date"
+            value={endDate}
+            onChange={handleEndDateChange}
+            className="w-[130px] h-7 text-xs"
+          />
+        </div>
       </div>
     </div>
   );
