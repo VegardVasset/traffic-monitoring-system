@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import FilterPanel from "@/components/shared/filterPanel";
 import PeriodFilter from "@/components/shared/periodFilter";
 import EventSummary from "@/components/shared/eventSummary";
 import TimeSeriesChart from "@/components/shared/charts/timeSeriesChart";
 import VehicleDistributionChart from "@/components/shared/charts/vehicleDistributionChart";
+import { UnifiedLegend } from "@/components/shared/unifiedLegend"; // import your new component
+
 
 // ShadCN UI components
 import { Card } from "@/components/ui/card";
@@ -45,12 +47,8 @@ export default function OverviewTemplate({
 
   // Local state for filters
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
-  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>(
-    []
-  );
-  const [binSize, setBinSize] = useState<"hour" | "day" | "week">(
-    defaultBinSize
-  );
+  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
+  const [binSize, setBinSize] = useState<"hour" | "day" | "week">(defaultBinSize);
 
   // Default date range: 1 month ago until today
   const today = new Date().toISOString().substring(0, 10);
@@ -94,8 +92,28 @@ export default function OverviewTemplate({
     });
   }, [data, selectedCamera, selectedVehicleTypes, startDate, endDate]);
 
+  // 6) Derive ONLY the vehicle types present in filtered data (for legend)
+  const filteredVehicleTypes = useMemo(() => {
+    const types = new Set<string>();
+    filteredData.forEach((event) => {
+      types.add(event.vehicleType);
+    });
+    return Array.from(types);
+  }, [filteredData]);
+
   // Mobile drawer state
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
+  // Add mobile detection state
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 550); // adjust breakpoint as needed
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   if (loading && !isLive) {
     return <p className="text-gray-500">Loading {domainTitle} data...</p>;
@@ -133,7 +151,6 @@ export default function OverviewTemplate({
         </Card>
 
         {/* FilterPanel Card (desktop only, pinned to the right) */}
-
         <Card className="p-3 hidden lg:block">
           <FilterPanel
             cameras={derivedCameras}
@@ -197,19 +214,25 @@ export default function OverviewTemplate({
           <div />
         </SheetTrigger>
       </Sheet>
-
+      {/* =============== SINGLE LEGEND FOR BOTH CHARTS =============== */}
+      <UnifiedLegend vehicleTypes={filteredVehicleTypes} />
       {/* =============== CHARTS =============== */}
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
-        {/* TimeSeriesChart Container (1:1 ratio) */}
-        <div className="aspect-square relative w-full">
+        {/* TimeSeriesChart Container */}
+        <div
+          className="relative w-full"
+          style={{ aspectRatio: isMobile ? "1 / 1.5" : "1 / 1" }}
+        >
           <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
             <TimeSeriesChart data={filteredData} binSize={binSize} />
           </div>
         </div>
 
-        {/* VehicleDistributionChart Container (1:1 ratio) */}
-        <div className="aspect-square relative w-full">
+        {/* VehicleDistributionChart Container */}
+        <div
+          className="relative w-full"
+          style={{ aspectRatio: isMobile ? "1 / 1.5" : "1 / 1" }}
+        >
           <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
             <VehicleDistributionChart data={filteredData} />
           </div>

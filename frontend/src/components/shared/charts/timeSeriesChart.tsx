@@ -133,7 +133,7 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
         x: {
           ticks: {
             font: {
-              size: isMobile ? 8 : 12,
+              size: isMobile ? 10 : 12,
             },
             autoSkip: true,
             maxTicksLimit: isMobile ? 4 : 10,
@@ -142,25 +142,26 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
         y: {
           ticks: {
             font: {
-              size: isMobile ? 8 : 12,
+              size: isMobile ? 10 : 12,
             },
           },
         },
       },
       plugins: {
         legend: {
-          display: !isMobile,
+          display: false,
           position: "bottom",
+          onClick: () => {}, //Disable click events on the legend
           labels: {
-            boxWidth: isMobile ? 8 : 12,
+            boxWidth: isMobile ? 6 : 12,
             font: {
-              size: isMobile ? 8 : 14,
+              size: isMobile ? 6 : 14,
             },
           },
         },
         tooltip: {
           bodyFont: {
-            size: isMobile ? 8 : 12,
+            size: isMobile ? 4 : 12,
           },
         },
         datalabels: {

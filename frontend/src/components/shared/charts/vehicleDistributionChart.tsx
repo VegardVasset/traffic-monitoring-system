@@ -66,39 +66,42 @@ export default function VehicleDistributionChart({
     maintainAspectRatio: false, // Fill the parent's height
     layout: {
       padding: {
-        bottom: 30, // extra space for the legend
+        
       },
     },
     plugins: {
       legend: {
         display: false,
         position: "bottom",
-        onClick: () => {},
+        onClick: () => {}, //Disable click events on the legend
         labels: {
-          pointStyle: "circle",
-          usePointStyle: true,
+          boxWidth: isMobile ? 6 : 12,
           font: {
-            size: 12,
+            size: isMobile ? 6 : 14,
           },
-          padding: 10,
         },
       },
+     
       title: {
         display: false,
       },
       datalabels: {
+        display: !isMobile,
         formatter: (value, context) => {
           const dataArr = context.chart.data.datasets[0].data as number[];
           const total = dataArr.reduce((acc, val) => acc + val, 0);
           const percentage = (((value as number) / total) * 100).toFixed(1) + "%";
           return percentage;
         },
-        color: "black",
+        color: "white",
         font: {
           weight: "bold",
           // Use a smaller font size on mobile
-          size: isMobile ? 8 : 10,
+          size: isMobile ? 8 : 12,
         },
+        anchor: "end",  // Anchor to the edge of the slice
+      align: "start", // Align text to start at the anchor
+      offset: 60,    // Adjust position higher
       },
     },
     animation: {
