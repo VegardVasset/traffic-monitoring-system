@@ -24,7 +24,7 @@ export default function DomainLayout({ navItems, children }: DomainLayoutProps) 
       />
 
       {/* Main content. Add left margin so mini-bar doesn’t overlap content. */}
-      <main className="ml-16 p-6">
+      <main className="ml-16">
         {children}
       </main>
     </div>
