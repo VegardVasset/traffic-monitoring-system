@@ -78,3 +78,5 @@ This keeps the system **flexible and scalable** while ensuring each domain has i
 
 ## Production deployment using Vercel and Railwind
 
+Must be done by owner on vercel because of hobby plan 
+
