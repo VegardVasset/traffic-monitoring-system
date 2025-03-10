@@ -53,7 +53,7 @@ const getColumns = (domain: string): ColumnDef<Event>[] => {
     {
       id: "select",
       header: ({ table }) => (
-        <div className="px-2">
+        <div>
           <input
             type="checkbox"
             checked={table.getIsAllRowsSelected()}
@@ -62,7 +62,7 @@ const getColumns = (domain: string): ColumnDef<Event>[] => {
         </div>
       ),
       cell: ({ row }) => (
-        <div className="px-2">
+        <div>
           <input
             type="checkbox"
             checked={row.getIsSelected()}
@@ -84,8 +84,7 @@ const getColumns = (domain: string): ColumnDef<Event>[] => {
     {
       accessorKey: "confidenceScore",
       header: "Confidence",
-      cell: (info) =>
-        `${((info.getValue() as number) * 100).toFixed(2)}%`,
+      cell: (info) => `${((info.getValue() as number) * 100).toFixed(2)}%`,
     },
   ];
 
@@ -120,11 +119,9 @@ export default function EventTable({
   selectedCamera,
   selectedVehicleTypes,
 }: EventTableProps) {
-  // Get centralized data from DataContext
   const { data, loading, error } = useData();
 
-  // Here we assume that your data (from DataProvider) is compatible with the Event interface.
-  // If necessary, adjust or type-cast accordingly.
+  // Filter data based on selectedCamera and selectedVehicleTypes
   const filteredData = useMemo(() => {
     let dataArr = data as Event[];
     if (selectedCamera !== "all") {
@@ -163,11 +160,12 @@ export default function EventTable({
   if (error) return <p className="text-red-500">Error: {error}</p>;
 
   return (
-    <div className="p-4 bg-white shadow rounded-lg overflow-x-auto">
-      <div className="flex items-center py-4">
+    // Make sure the parent div is full width, and let it scroll horizontally if needed
+    <div className="w-full bg-white shadow rounded-lg">
+      <div className="flex items-center py-1 sm:py:4 px-1 sm:px-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
+            <Button variant="outline" className="ml-auto text-xs px-2">
               Columns <ChevronDown />
             </Button>
           </DropdownMenuTrigger>
@@ -185,62 +183,76 @@ export default function EventTable({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id} className="bg-gray-100">
-              {headerGroup.headers.map((header) => {
-                const sorting = header.column.getIsSorted();
-                return (
-                  <TableHead
-                    key={header.id}
-                    className="p-2 cursor-pointer"
-                    onClick={
-                      header.column.getCanSort()
-                        ? header.column.getToggleSortingHandler()
-                        : undefined
-                    }
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                    {header.column.getCanSort() &&
-                      (sorting === "asc" ? (
-                        <ArrowUp className="ml-2 inline-block" />
-                      ) : sorting === "desc" ? (
-                        <ArrowDown className="ml-2 inline-block" />
-                      ) : (
-                        <ArrowUpDown className="ml-2 inline-block" />
-                      ))}
-                  </TableHead>
-                );
-              })}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.map((row) => (
-            <TableRow key={row.id} className="hover:bg-gray-200">
-              {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id} className="p-2">
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      <div className="flex items-center justify-between py-4">
-        <div className="text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of {filteredData.length} row(s) selected.
+
+      {/* Overflow container for the actual table */}
+      <div className="overflow-x-auto w-full">
+        <Table className="w-full table-auto">
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id} className="bg-gray-100">
+                {headerGroup.headers.map((header) => {
+                  const sorting = header.column.getIsSorted();
+                  return (
+                    <TableHead
+                      key={header.id}
+                      className="cursor-pointer text-xs sm:text-sm md:text-base p-1 sm:p-2 whitespace-nowrap"
+                      onClick={
+                        header.column.getCanSort()
+                          ? header.column.getToggleSortingHandler()
+                          : undefined
+                      }
+                    >
+                      <div className="flex items-center">
+                        <div className="flex-1">
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                        </div>
+                        {header.column.getCanSort() &&
+                          (sorting === "asc" ? (
+                            <ArrowUp className="ml-2 inline-block w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                          ) : sorting === "desc" ? (
+                            <ArrowDown className="ml-2 inline-block w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                          ) : (
+                            <ArrowUpDown className="ml-2 inline-block w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                          ))}
+                      </div>
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+
+          <TableBody>
+            {table.getRowModel().rows.map((row) => (
+              <TableRow
+                key={row.id}
+                className="hover:bg-gray-200 text-xs sm:text-sm md:text-base"
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id} className="p-1 sm:p-2">
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="flex items-center justify-between gap-2 sm:items-center p-2 sm:p-4 text-xs sm:text-sm">
+        <div className="text-muted-foreground">
+          {table.getFilteredSelectedRowModel().rows.length} of{" "}
+          {filteredData.length} row(s) selected.
         </div>
-        <div className="space-x-2">
+        <div className="flex space-x-1 sm:space-x-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
+            className="h-6 px-2 sm:h-8 sm:px-3"
           >
             Previous
           </Button>
@@ -249,6 +261,7 @@ export default function EventTable({
             size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
+            className="h-6 px-2 sm:h-8 sm:px-3"
           >
             Next
           </Button>

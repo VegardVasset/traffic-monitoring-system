@@ -59,23 +59,41 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
     return Array.from(types);
   }, [data]);
 
-  // 2) Binning function
+  const formatDate = (date: Date): string => {
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = String(date.getFullYear()).slice(-2);
+    return `${day}/${month}/${year}`;
+  };
+  
+  const formatHour = (date: Date): string => {
+    const formattedDate = formatDate(date);
+    const hour = String(date.getHours()).padStart(2, "0");
+    return `${formattedDate} ${hour}:00`;
+  };
+  
   const binningFunction = useMemo(() => {
     const binFormat: Record<"hour" | "day" | "week", (date: Date) => string> = {
-      hour: (date) => date.toISOString().substring(0, 13),
-      day: (date) => date.toISOString().substring(0, 10),
+      hour: formatHour,
+      day: (date) => formatDate(date),
       week: (date) => {
+        // Calculate the start of the week (Monday)
         const startOfWeek = new Date(date);
         startOfWeek.setHours(0, 0, 0, 0);
-
-        let day = startOfWeek.getDay(); // 0..6, with 0 = Sunday
-        if (day === 0) day = 7; // Make Sunday day 7
+        let day = startOfWeek.getDay();
+        if (day === 0) day = 7; // Treat Sunday as the last day
         startOfWeek.setDate(startOfWeek.getDate() - (day - 1));
-        return startOfWeek.toISOString().substring(0, 10);
+  
+        // Calculate the end of the week (start + 6 days)
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(endOfWeek.getDate() + 6);
+  
+        return `${formatDate(startOfWeek)} - ${formatDate(endOfWeek)}`;
       },
     };
     return binFormat[binSize] ?? binFormat.day;
   }, [binSize]);
+  
 
   // 3) Aggregate data
   const aggregatedData: AggregatedDataEntry[] = useMemo(() => {

@@ -123,7 +123,7 @@ export default function OverviewTemplate({
     <div className="px-2 md:px-4 py-2 md:py-4 w-full">
       {/* =============== TITLE + MOBILE FILTER BUTTON =============== */}
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-base md:text-2xl font-bold">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4">
           {domainTitle} Overview
         </h1>
         {/* Mobile button to open the filter sheet (hidden on desktop) */}
