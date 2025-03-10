@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
+import { MOBILE_MAX_WIDTH } from "@/config/config";
 import { Pie } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
-import ChartDataLabels from "chartjs-plugin-datalabels"; // Import the plugin
+import ChartDataLabels from "chartjs-plugin-datalabels"; 
 import type { ChartOptions } from "chart.js";
 import { getChartColor } from "@/lib/chartUtils";
 
-// Register the necessary components and plugin
 ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels);
 
 export interface Event {
@@ -22,19 +22,17 @@ export interface VehicleDistributionChartProps {
 export default function VehicleDistributionChart({
   data,
 }: VehicleDistributionChartProps) {
-  // Hook to detect if screen is mobile
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 550); // adjust the breakpoint as needed
+      setIsMobile(window.innerWidth < MOBILE_MAX_WIDTH); 
     };
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // 1) Aggregate vehicle-type counts
   const distribution = useMemo(() => {
     const counts: Record<string, number> = {};
     data.forEach((event) => {
@@ -43,11 +41,9 @@ export default function VehicleDistributionChart({
     return counts;
   }, [data]);
 
-  // 2) Chart labels & values
   const labels = Object.keys(distribution);
   const values = labels.map((label) => distribution[label]);
 
-  // 3) Build chartData
   const chartData = useMemo(() => {
     return {
       labels,
@@ -60,10 +56,9 @@ export default function VehicleDistributionChart({
     };
   }, [labels, values]);
 
-  // 4) Chart options (with responsive datalabels configuration)
   const pieChartOptions: ChartOptions<"pie"> = {
     responsive: true,
-    maintainAspectRatio: false, // Fill the parent's height
+    maintainAspectRatio: false, 
     layout: {
       padding: {
         
@@ -73,7 +68,7 @@ export default function VehicleDistributionChart({
       legend: {
         display: false,
         position: "bottom",
-        onClick: () => {}, //Disable click events on the legend
+        onClick: () => {}, 
         labels: {
           boxWidth: isMobile ? 6 : 12,
           font: {
@@ -96,12 +91,11 @@ export default function VehicleDistributionChart({
         color: "white",
         font: {
           weight: "bold",
-          // Use a smaller font size on mobile
           size: isMobile ? 8 : 12,
         },
-        anchor: "end",  // Anchor to the edge of the slice
-      align: "start", // Align text to start at the anchor
-      offset: 60,    // Adjust position higher
+        anchor: "end",  
+      align: "start", 
+      offset: 60,    
       },
     },
     animation: {

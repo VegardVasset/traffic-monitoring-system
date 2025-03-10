@@ -160,7 +160,6 @@ export default function EventTable({
   if (error) return <p className="text-red-500">Error: {error}</p>;
 
   return (
-    // Make sure the parent div is full width, and let it scroll horizontally if needed
     <div className="w-full bg-white shadow rounded-lg">
       <div className="flex items-center py-1 sm:py:4 px-1 sm:px-4">
         <DropdownMenu>

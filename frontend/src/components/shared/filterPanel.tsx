@@ -100,15 +100,11 @@ export default function FilterPanel({
     setSelectedVehicleTypes([]);
   }
 
-  // Main content of the filter panel
   const content = (
-    // text-xs to shrink overall font size
     <div className="text-xs">
       <div className="mb-1 font-bold">Filters</div>
 
-      {/* Use a smaller gap between items */}
       <div className="flex flex-wrap gap-1">
-        {/* CAMERA SELECT */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
           <Label htmlFor="camera-select" className="whitespace-nowrap text-xs">
             Camera
@@ -117,7 +113,6 @@ export default function FilterPanel({
             value={selectedCamera}
             onValueChange={(val) => setSelectedCamera(val)}
           >
-            {/* h-6 for a smaller select height */}
             <SelectTrigger
               id="camera-select"
               className="w-full sm:w-[120px] h-6 text-xs mt-1 sm:mt-0"
@@ -135,7 +130,6 @@ export default function FilterPanel({
           </Select>
         </div>
 
-        {/* VEHICLE TYPE MULTI-SELECT */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
           <Label htmlFor="vehicle-type" className="whitespace-nowrap text-xs">
             Vehicle Type
@@ -147,7 +141,6 @@ export default function FilterPanel({
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                // h-6 for smaller height, narrower width
                 className="w-full sm:w-[120px] h-6 text-xs mt-1 sm:mt-0 justify-between"
               >
                 {buttonText}
@@ -200,7 +193,6 @@ export default function FilterPanel({
           </Popover>
         </div>
 
-        {/* BIN SIZE SELECT (optional) */}
         {showBinSize && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
             <Label
@@ -230,13 +222,11 @@ export default function FilterPanel({
           </div>
         )}
 
-        {/* LIVE SWITCH (optional) */}
         {showLiveButton && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
             <Label htmlFor="live-switch" className="whitespace-nowrap text-xs">
               Live Mode
             </Label>
-            {/* scale-90 to make the switch smaller */}
             <Switch
               checked={isLive}
               onCheckedChange={(checked) => setIsLive(checked)}

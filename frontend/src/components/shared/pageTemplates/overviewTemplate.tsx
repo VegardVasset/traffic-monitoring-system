@@ -3,13 +3,11 @@
 import React, { useCallback, useMemo, useState, useEffect } from "react";
 import FilterPanel from "@/components/shared/filterPanel";
 import PeriodFilter from "@/components/shared/periodFilter";
-import EventSummary from "@/components/shared/eventSummary";
+import EventSummary from "@/components/shared/eventCount";
+import { MOBILE_MAX_WIDTH } from "@/config/config";
 import TimeSeriesChart from "@/components/shared/charts/timeSeriesChart";
 import VehicleDistributionChart from "@/components/shared/charts/vehicleDistributionChart";
-import { UnifiedLegend } from "@/components/shared/unifiedLegend"; // import your new component
-
-
-// ShadCN UI components
+import { UnifiedLegend } from "@/components/shared/unifiedLegend";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,20 +40,22 @@ export default function OverviewTemplate({
   defaultBinSize = "day",
   children,
 }: OverviewTemplateProps) {
-  // Data from context
   const { data, loading, isLive, setIsLive } = useData();
 
-  // Local state for filters
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
-  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
-  const [binSize, setBinSize] = useState<"hour" | "day" | "week">(defaultBinSize);
+  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>(
+    []
+  );
+  const [binSize, setBinSize] = useState<"hour" | "day" | "week">(
+    defaultBinSize
+  );
 
-  // Default date range: 1 month ago until today
+  // Default date range: 1 week ago until today
   const today = new Date().toISOString().substring(0, 10);
-  const oneMonthAgo = new Date(new Date().setMonth(new Date().getMonth() - 1))
+  const oneWeekAgo = new Date(new Date().setDate(new Date().getDate() - 7))
     .toISOString()
     .substring(0, 10);
-  const [startDate, setStartDate] = useState<string>(oneMonthAgo);
+  const [startDate, setStartDate] = useState<string>(oneWeekAgo);
   const [endDate, setEndDate] = useState<string>(today);
 
   const handlePeriodChange = useCallback((start: string, end: string) => {
@@ -63,7 +63,6 @@ export default function OverviewTemplate({
     setEndDate(end);
   }, []);
 
-  // Derive unique vehicle types and cameras
   const derivedVehicleTypes = useMemo(() => {
     const types = new Set<string>();
     data.forEach((event) => types.add(event.vehicleType));
@@ -78,7 +77,6 @@ export default function OverviewTemplate({
     return Array.from(cams, ([id, name]) => ({ id, name }));
   }, [data]);
 
-  // Filter the data
   const filteredData = useMemo(() => {
     return data.filter((event) => {
       const eventDate = event.creationTime.substring(0, 10);
@@ -92,7 +90,7 @@ export default function OverviewTemplate({
     });
   }, [data, selectedCamera, selectedVehicleTypes, startDate, endDate]);
 
-  // 6) Derive ONLY the vehicle types present in filtered data (for legend)
+  // Derive ONLY the vehicle types present in filtered data (for legend)
   const filteredVehicleTypes = useMemo(() => {
     const types = new Set<string>();
     filteredData.forEach((event) => {
@@ -101,14 +99,12 @@ export default function OverviewTemplate({
     return Array.from(types);
   }, [filteredData]);
 
-  // Mobile drawer state
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
-  // Add mobile detection state
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 550); // adjust breakpoint as needed
+      setIsMobile(window.innerWidth < MOBILE_MAX_WIDTH); 
     };
     handleResize();
     window.addEventListener("resize", handleResize);
@@ -136,7 +132,6 @@ export default function OverviewTemplate({
 
       {/* =============== PERIOD, EVENT SUMMARY, FILTER PANEL ROW =============== */}
       <div className="flex flex-wrap items-start gap-4 mb-4">
-        {/* Period Filter Card */}
         <Card className="p-3 max-w-sm w-full hidden lg:block">
           <PeriodFilter
             startDate={startDate}
@@ -144,13 +139,9 @@ export default function OverviewTemplate({
             onChange={handlePeriodChange}
           />
         </Card>
-
-        {/* Event Summary Card */}
         <Card className="p-3 max-w-sm w-full hidden lg:block">
           <EventSummary count={filteredData.length} />
         </Card>
-
-        {/* FilterPanel Card (desktop only, pinned to the right) */}
         <Card className="p-3 hidden lg:block">
           <FilterPanel
             cameras={derivedCameras}
@@ -177,7 +168,6 @@ export default function OverviewTemplate({
 
           <Card className="p-4 mt-4">
             <div className="flex flex-col gap-4 w-full">
-              {/* FilterPanel */}
               <FilterPanel
                 cameras={derivedCameras}
                 selectedCamera={selectedCamera}
@@ -192,14 +182,12 @@ export default function OverviewTemplate({
                 showLiveButton={false}
               />
 
-              {/* PeriodFilter */}
               <PeriodFilter
                 startDate={startDate}
                 endDate={endDate}
                 onChange={handlePeriodChange}
               />
 
-              {/* EventSummary */}
               <EventSummary count={filteredData.length} />
             </div>
           </Card>
@@ -218,7 +206,6 @@ export default function OverviewTemplate({
       <UnifiedLegend vehicleTypes={filteredVehicleTypes} />
       {/* =============== CHARTS =============== */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
-        {/* TimeSeriesChart Container */}
         <div
           className="relative w-full"
           style={{ aspectRatio: isMobile ? "1 / 1.5" : "1 / 1" }}
@@ -227,8 +214,6 @@ export default function OverviewTemplate({
             <TimeSeriesChart data={filteredData} binSize={binSize} />
           </div>
         </div>
-
-        {/* VehicleDistributionChart Container */}
         <div
           className="relative w-full"
           style={{ aspectRatio: isMobile ? "1 / 1.5" : "1 / 1" }}

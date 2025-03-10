@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
+import { MOBILE_MAX_WIDTH } from "@/config/config";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -33,7 +34,7 @@ type AggregatedDataEntry = {
 };
 
 
-function useIsMobile(maxWidth = 550) {
+function useIsMobile(maxWidth = MOBILE_MAX_WIDTH) {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const checkSize = () => {
@@ -46,48 +47,31 @@ function useIsMobile(maxWidth = 550) {
   return isMobile;
 }
 
-// ----------------------------------------------------------------
-// 1. Helper functions to produce *sortable* bin keys (ISO) 
-//    and also a *display label* for the chart axis.
-// ----------------------------------------------------------------
 
-// We keep all bin keys in a format that sorts properly (like YYYY-MM-DD or a pair).
-// Then, we provide a separate function to format them as dd/mm/yy or a range.
 function getHourBinKey(date: Date): string {
-  // e.g. 2025-02-15T14
-  // We'll keep only YYYY-MM-DDTHH for sorting
   return date.toISOString().substring(0, 13);
 }
 function getDayBinKey(date: Date): string {
-  // e.g. 2025-02-15
   return date.toISOString().substring(0, 10);
 }
 function getWeekBinKey(date: Date): string {
-  // This returns an ISO string for the *start* of the week, e.g. 2025-02-10
-  // You can store startOfWeek only, or store start+end as a pair, as long as you keep it consistent
   const startOfWeek = new Date(date);
   startOfWeek.setHours(0, 0, 0, 0);
   let day = startOfWeek.getDay();
   if (day === 0) day = 7; // treat Sunday as day 7
   startOfWeek.setDate(startOfWeek.getDate() - (day - 1));
-  // e.g. "2025-02-10"
   return startOfWeek.toISOString().substring(0, 10);
 }
 
-// Now a function that, given the bin key + binSize, returns a "display label."
+
 function formatBinLabel(binKey: string, binSize: "hour" | "day" | "week"): string {
-  // parse the ISO string(s) into real Dates
   if (binSize === "hour") {
-    // binKey like "2025-02-15T14"
-    const date = new Date(binKey + ":00:00Z"); // reconstruct full date string
+    const date = new Date(binKey + ":00:00Z");
     return formatHour(date);
   } else if (binSize === "day") {
-    // binKey like "2025-02-15"
     const date = new Date(binKey);
     return formatDate(date);
   } else {
-    // binSize === "week"
-    // binKey like "2025-02-10" (start of the week)
     const startOfWeek = new Date(binKey);
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(endOfWeek.getDate() + 6);
@@ -95,7 +79,6 @@ function formatBinLabel(binKey: string, binSize: "hour" | "day" | "week"): strin
   }
 }
 
-// Basic date formatting: dd/mm/yy
 function formatDate(date: Date): string {
   const day = String(date.getDate()).padStart(2, "0");
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -103,9 +86,9 @@ function formatDate(date: Date): string {
   return `${day}/${month}/${year}`;
 }
 
-// Hourly label: dd/mm/yy HH:00
+
 function formatHour(date: Date): string {
-  const base = formatDate(date); // dd/mm/yy
+  const base = formatDate(date); 
   const hour = String(date.getHours()).padStart(2, "0");
   return `${base} ${hour}:00`;
 }
@@ -115,14 +98,13 @@ function formatHour(date: Date): string {
 export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps) {
   const isMobile = useIsMobile();
 
-  // 1) Derive vehicle types
   const vehicleTypes = useMemo(() => {
     const types = new Set<string>();
     data.forEach((e) => types.add(e.vehicleType));
     return Array.from(types);
   }, [data]);
 
-  // 2) Create a function that returns an ISO "bin key" for each event date
+
   const getBinKey = useMemo(() => {
     switch (binSize) {
       case "hour":
@@ -136,7 +118,6 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
     }
   }, [binSize]);
 
-  // 3) Aggregate data into an object keyed by the *sortable* binKey
   const binnedCounts: BinnedCounts = useMemo(() => {
     const counts: BinnedCounts = {};
     data.forEach((event) => {
@@ -145,7 +126,6 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
 
       if (!counts[binKey]) {
         counts[binKey] = {};
-        // initialize counts for each vehicle type to 0
         vehicleTypes.forEach((type) => {
           counts[binKey][type] = 0;
         });
@@ -155,25 +135,19 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
     return counts;
   }, [data, vehicleTypes, getBinKey]);
 
-  // 4) Sort bin keys by actual ISO date (string sort on "YYYY-MM-DD" or "YYYY-MM-DDTHH" is correct).
   const sortedBinKeys = useMemo(() => {
     return Object.keys(binnedCounts).sort(); 
-    // With ISO strings, .sort() sorts chronologically.
   }, [binnedCounts]);
 
-  // 5) Build final aggregated data array with a "display" label
-  //    This is what you'll pass to Chart.js as the x-axis labels.
   const aggregatedData: AggregatedDataEntry[] = useMemo(() => {
     return sortedBinKeys.map((binKey) => {
       return {
-        // We'll store the display label in "date"
         date: formatBinLabel(binKey, binSize),
         ...binnedCounts[binKey],
       };
     });
   }, [sortedBinKeys, binnedCounts, binSize]);
 
-  // 6) Build datasets for each vehicle type
   const datasets = useMemo(() => {
     return vehicleTypes.map((type, index) => ({
       label: type,
@@ -188,13 +162,13 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
   }, [aggregatedData, vehicleTypes, isMobile]);
 
 
-  // 7) Chart data
+  // Chart data
   const chartData = {
     labels: aggregatedData.map((entry) => entry.date),
     datasets,
   };
 
-  // 8) Chart options
+  // Chart options
   const lineChartOptions: ChartOptions<"line"> = useMemo(
     () => ({
       responsive: true,
