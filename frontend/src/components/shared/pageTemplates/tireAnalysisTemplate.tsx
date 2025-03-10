@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useCallback } from "react";
 import FilterPanel from "@/components/shared/filterPanel";
 import PeriodFilter from "@/components/shared/periodFilter";
-import EventSummary from "@/components/shared/eventSummary";
+import EventCount from "@/components/shared/eventCount";
 import TireConditionChart from "@/components/shared/charts/tires/tireConditionChart";
 import TireTypeChart from "@/components/shared/charts/tires/tireTypeChart";
 
@@ -99,7 +99,7 @@ export default function TireAnalysisTemplate() {
 
         {/* Passings Card */}
         <Card className="p-3 max-w-sm w-full hidden lg:block">
-            <EventSummary count={filteredData.length} />
+            <EventCount count={filteredData.length} />
         </Card>
 
         {/* Filter Panel Card */}
@@ -156,7 +156,7 @@ export default function TireAnalysisTemplate() {
                 <CardTitle>Passings for chosen period</CardTitle>
               </CardHeader>
               <CardContent>
-                <EventSummary count={filteredData.length} />
+                <EventCount count={filteredData.length} />
               </CardContent>
             </Card>
 

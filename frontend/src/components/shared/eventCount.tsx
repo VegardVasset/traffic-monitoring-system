@@ -2,11 +2,11 @@
 
 import React from "react";
 
-interface EventSummaryProps {
+interface EventCountProps {
   count: number;
 }
 
-export default function EventSummary({ count }: EventSummaryProps) {
+export default function EventCount({ count }: EventCountProps) {
   return (
     <div className="text-xs">
       <div className="mb-1 font-bold">Passings for chosen period</div>

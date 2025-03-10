@@ -79,12 +79,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({
     if (!isLive) return;
     const newSocket: Socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
       transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: 10,         // Maximum number of reconnection attempts
+      reconnectionDelay: 1000,          // Initial delay before a reconnection attempt (in ms)
+      reconnectionDelayMax: 5000,       // Maximum reconnection delay (in ms)
     });
     setSocket(newSocket);
 
     newSocket.on("connect", () => {
       console.log(`Connected to WebSocket for ${domain}`);
       newSocket.emit("requestData", domain);
+      
     });
 
     newSocket.on("initialData", (initialData: BaseEvent[]) => {

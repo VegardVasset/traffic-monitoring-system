@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
+import { MOBILE_MAX_WIDTH } from "@/config/config";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -34,7 +35,9 @@ type AggregatedDataEntry = {
   [vehicleType: string]: number | string;
 };
 
-function useIsMobile(maxWidth = 550) {
+
+function useIsMobile(maxWidth = MOBILE_MAX_WIDTH) {
+
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const checkSize = () => setIsMobile(window.innerWidth <= maxWidth);
@@ -63,6 +66,7 @@ function getMonthBinKey(date: Date): string {
   return date.toISOString().substring(0, 7);
 }
 
+
 function formatBinLabel(binKey: string, binSize: "hour" | "day" | "week" | "month"): string {
   if (binSize === "hour") {
     const date = new Date(binKey + ":00:00Z");
@@ -88,8 +92,11 @@ function formatDate(date: Date): string {
   return `${day}/${month}/${year}`;
 }
 
+
+
 function formatHour(date: Date): string {
-  const base = formatDate(date);
+  const base = formatDate(date); 
+
   const hour = String(date.getHours()).padStart(2, "0");
   return `${base} ${hour}:00`;
 }
@@ -142,14 +149,16 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
   }, [data, vehicleTypes, getBinKey]);
 
   const sortedBinKeys = useMemo(() => {
-    return Object.keys(binnedCounts).sort();
+    return Object.keys(binnedCounts).sort(); 
   }, [binnedCounts]);
 
   const aggregatedData: AggregatedDataEntry[] = useMemo(() => {
-    return sortedBinKeys.map((binKey) => ({
-      date: formatBinLabel(binKey, binSize),
-      ...binnedCounts[binKey],
-    }));
+    return sortedBinKeys.map((binKey) => {
+      return {
+        date: formatBinLabel(binKey, binSize),
+        ...binnedCounts[binKey],
+      };
+    });
   }, [sortedBinKeys, binnedCounts, binSize]);
 
   const datasets = useMemo(() => {
@@ -165,6 +174,8 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
     }));
   }, [aggregatedData, vehicleTypes, isMobile]);
 
+
+  // Chart data
   const chartData = {
     labels: aggregatedData.map((entry) => entry.date),
     datasets,

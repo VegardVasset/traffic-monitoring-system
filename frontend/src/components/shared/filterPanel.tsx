@@ -4,7 +4,11 @@ import React, { useState, useMemo } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 import {
   Command,
   CommandInput,
@@ -22,6 +26,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 
 export interface Camera {
@@ -33,15 +38,20 @@ interface FilterPanelProps {
   cameras: Camera[];
   selectedCamera: string;
   setSelectedCamera: (value: string) => void;
+
   vehicleTypes: string[];
   selectedVehicleTypes: string[];
   setSelectedVehicleTypes: (value: string[]) => void;
+
   binSize: "hour" | "day" | "week" | "month";
   setBinSize: (value: "hour" | "day" | "week" | "month") => void;
+
   isLive: boolean;
   setIsLive: (value: boolean) => void;
+
   showBinSize?: boolean;
   showLiveButton?: boolean;
+  /** Whether to wrap in a Card */
   useCardWrapper?: boolean;
 }
 
@@ -97,6 +107,7 @@ export default function FilterPanel({
   const content = (
     <div className="text-xs">
       <div className="mb-1 font-bold">Filters</div>
+
       <div className="flex flex-wrap gap-1">
         <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
           <Label htmlFor="camera-select" className="whitespace-nowrap text-xs">
@@ -127,7 +138,10 @@ export default function FilterPanel({
           <Label htmlFor="vehicle-type" className="whitespace-nowrap text-xs">
             Vehicle Type
           </Label>
-          <Popover open={vehiclePopoverOpen} onOpenChange={setVehiclePopoverOpen}>
+          <Popover
+            open={vehiclePopoverOpen}
+            onOpenChange={setVehiclePopoverOpen}
+          >
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -158,7 +172,10 @@ export default function FilterPanel({
                           }}
                         >
                           <Check
-                            className={"mr-2 h-4 w-4 " + (selected ? "opacity-100" : "opacity-0")}
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selected ? "opacity-100" : "opacity-0"
+                            )}
                           />
                           {vt}
                         </CommandItem>
@@ -167,8 +184,12 @@ export default function FilterPanel({
                   </CommandGroup>
                   <CommandSeparator />
                   <CommandGroup>
-                    <CommandItem onSelect={handleSelectAll}>Select All</CommandItem>
-                    <CommandItem onSelect={handleClearAll}>Clear All</CommandItem>
+                    <CommandItem onSelect={handleSelectAll}>
+                      Select All
+                    </CommandItem>
+                    <CommandItem onSelect={handleClearAll}>
+                      Clear All
+                    </CommandItem>
                   </CommandGroup>
                 </CommandList>
               </Command>
@@ -178,12 +199,17 @@ export default function FilterPanel({
 
         {showBinSize && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
-            <Label htmlFor="bin-size-select" className="whitespace-nowrap text-xs">
+            <Label
+              htmlFor="bin-size-select"
+              className="whitespace-nowrap text-xs"
+            >
               Time Interval
             </Label>
             <Select
               value={binSize}
-              onValueChange={(val) => setBinSize(val as "hour" | "day" | "week" | "month")}
+              onValueChange={(val) =>
+                setBinSize(val as "hour" | "day" | "week")
+              }
             >
               <SelectTrigger
                 id="bin-size-select"
@@ -196,6 +222,7 @@ export default function FilterPanel({
                 <SelectItem value="day">Daily</SelectItem>
                 <SelectItem value="week">Weekly</SelectItem>
                 <SelectItem value="month">Monthly</SelectItem>
+
               </SelectContent>
             </Select>
           </div>
@@ -218,5 +245,6 @@ export default function FilterPanel({
     </div>
   );
 
+  // Optionally wrap content in a Card, but reduce padding
   return useCardWrapper ? <Card className="p-2 mb-4">{content}</Card> : content;
 }
