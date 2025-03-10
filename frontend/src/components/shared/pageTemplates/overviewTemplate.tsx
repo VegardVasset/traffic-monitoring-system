@@ -31,7 +31,7 @@ export interface BaseEvent {
 
 interface OverviewTemplateProps {
   domainTitle: string;
-  defaultBinSize?: "hour" | "day" | "week";
+  defaultBinSize?: "hour" | "day" | "week" | "month";
   children?: React.ReactNode;
 }
 
@@ -43,12 +43,8 @@ export default function OverviewTemplate({
   const { data, loading, isLive, setIsLive } = useData();
 
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
-  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>(
-    []
-  );
-  const [binSize, setBinSize] = useState<"hour" | "day" | "week">(
-    defaultBinSize
-  );
+  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
+  const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">(defaultBinSize);
 
   // Default date range: 1 week ago until today
   const today = new Date().toISOString().substring(0, 10);
@@ -81,21 +77,16 @@ export default function OverviewTemplate({
     return data.filter((event) => {
       const eventDate = event.creationTime.substring(0, 10);
       const withinDateRange = eventDate >= startDate && eventDate <= endDate;
-      const matchCamera =
-        selectedCamera === "all" || event.camera === selectedCamera;
+      const matchCamera = selectedCamera === "all" || event.camera === selectedCamera;
       const matchVehicle =
-        selectedVehicleTypes.length === 0 ||
-        selectedVehicleTypes.includes(event.vehicleType);
+        selectedVehicleTypes.length === 0 || selectedVehicleTypes.includes(event.vehicleType);
       return withinDateRange && matchCamera && matchVehicle;
     });
   }, [data, selectedCamera, selectedVehicleTypes, startDate, endDate]);
 
-  // Derive ONLY the vehicle types present in filtered data (for legend)
   const filteredVehicleTypes = useMemo(() => {
     const types = new Set<string>();
-    filteredData.forEach((event) => {
-      types.add(event.vehicleType);
-    });
+    filteredData.forEach((event) => types.add(event.vehicleType));
     return Array.from(types);
   }, [filteredData]);
 
@@ -117,12 +108,11 @@ export default function OverviewTemplate({
 
   return (
     <div className="px-2 md:px-4 py-2 md:py-4 w-full">
-      {/* =============== TITLE + MOBILE FILTER BUTTON =============== */}
+      {/* TITLE + MOBILE FILTER BUTTON */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4">
           {domainTitle} Overview
         </h1>
-        {/* Mobile button to open the filter sheet (hidden on desktop) */}
         <div className="block lg:hidden">
           <Button variant="outline" onClick={() => setMobileFilterOpen(true)}>
             Open Filters
@@ -130,7 +120,7 @@ export default function OverviewTemplate({
         </div>
       </div>
 
-      {/* =============== PERIOD, EVENT SUMMARY, FILTER PANEL ROW =============== */}
+      {/* PERIOD, EVENT SUMMARY, FILTER PANEL ROW */}
       <div className="flex flex-wrap items-start gap-4 mb-4">
         <Card className="p-3 max-w-sm w-full hidden lg:block">
           <PeriodFilter
@@ -159,13 +149,12 @@ export default function OverviewTemplate({
         </Card>
       </div>
 
-      {/* =============== MOBILE FILTER SHEET =============== */}
+      {/* MOBILE FILTER SHEET */}
       <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
         <SheetContent side="right" className="w-[85%] sm:w-[360px] p-2 text-xs">
           <SheetHeader>
             <SheetTitle>{domainTitle} Filters</SheetTitle>
           </SheetHeader>
-
           <Card className="p-4 mt-4">
             <div className="flex flex-col gap-4 w-full">
               <FilterPanel
@@ -191,7 +180,6 @@ export default function OverviewTemplate({
               <EventSummary count={filteredData.length} />
             </div>
           </Card>
-
           <div className="mt-4">
             <SheetClose asChild>
               <Button variant="outline">Close</Button>
@@ -202,9 +190,11 @@ export default function OverviewTemplate({
           <div />
         </SheetTrigger>
       </Sheet>
-      {/* =============== SINGLE LEGEND FOR BOTH CHARTS =============== */}
+
+      {/* SINGLE LEGEND */}
       <UnifiedLegend vehicleTypes={filteredVehicleTypes} />
-      {/* =============== CHARTS =============== */}
+
+      {/* CHARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
         <div
           className="relative w-full"

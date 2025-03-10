@@ -4,7 +4,11 @@ import React, { useState, useMemo } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 import {
   Command,
   CommandInput,
@@ -39,8 +43,8 @@ interface FilterPanelProps {
   selectedVehicleTypes: string[];
   setSelectedVehicleTypes: (value: string[]) => void;
 
-  binSize: "hour" | "day" | "week";
-  setBinSize: (value: "hour" | "day" | "week") => void;
+  binSize: "hour" | "day" | "week" | "month";
+  setBinSize: (value: "hour" | "day" | "week" | "month") => void;
 
   isLive: boolean;
   setIsLive: (value: boolean) => void;
@@ -217,6 +221,8 @@ export default function FilterPanel({
                 <SelectItem value="hour">Hourly</SelectItem>
                 <SelectItem value="day">Daily</SelectItem>
                 <SelectItem value="week">Weekly</SelectItem>
+                <SelectItem value="month">Monthly</SelectItem>
+
               </SelectContent>
             </Select>
           </div>
@@ -240,9 +246,5 @@ export default function FilterPanel({
   );
 
   // Optionally wrap content in a Card, but reduce padding
-  return useCardWrapper ? (
-    <Card className="p-2 mb-4">{content}</Card>
-  ) : (
-    content
-  );
+  return useCardWrapper ? <Card className="p-2 mb-4">{content}</Card> : content;
 }
