@@ -57,7 +57,9 @@ export default function EventTemplate({ domain }: EventTemplateProps) {
         isLive={isLive}
         setIsLive={setIsLive}
         showBinSize={false}
+        useCardWrapper={true}
       />
+    
 
       {/* Event table */}
       <EventTable
