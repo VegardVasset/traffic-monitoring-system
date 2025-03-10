@@ -16,7 +16,7 @@ export default function EventTemplate({ domain }: EventTemplateProps) {
   const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>(
     []
   );
-  const [binSize, setBinSize] = useState<"hour" | "day" | "week">("day");
+  const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">("day");
 
   const { data, loading, isLive, setIsLive } = useData();
 

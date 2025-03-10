@@ -22,7 +22,6 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 
 export interface Camera {
@@ -34,20 +33,15 @@ interface FilterPanelProps {
   cameras: Camera[];
   selectedCamera: string;
   setSelectedCamera: (value: string) => void;
-
   vehicleTypes: string[];
   selectedVehicleTypes: string[];
   setSelectedVehicleTypes: (value: string[]) => void;
-
-  binSize: "hour" | "day" | "week";
-  setBinSize: (value: "hour" | "day" | "week") => void;
-
+  binSize: "hour" | "day" | "week" | "month";
+  setBinSize: (value: "hour" | "day" | "week" | "month") => void;
   isLive: boolean;
   setIsLive: (value: boolean) => void;
-
   showBinSize?: boolean;
   showLiveButton?: boolean;
-  /** Whether to wrap in a Card */
   useCardWrapper?: boolean;
 }
 
@@ -100,15 +94,10 @@ export default function FilterPanel({
     setSelectedVehicleTypes([]);
   }
 
-  // Main content of the filter panel
   const content = (
-    // text-xs to shrink overall font size
     <div className="text-xs">
       <div className="mb-1 font-bold">Filters</div>
-
-      {/* Use a smaller gap between items */}
       <div className="flex flex-wrap gap-1">
-        {/* CAMERA SELECT */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
           <Label htmlFor="camera-select" className="whitespace-nowrap text-xs">
             Camera
@@ -117,7 +106,6 @@ export default function FilterPanel({
             value={selectedCamera}
             onValueChange={(val) => setSelectedCamera(val)}
           >
-            {/* h-6 for a smaller select height */}
             <SelectTrigger
               id="camera-select"
               className="w-full sm:w-[120px] h-6 text-xs mt-1 sm:mt-0"
@@ -135,19 +123,14 @@ export default function FilterPanel({
           </Select>
         </div>
 
-        {/* VEHICLE TYPE MULTI-SELECT */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
           <Label htmlFor="vehicle-type" className="whitespace-nowrap text-xs">
             Vehicle Type
           </Label>
-          <Popover
-            open={vehiclePopoverOpen}
-            onOpenChange={setVehiclePopoverOpen}
-          >
+          <Popover open={vehiclePopoverOpen} onOpenChange={setVehiclePopoverOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                // h-6 for smaller height, narrower width
                 className="w-full sm:w-[120px] h-6 text-xs mt-1 sm:mt-0 justify-between"
               >
                 {buttonText}
@@ -175,10 +158,7 @@ export default function FilterPanel({
                           }}
                         >
                           <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              selected ? "opacity-100" : "opacity-0"
-                            )}
+                            className={"mr-2 h-4 w-4 " + (selected ? "opacity-100" : "opacity-0")}
                           />
                           {vt}
                         </CommandItem>
@@ -187,12 +167,8 @@ export default function FilterPanel({
                   </CommandGroup>
                   <CommandSeparator />
                   <CommandGroup>
-                    <CommandItem onSelect={handleSelectAll}>
-                      Select All
-                    </CommandItem>
-                    <CommandItem onSelect={handleClearAll}>
-                      Clear All
-                    </CommandItem>
+                    <CommandItem onSelect={handleSelectAll}>Select All</CommandItem>
+                    <CommandItem onSelect={handleClearAll}>Clear All</CommandItem>
                   </CommandGroup>
                 </CommandList>
               </Command>
@@ -200,20 +176,14 @@ export default function FilterPanel({
           </Popover>
         </div>
 
-        {/* BIN SIZE SELECT (optional) */}
         {showBinSize && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
-            <Label
-              htmlFor="bin-size-select"
-              className="whitespace-nowrap text-xs"
-            >
+            <Label htmlFor="bin-size-select" className="whitespace-nowrap text-xs">
               Time Interval
             </Label>
             <Select
               value={binSize}
-              onValueChange={(val) =>
-                setBinSize(val as "hour" | "day" | "week")
-              }
+              onValueChange={(val) => setBinSize(val as "hour" | "day" | "week" | "month")}
             >
               <SelectTrigger
                 id="bin-size-select"
@@ -225,18 +195,17 @@ export default function FilterPanel({
                 <SelectItem value="hour">Hourly</SelectItem>
                 <SelectItem value="day">Daily</SelectItem>
                 <SelectItem value="week">Weekly</SelectItem>
+                <SelectItem value="month">Monthly</SelectItem>
               </SelectContent>
             </Select>
           </div>
         )}
 
-        {/* LIVE SWITCH (optional) */}
         {showLiveButton && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
             <Label htmlFor="live-switch" className="whitespace-nowrap text-xs">
               Live Mode
             </Label>
-            {/* scale-90 to make the switch smaller */}
             <Switch
               checked={isLive}
               onCheckedChange={(checked) => setIsLive(checked)}
@@ -249,10 +218,5 @@ export default function FilterPanel({
     </div>
   );
 
-  // Optionally wrap content in a Card, but reduce padding
-  return useCardWrapper ? (
-    <Card className="p-2 mb-4">{content}</Card>
-  ) : (
-    content
-  );
+  return useCardWrapper ? <Card className="p-2 mb-4">{content}</Card> : content;
 }
