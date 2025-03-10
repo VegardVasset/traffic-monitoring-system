@@ -15,7 +15,7 @@ export default function EventTemplate({ domain }: EventTemplateProps) {
   // Local filter state
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
   const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
-  const [binSize, setBinSize] = useState<"hour" | "day" | "week">("day");
+  const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">("day");
 
   // Get shared data and live mode state from the DataContext
   const { data, loading, isLive, setIsLive } = useData();

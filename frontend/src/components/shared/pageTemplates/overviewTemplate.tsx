@@ -31,7 +31,8 @@ export interface BaseEvent {
 
 interface OverviewTemplateProps {
   domainTitle: string;
-  defaultBinSize?: "hour" | "day" | "week";
+  // Updated type: allow "month" as well
+  defaultBinSize?: "hour" | "day" | "week" | "month";
   children?: React.ReactNode;
 }
 
@@ -45,12 +46,9 @@ export default function OverviewTemplate({
 
   // Local state for filters
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
-  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>(
-    []
-  );
-  const [binSize, setBinSize] = useState<"hour" | "day" | "week">(
-    defaultBinSize
-  );
+  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
+  // Updated type: include "month"
+  const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">(defaultBinSize);
 
   // Default date range: 1 month ago until today
   const today = new Date().toISOString().substring(0, 10);
@@ -133,7 +131,6 @@ export default function OverviewTemplate({
         </Card>
 
         {/* FilterPanel Card (desktop only, pinned to the right) */}
-
         <Card className="p-3 hidden lg:block">
           <FilterPanel
             cameras={derivedCameras}
@@ -199,7 +196,6 @@ export default function OverviewTemplate({
       </Sheet>
 
       {/* =============== CHARTS =============== */}
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
         {/* TimeSeriesChart Container (1:1 ratio) */}
         <div className="aspect-square relative w-full">

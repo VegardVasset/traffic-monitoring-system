@@ -7,7 +7,7 @@ import EventSummary from "@/components/shared/eventSummary";
 import TireConditionChart from "@/components/shared/charts/tires/tireConditionChart";
 import TireTypeChart from "@/components/shared/charts/tires/tireTypeChart";
 
-// ShadCN UI components (assuming you use these):
+// ShadCN UI components
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +19,6 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 
-// Import your data context
 import { useData } from "@/context/DataContext";
 
 export default function TireAnalysisTemplate() {
@@ -29,7 +28,7 @@ export default function TireAnalysisTemplate() {
   // Local filter state
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
   const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
-  const [binSize, setBinSize] = useState<"hour" | "day" | "week">("day");
+  const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">("day");
 
   // Date range (default: last month to today)
   const today = new Date().toISOString().substring(0, 10);
@@ -45,7 +44,7 @@ export default function TireAnalysisTemplate() {
     setEndDate(end);
   }, []);
 
-  // Derive the unique cameras + vehicle types from the data
+  // Derive unique cameras + vehicle types from the data
   const derivedVehicleTypes = useMemo(() => {
     const types = new Set<string>();
     data.forEach((event) => types.add(event.vehicleType));
@@ -87,53 +86,43 @@ export default function TireAnalysisTemplate() {
     <div className="px-4 py-6">
       <h1 className="text-2xl md:text-3xl font-bold mb-6">Tire Analysis</h1>
 
-      {/* ========== Desktop Filters ========== */}
-      <div className="hidden md:block">
-        <div className="flex flex-col md:flex-row gap-6 mb-6">
-          {/* Date Range Card */}
-          <Card className="w-full md:max-w-md">
-            <CardHeader>
-              <CardTitle>Date Range</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <PeriodFilter
-                startDate={startDate}
-                endDate={endDate}
-                onChange={handlePeriodChange}
-              />
-            </CardContent>
-          </Card>
+      {/* ========== Desktop: 3 Cards in a Row ========== */}
+      <div className="flex flex-wrap items-start gap-4 mb-4">
+        {/* Date Range Card */}
+        <Card className="p-3 max-w-sm w-full hidden lg:block">
+            <PeriodFilter
+              startDate={startDate}
+              endDate={endDate}
+              onChange={handlePeriodChange}
+            />
+        </Card>
 
-          {/* Event Summary Card */}
-          <Card className="w-full md:max-w-md">
-            <CardHeader>
-              <CardTitle>Passings for chosen period</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <EventSummary count={filteredData.length} />
-            </CardContent>
-          </Card>
-        </div>
+        {/* Passings Card */}
+        <Card className="p-3 max-w-sm w-full hidden lg:block">
+            <EventSummary count={filteredData.length} />
+        </Card>
 
-        {/* Filter Panel */}
-        <FilterPanel
-          cameras={derivedCameras}
-          selectedCamera={selectedCamera}
-          setSelectedCamera={setSelectedCamera}
-          vehicleTypes={derivedVehicleTypes}
-          selectedVehicleTypes={selectedVehicleTypes}
-          setSelectedVehicleTypes={setSelectedVehicleTypes}
-          binSize={binSize}
-          setBinSize={setBinSize}
-          isLive={isLive}
-          setIsLive={setIsLive}
-          showBinSize={false} // optional
-          showLiveButton={false} // optional
-        />
+        {/* Filter Panel Card */}
+        <Card className="p-3 hidden lg:block">
+          <FilterPanel
+            cameras={derivedCameras}
+            selectedCamera={selectedCamera}
+            setSelectedCamera={setSelectedCamera}
+            vehicleTypes={derivedVehicleTypes}
+            selectedVehicleTypes={selectedVehicleTypes}
+            setSelectedVehicleTypes={setSelectedVehicleTypes}
+            binSize={binSize}
+            setBinSize={setBinSize}
+            isLive={isLive}
+            setIsLive={setIsLive}
+            showBinSize={true}
+            showLiveButton={false}
+          />
+        </Card>
       </div>
 
       {/* ========== Mobile Filter Drawer Trigger ========== */}
-      <div className="block md:hidden mb-4">
+      <div className="block lg:hidden mb-4">
         <Button variant="outline" onClick={() => setMobileFilterOpen(true)}>
           Open Filters
         </Button>
@@ -183,7 +172,7 @@ export default function TireAnalysisTemplate() {
               setBinSize={setBinSize}
               isLive={isLive}
               setIsLive={setIsLive}
-              showLiveButton={false} // optional
+              showLiveButton={false}
             />
           </div>
 
@@ -193,19 +182,18 @@ export default function TireAnalysisTemplate() {
             </SheetClose>
           </div>
         </SheetContent>
-
-        {/* We need a SheetTrigger in the tree, but it can be empty if you’re manually opening */}
         <SheetTrigger asChild>
           <div />
         </SheetTrigger>
       </Sheet>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* ========== Charts ========== */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Tire Condition Bar Chart */}
         <TireConditionChart data={filteredData} />
 
         {/* Right: Tire Type Line Chart */}
-        <TireTypeChart data={filteredData} />
+        <TireTypeChart data={filteredData} binSize={binSize} />
       </div>
     </div>
   );

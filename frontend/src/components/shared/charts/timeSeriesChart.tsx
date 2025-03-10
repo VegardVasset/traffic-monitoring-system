@@ -25,7 +25,7 @@ export interface Event {
 
 export interface TimeSeriesChartProps {
   data: Event[];
-  binSize: "hour" | "day" | "week";
+  binSize: "hour" | "day" | "week" | "month";
 }
 
 type AggregatedDataEntry = {
@@ -61,20 +61,20 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
 
   // 2) Binning function
   const binningFunction = useMemo(() => {
-    const binFormat: Record<"hour" | "day" | "week", (date: Date) => string> = {
-      hour: (date) => date.toISOString().substring(0, 13),
-      day: (date) => date.toISOString().substring(0, 10),
+    const binFormat: Record<"hour" | "day" | "week" | "month", (date: Date) => string> = {
+      hour: (date) => date.toISOString().substring(0, 13), // e.g. "2025-03-10T14"
+      day: (date) => date.toISOString().substring(0, 10),   // e.g. "2025-03-10"
       week: (date) => {
         const startOfWeek = new Date(date);
         startOfWeek.setHours(0, 0, 0, 0);
-
         let day = startOfWeek.getDay(); // 0..6, with 0 = Sunday
         if (day === 0) day = 7; // Make Sunday day 7
         startOfWeek.setDate(startOfWeek.getDate() - (day - 1));
         return startOfWeek.toISOString().substring(0, 10);
       },
+      month: (date) => date.toISOString().substring(0, 7), // e.g. "2025-03"
     };
-    return binFormat[binSize] ?? binFormat.day;
+    return binFormat[binSize];
   }, [binSize]);
 
   // 3) Aggregate data
@@ -91,7 +91,7 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
           binnedCounts[binKey][type] = 0;
         });
       }
-      binnedCounts[binKey][event.vehicleType]++;
+      binnedCounts[binKey][event.vehicleType] = (binnedCounts[binKey][event.vehicleType] || 0) + 1;
     });
 
     const sortedBins = Object.keys(binnedCounts).sort();
@@ -109,7 +109,6 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
       borderColor: getChartColor(index),
       backgroundColor: getChartColor(index, 0.5),
       fill: false,
-      // Use different values depending on screen size
       borderWidth: isMobile ? 1 : 2,
       pointRadius: isMobile ? 1 : 2,
       pointHoverRadius: isMobile ? 3 : 4,
@@ -123,66 +122,54 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
   };
 
   // 6) Chart options
-  // We dynamically set font sizes and whether the legend is displayed.
-  const lineChartOptions: ChartOptions<"line"> = useMemo(
-    () => ({
-      responsive: true,
-      maintainAspectRatio: false, // Enable aspect ratio control
-   
-      scales: {
-        x: {
-          ticks: {
-            font: {
-              size: isMobile ? 8 : 12,
-            },
-            autoSkip: true,
-            maxTicksLimit: isMobile ? 4 : 10,
+  const lineChartOptions: ChartOptions<"line"> = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: {
+        ticks: {
+          font: {
+            size: isMobile ? 8 : 12,
           },
-        },
-        y: {
-          ticks: {
-            font: {
-              size: isMobile ? 8 : 12,
-            },
-          },
+          autoSkip: true,
+          maxTicksLimit: isMobile ? 4 : 10,
         },
       },
-      plugins: {
-        legend: {
-          display: !isMobile,
-          position: "bottom",
-          labels: {
-            boxWidth: isMobile ? 8 : 12,
-            font: {
-              size: isMobile ? 8 : 14,
-            },
-          },
-        },
-        tooltip: {
-          bodyFont: {
+      y: {
+        ticks: {
+          font: {
             size: isMobile ? 8 : 12,
           },
         },
-        datalabels: {
-          display: false, // Disable datalabels for this chart
+      },
+    },
+    plugins: {
+      legend: {
+        display: !isMobile,
+        position: "bottom",
+        labels: {
+          boxWidth: isMobile ? 8 : 12,
+          font: {
+            size: isMobile ? 8 : 14,
+          },
         },
       },
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isMobile, binSize]
-  );
+      tooltip: {
+        bodyFont: {
+          size: isMobile ? 8 : 12,
+        },
+      },
+      datalabels: {
+        display: false,
+      },
+    },
+  }), [isMobile]);
 
   return (
     <div className="flex flex-col w-full h-full">
       <h2 className="ml-4 text-xs md:text-xl font-semibold mb-4">
-  Passings Over Time ({binSize})
-</h2>
-
-      {/* 
-        Give the chart container a set height (responsive via Tailwind).
-        For example,  h-64 on mobile, h-96 on medium screens, etc.
-        This ensures the chart has space to fill. 
-      */}
+        Passings Over Time ({binSize})
+      </h2>
       <div className="flex-1 relative h-full">
         <Line data={chartData} options={lineChartOptions} />
       </div>
