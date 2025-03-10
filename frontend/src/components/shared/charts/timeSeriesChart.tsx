@@ -27,6 +27,11 @@ export interface TimeSeriesChartProps {
 }
 
 type BinnedCounts = Record<string, Record<string, number>>;
+type AggregatedDataEntry = {
+  date: string;
+  [vehicleType: string]: number | string; // index signature
+};
+
 
 function useIsMobile(maxWidth = 550) {
   const [isMobile, setIsMobile] = useState(false);
@@ -158,7 +163,7 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
 
   // 5) Build final aggregated data array with a "display" label
   //    This is what you'll pass to Chart.js as the x-axis labels.
-  const aggregatedData = useMemo(() => {
+  const aggregatedData: AggregatedDataEntry[] = useMemo(() => {
     return sortedBinKeys.map((binKey) => {
       return {
         // We'll store the display label in "date"
