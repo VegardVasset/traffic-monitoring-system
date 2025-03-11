@@ -12,15 +12,15 @@ interface EventTemplateProps {
 }
 
 export default function EventTemplate({ domain }: EventTemplateProps) {
-  // Local filter state
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
-  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
-  const [binSize, setBinSize] = useState<"hour" | "day" | "week">("day");
+  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>(
+    []
+  );
+  const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">("day");
 
-  // Get shared data and live mode state from the DataContext
   const { data, loading, isLive, setIsLive } = useData();
 
-  // Derive unique cameras from the events data
+  // Derive unique cameras
   const derivedCameras: Camera[] = useMemo(() => {
     const camMap = new Map<string, string>();
     data.forEach((event: BaseEvent) => {
@@ -29,7 +29,7 @@ export default function EventTemplate({ domain }: EventTemplateProps) {
     return Array.from(camMap, ([id, name]) => ({ id, name }));
   }, [data]);
 
-  // Derive unique vehicle types from the events data
+  // Derive unique vehicle types
   const derivedVehicleTypes: string[] = useMemo(() => {
     const types = new Set<string>();
     data.forEach((event: BaseEvent) => types.add(event.vehicleType));
@@ -41,10 +41,13 @@ export default function EventTemplate({ domain }: EventTemplateProps) {
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-4">Passings</h1>
+    // Make the container full width on small screens and add responsive padding
+    <div className="max-w-full px-1 py-6 sm:px-6">
+      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4">
+        Passings
+      </h1>
 
-      {/* Filter component WITHOUT the bin size */}
+      {/* Filter component */}
       <FilterPanel
         cameras={derivedCameras}
         selectedCamera={selectedCamera}
@@ -57,14 +60,17 @@ export default function EventTemplate({ domain }: EventTemplateProps) {
         isLive={isLive}
         setIsLive={setIsLive}
         showBinSize={false}
+        useCardWrapper={true}
       />
 
-      {/* Event table */}
-      <EventTable
-        domain={domain}
-        selectedCamera={selectedCamera}
-        selectedVehicleTypes={selectedVehicleTypes}
-      />
+      {/* Wrap table in an overflow-x container to allow horizontal scroll if it’s too wide */}
+      <div className="mt-4 overflow-x-auto">
+        <EventTable
+          domain={domain}
+          selectedCamera={selectedCamera}
+          selectedVehicleTypes={selectedVehicleTypes}
+        />
+      </div>
     </div>
   );
 }

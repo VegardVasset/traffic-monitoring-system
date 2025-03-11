@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import FilterPanel from "@/components/shared/filterPanel";
 import PeriodFilter from "@/components/shared/periodFilter";
-import EventSummary from "@/components/shared/eventSummary";
+import EventSummary from "@/components/shared/eventCount";
+import { MOBILE_MAX_WIDTH } from "@/config/config";
 import TimeSeriesChart from "@/components/shared/charts/timeSeriesChart";
 import VehicleDistributionChart from "@/components/shared/charts/vehicleDistributionChart";
-
-// ShadCN UI components:
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { UnifiedLegend } from "@/components/shared/unifiedLegend";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -31,8 +31,7 @@ export interface BaseEvent {
 
 interface OverviewTemplateProps {
   domainTitle: string;
-  defaultBinSize?: "hour" | "day" | "week";
-  /** Adding the children prop so TS recognizes it. */
+  defaultBinSize?: "hour" | "day" | "week" | "month";
   children?: React.ReactNode;
 }
 
@@ -41,24 +40,18 @@ export default function OverviewTemplate({
   defaultBinSize = "day",
   children,
 }: OverviewTemplateProps) {
-  // Use the centralized data from DataContext.
   const { data, loading, isLive, setIsLive } = useData();
 
-  // Local UI state for filters and bin size.
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
-  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>(
-    []
-  );
-  const [binSize, setBinSize] = useState<"hour" | "day" | "week">(
-    defaultBinSize
-  );
+  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
+  const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">(defaultBinSize);
 
-  // Date range: from 1 month ago to today.
+  // Default date range: 1 week ago until today
   const today = new Date().toISOString().substring(0, 10);
-  const oneMonthAgo = new Date(new Date().setMonth(new Date().getMonth() - 1))
+  const oneWeekAgo = new Date(new Date().setDate(new Date().getDate() - 7))
     .toISOString()
     .substring(0, 10);
-  const [startDate, setStartDate] = useState<string>(oneMonthAgo);
+  const [startDate, setStartDate] = useState<string>(oneWeekAgo);
   const [endDate, setEndDate] = useState<string>(today);
 
   const handlePeriodChange = useCallback((start: string, end: string) => {
@@ -66,7 +59,6 @@ export default function OverviewTemplate({
     setEndDate(end);
   }, []);
 
-  // Derive unique vehicle types and cameras from the provided data.
   const derivedVehicleTypes = useMemo(() => {
     const types = new Set<string>();
     data.forEach((event) => types.add(event.vehicleType));
@@ -81,157 +73,148 @@ export default function OverviewTemplate({
     return Array.from(cams, ([id, name]) => ({ id, name }));
   }, [data]);
 
-  // Apply filtering based on date range, selected camera, and vehicle types.
   const filteredData = useMemo(() => {
     return data.filter((event) => {
       const eventDate = event.creationTime.substring(0, 10);
       const withinDateRange = eventDate >= startDate && eventDate <= endDate;
-      const matchCamera =
-        selectedCamera === "all" || event.camera === selectedCamera;
+      const matchCamera = selectedCamera === "all" || event.camera === selectedCamera;
       const matchVehicle =
-        selectedVehicleTypes.length === 0 ||
-        selectedVehicleTypes.includes(event.vehicleType);
-
+        selectedVehicleTypes.length === 0 || selectedVehicleTypes.includes(event.vehicleType);
       return withinDateRange && matchCamera && matchVehicle;
     });
   }, [data, selectedCamera, selectedVehicleTypes, startDate, endDate]);
 
-  // Mobile filter drawer state.
+  const filteredVehicleTypes = useMemo(() => {
+    const types = new Set<string>();
+    filteredData.forEach((event) => types.add(event.vehicleType));
+    return Array.from(types);
+  }, [filteredData]);
+
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < MOBILE_MAX_WIDTH); 
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   if (loading && !isLive) {
     return <p className="text-gray-500">Loading {domainTitle} data...</p>;
   }
 
   return (
-    <div className="px-0 md:px-6 py-4 md:py-6 w-full">
-      <h1 className="text-2xl md:text-3xl font-bold mb-4">
-        {domainTitle} Overview
-      </h1>
+    <div className="px-2 md:px-4 py-2 md:py-4 w-full">
+      {/* TITLE + MOBILE FILTER BUTTON */}
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4">
+          {domainTitle} Overview
+        </h1>
+        <div className="block lg:hidden">
+          <Button variant="outline" onClick={() => setMobileFilterOpen(true)}>
+            Open Filters
+          </Button>
+        </div>
+      </div>
 
-      {/* ===================== Desktop Filters ===================== */}
-      <div className="hidden md:block">
-        <div className="flex flex-col md:flex-row gap-6 mb-6">
-          {/* Date Range Card */}
-          <Card className="w-full md:max-w-md">
-            <CardHeader>
-              <CardTitle>Date Range</CardTitle>
-            </CardHeader>
-            <CardContent>
+      {/* PERIOD, EVENT SUMMARY, FILTER PANEL ROW */}
+      <div className="flex flex-wrap items-start gap-4 mb-4">
+        <Card className="p-3 max-w-sm w-full hidden lg:block">
+          <PeriodFilter
+            startDate={startDate}
+            endDate={endDate}
+            onChange={handlePeriodChange}
+          />
+        </Card>
+        <Card className="p-3 max-w-sm w-full hidden lg:block">
+          <EventSummary count={filteredData.length} />
+        </Card>
+        <Card className="p-3 hidden lg:block">
+          <FilterPanel
+            cameras={derivedCameras}
+            selectedCamera={selectedCamera}
+            setSelectedCamera={setSelectedCamera}
+            vehicleTypes={derivedVehicleTypes}
+            selectedVehicleTypes={selectedVehicleTypes}
+            setSelectedVehicleTypes={setSelectedVehicleTypes}
+            binSize={binSize}
+            setBinSize={setBinSize}
+            isLive={isLive}
+            setIsLive={setIsLive}
+            showLiveButton={false}
+          />
+        </Card>
+      </div>
+
+      {/* MOBILE FILTER SHEET */}
+      <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
+        <SheetContent side="right" className="w-[85%] sm:w-[360px] p-2 text-xs">
+          <SheetHeader>
+            <SheetTitle>{domainTitle} Filters</SheetTitle>
+          </SheetHeader>
+          <Card className="p-4 mt-4">
+            <div className="flex flex-col gap-4 w-full">
+              <FilterPanel
+                cameras={derivedCameras}
+                selectedCamera={selectedCamera}
+                setSelectedCamera={setSelectedCamera}
+                vehicleTypes={derivedVehicleTypes}
+                selectedVehicleTypes={selectedVehicleTypes}
+                setSelectedVehicleTypes={setSelectedVehicleTypes}
+                binSize={binSize}
+                setBinSize={setBinSize}
+                isLive={isLive}
+                setIsLive={setIsLive}
+                showLiveButton={false}
+              />
+
               <PeriodFilter
                 startDate={startDate}
                 endDate={endDate}
                 onChange={handlePeriodChange}
               />
-            </CardContent>
-          </Card>
 
-          {/* Event Summary Card */}
-          <Card className="w-full md:max-w-md">
-            <CardHeader>
-              <CardTitle>Passings for chosen period</CardTitle>
-            </CardHeader>
-            <CardContent>
               <EventSummary count={filteredData.length} />
-            </CardContent>
+            </div>
           </Card>
-        </div>
-
-        {/* Filter Panel */}
-        <FilterPanel
-          cameras={derivedCameras}
-          selectedCamera={selectedCamera}
-          setSelectedCamera={setSelectedCamera}
-          vehicleTypes={derivedVehicleTypes}
-          selectedVehicleTypes={selectedVehicleTypes}
-          setSelectedVehicleTypes={setSelectedVehicleTypes}
-          binSize={binSize}
-          setBinSize={setBinSize}
-          isLive={isLive}
-          setIsLive={setIsLive}
-          showLiveButton={false}
-        />
-      </div>
-
-      {/* ===================== Mobile Drawer Trigger ===================== */}
-      <div className="block md:hidden mb-4">
-        <Button variant="outline" onClick={() => setMobileFilterOpen(true)}>
-          Open Filters
-        </Button>
-      </div>
-
-      {/* ===================== Mobile Drawer Content ===================== */}
-      <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
-        <SheetContent side="right" className="w-[85%] sm:w-[400px]">
-          <SheetHeader>
-            <SheetTitle>{domainTitle} Filters</SheetTitle>
-          </SheetHeader>
-
-          <div className="mt-4 space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Date Range</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <PeriodFilter
-                  startDate={startDate}
-                  endDate={endDate}
-                  onChange={handlePeriodChange}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Passings for chosen period</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <EventSummary count={filteredData.length} />
-              </CardContent>
-            </Card>
-
-            <FilterPanel
-              cameras={derivedCameras}
-              selectedCamera={selectedCamera}
-              setSelectedCamera={setSelectedCamera}
-              vehicleTypes={derivedVehicleTypes}
-              selectedVehicleTypes={selectedVehicleTypes}
-              setSelectedVehicleTypes={setSelectedVehicleTypes}
-              binSize={binSize}
-              setBinSize={setBinSize}
-              isLive={isLive}
-              setIsLive={setIsLive}
-              showLiveButton={false}
-            />
-          </div>
-
           <div className="mt-4">
             <SheetClose asChild>
               <Button variant="outline">Close</Button>
             </SheetClose>
           </div>
         </SheetContent>
-
         <SheetTrigger asChild>
           <div />
         </SheetTrigger>
       </Sheet>
 
-      {/* ===================== Charts ===================== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-        <div className="bg-white shadow rounded-lg p-4 overflow-hidden h-auto md:min-h-[600px] xl:min-h-[700px]">
-          <TimeSeriesChart data={filteredData} binSize={binSize} />
+      {/* SINGLE LEGEND */}
+      <UnifiedLegend vehicleTypes={filteredVehicleTypes} />
+
+      {/* CHARTS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
+        <div
+          className="relative w-full"
+          style={{ aspectRatio: isMobile ? "1 / 1.5" : "1 / 1" }}
+        >
+          <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
+            <TimeSeriesChart data={filteredData} binSize={binSize} />
+          </div>
         </div>
         <div
-          className="bg-white shadow rounded-lg  p-2 overflow-hidden 
-                min-h-[300px] md:min-h-[400px] xl:min-h-[700px]"
+          className="relative w-full"
+          style={{ aspectRatio: isMobile ? "1 / 1.5" : "1 / 1" }}
         >
-          <VehicleDistributionChart data={filteredData} />
+          <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
+            <VehicleDistributionChart data={filteredData} />
+          </div>
         </div>
       </div>
 
-      {/* Render children (e.g., TireConditionChart) if provided */}
-      {children && <div className="mt-6">{children}</div>}
+      {children && <div className="mt-4">{children}</div>}
     </div>
   );
 }

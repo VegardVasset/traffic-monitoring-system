@@ -2,6 +2,7 @@
 
 import { NavItem } from "@/components/layout/sidebar";
 import { CameraIcon, ChartBarSquareIcon, TruckIcon } from "@heroicons/react/24/outline";
+import  {GiCarWheel} from "react-icons/gi";
 import React from "react";
 
 export interface DomainConfig {
@@ -64,11 +65,6 @@ export const domainConfigs: Record<string, DomainConfig> = {
         href: "/tires/events",
         icon: React.createElement(TruckIcon, { className: "w-6 h-6" }),
       },
-      {
-        label: "Cameras",
-        href: "/tires/cameras",
-        icon: React.createElement(CameraIcon, { className: "w-6 h-6" }),
-      }
     ],
   },
 };

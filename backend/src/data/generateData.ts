@@ -45,9 +45,29 @@ function getRandomPassengerCount(): number {
   return faker.number.int({ min: 1, max: 5 });
 }
 
-function getRandomTireType(): "Sommerdekk" | "Vinterdekk" {
-  return Math.random() < 0.5 ? "Sommerdekk" : "Vinterdekk";
+function getRandomTireType(timestamp: string): "Sommerdekk" | "Vinterdekk" {
+  const date = new Date(timestamp);
+  const month = date.getMonth() + 1; // JavaScript months are 0-based
+
+  let winterProbability = 0;
+
+  if (month >= 12 || month <= 2) {
+    // Winter months (December, January, February) → ~100% winter tires
+    winterProbability = 0.95;
+  } else if (month >= 6 && month <= 8) {
+    // Summer months (June, July, August) → ~100% summer tires
+    winterProbability = 0.05;
+  } else if (month >= 3 && month <= 5) {
+    // Transition Spring: Gradually decrease winter tires
+    winterProbability = 0.9 - (month - 3) * 0.3; // 90% → 60% → 30%
+  } else if (month >= 9 && month <= 11) {
+    // Transition Autumn: Gradually increase winter tires
+    winterProbability = 0.3 + (month - 9) * 0.3; // 30% → 60% → 90%
+  }
+
+  return Math.random() < winterProbability ? "Vinterdekk" : "Sommerdekk";
 }
+
 
 function getRandomTimestamp(): string {
   const start = new Date();
@@ -132,7 +152,7 @@ export function generateMockData(
     };
 
     if (entityType === "tires") {
-      record.tireType = getRandomTireType();
+      record.tireType = getRandomTireType(creationTime);
       record.tireCondition = getRandomTireCondition();
     }
 
