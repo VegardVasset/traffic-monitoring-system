@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState} from "react";
 import dynamic from "next/dynamic";
 import { useData } from "@/context/DataContext";
 import {
@@ -27,6 +27,7 @@ const Marker = dynamic(
   () => import("react-leaflet").then((mod) => mod.Marker),
   { ssr: false }
 );
+
 
 interface LargeMapModalProps {
   center: { lat: number; lng: number };
@@ -76,9 +77,9 @@ export default function CameraTemplate({ domain }: CameraTemplateProps) {
   const [selectedLocation, setSelectedLocation] =
     useState<{ lat: number; lng: number } | null>(null);
 
-  // Aggregate cameras + passings count
+  // Aggregate cameras + passings count.
   const cameraRows: CameraRow[] = useMemo(() => {
-    // Build a map: cameraName -> passings
+    // Build a map: cameraName -> passings.
     const cameraMap = new Map<string, number>();
 
     data.forEach((event) => {
@@ -88,7 +89,7 @@ export default function CameraTemplate({ domain }: CameraTemplateProps) {
       }
     });
 
-    // Convert to an array of {cameraName, passings}
+    // Convert to an array of {cameraName, passings}.
     return Array.from(cameraMap.entries()).map(([cameraName, passings]) => ({
       cameraName,
       passings,
@@ -100,7 +101,9 @@ export default function CameraTemplate({ domain }: CameraTemplateProps) {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">{domain.toUpperCase()} Cameras</h1>
+      <h1 className="text-2xl font-bold mb-4">
+        {domain.toUpperCase()} Cameras
+      </h1>
       <div className="p-4 bg-white shadow rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
