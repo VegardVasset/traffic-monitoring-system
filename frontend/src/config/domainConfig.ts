@@ -65,6 +65,16 @@ export const domainConfigs: Record<string, DomainConfig> = {
         href: "/tires/events",
         icon: React.createElement(TruckIcon, { className: "w-6 h-6" }),
       },
+      {
+        label: "Cameras",
+        href: "/tires/cameras",
+        icon: React.createElement(CameraIcon, { className: "w-6 h-6" }),
+      },
+      {
+        label: "Tire Analysis",
+        href: "/tires/analysis",
+        icon: React.createElement(GiCarWheel, { className: "w-6 h-6" }),
+      },
     ],
   },
 };
