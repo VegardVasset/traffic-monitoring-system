@@ -1,7 +1,7 @@
 // src/config/domainConfig.ts
 
 import { NavItem } from "@/components/layout/sidebar";
-import { ChartBarSquareIcon, TruckIcon } from "@heroicons/react/24/outline";
+import { CameraIcon, ChartBarSquareIcon, TruckIcon } from "@heroicons/react/24/outline";
 import  {GiCarWheel} from "react-icons/gi";
 import React from "react";
 
@@ -25,7 +25,11 @@ export const domainConfigs: Record<string, DomainConfig> = {
         href: "/dts/events",
         icon: React.createElement(TruckIcon, { className: "w-6 h-6" }),
       },
-      // ...add more items as needed
+      {
+        label: "Cameras",
+        href: "/dts/cameras",
+        icon: React.createElement(CameraIcon, { className: "w-6 h-6" }),
+      }
     ],
   },
   ferry: {
@@ -41,6 +45,11 @@ export const domainConfigs: Record<string, DomainConfig> = {
         href: "/ferry/events",
         icon: React.createElement(TruckIcon, { className: "w-6 h-6" }),
       },
+      {
+        label: "Cameras",
+        href: "/ferry/cameras",
+        icon: React.createElement(CameraIcon, { className: "w-6 h-6" }),
+      }
     ],
   },
   tires: {
@@ -55,6 +64,11 @@ export const domainConfigs: Record<string, DomainConfig> = {
         label: "Passings",
         href: "/tires/events",
         icon: React.createElement(TruckIcon, { className: "w-6 h-6" }),
+      },
+      {
+        label: "Cameras",
+        href: "/tires/cameras",
+        icon: React.createElement(CameraIcon, { className: "w-6 h-6" }),
       },
       {
         label: "Tire Analysis",
