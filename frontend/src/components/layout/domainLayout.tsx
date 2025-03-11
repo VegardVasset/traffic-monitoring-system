@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, ReactNode } from "react";
-import Sidebar, { NavItem } from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
+import Sidebar, { NavItem } from "@/components/layout/sidebar";
 
 interface DomainLayoutProps {
   // Domain-specific nav items, e.g. Overview, Passings, Cameras
@@ -15,20 +15,23 @@ export default function DomainLayout({ navItems, children }: DomainLayoutProps) 
 
   return (
     <div className="relative min-h-screen">
-      {/* Header with top-level nav (Ferry, DTS, Tires) and hamburger to open domain sidebar */}
+      {/* 1) Header with top-level nav (Ferry, DTS, Tires) + hamburger */}
       <Header onOpenSidebar={() => setSidebarOpen(true)} />
 
-      {/* Domain sidebar (mini on desktop, overlay on mobile/expanded) */}
+      {/* 2) Domain sidebar: mini on desktop, slide-out overlay if sidebarOpen */}
       <Sidebar
         navItems={navItems}
         open={sidebarOpen}
-        onOpen={() => setSidebarOpen(true)}
         onClose={() => setSidebarOpen(false)}
-        miniBarWidth={16} // 16 => w-16 => 64px
+        miniBarWidth={16} // => w-16 => 64px
       />
 
-      {/* Main content offset by header (pt-16) and sidebar (md:ml-16) */}
-      <main className="pt-16 md:ml-16">{children}</main>
+      {/* 3) Main content offset:
+          - pt-16 for the fixed header
+          - md:pl-16 for the mini sidebar on desktop */}
+      <main className="pt-16 md:pl-16">
+        {children}
+      </main>
     </div>
   );
 }

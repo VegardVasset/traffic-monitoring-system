@@ -8,7 +8,7 @@ interface HeaderProps {
 }
 
 export default function Header({ onOpenSidebar }: HeaderProps) {
-  // Hard-coded top-level nav (Ferry, DTS, Tires), always visible
+  // Hard-coded top-level nav
   const topLevelNav = [
     { label: "Ferry Counter", href: "/ferry" },
     { label: "Detailed Traffic Statistics", href: "/dts" },
@@ -23,7 +23,7 @@ export default function Header({ onOpenSidebar }: HeaderProps) {
       )}
     >
       <div className="flex items-center justify-between px-4 h-full">
-        {/* Hamburger (visible on all screen sizes) to open domain sidebar */}
+        {/* Hamburger (visible at all sizes) */}
         <button
           onClick={onOpenSidebar}
           className="p-2 rounded hover:bg-gray-100 focus:outline-none"
@@ -37,15 +37,15 @@ export default function Header({ onOpenSidebar }: HeaderProps) {
             stroke="currentColor"
             className="w-6 h-6"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3.75 5.25h16.5m-16.5 6h16.5m-16.5 6h16.5"
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              d="M3.75 5.25h16.5m-16.5 6h16.5m-16.5 6h16.5" 
             />
           </svg>
         </button>
 
-        {/* Top-level nav (Ferry, DTS, Tires) */}
+        {/* Top-level nav (Ferry, DTS, Tires) on all screen sizes */}
         <nav className="flex items-center space-x-4">
           {topLevelNav.map((item) => (
             <Link key={item.href} href={item.href}>
