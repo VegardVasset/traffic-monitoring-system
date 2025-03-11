@@ -9,8 +9,8 @@
     "start": "node dist/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "engines" : {
-    "node" : "22.x"
+  "engines": {
+    "node": "22.x"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +21,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "react-leaflet": "^5.0.0",
     "uuid": "^11.0.5",
     "ws": "^8.18.0"
   },
@@ -28,9 +29,10 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.13.4",
+    "@types/react-leaflet": "^2.8.3",
     "@types/ws": "^8.5.14",
-    "socket.io": "^4.8.1",
     "nodemon": "^3.1.9",
+    "socket.io": "^4.8.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
   }
