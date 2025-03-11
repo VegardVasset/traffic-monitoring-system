@@ -53,6 +53,8 @@ interface FilterPanelProps {
   showLiveButton?: boolean;
   /** Whether to wrap in a Card */
   useCardWrapper?: boolean;
+  /** Callback to trigger a data refetch (optional, not used by default) */
+  onRefetch?: () => void;
 }
 
 export default function FilterPanel({
@@ -69,6 +71,7 @@ export default function FilterPanel({
   showBinSize = true,
   showLiveButton = true,
   useCardWrapper = false,
+  onRefetch,
 }: FilterPanelProps) {
   const [vehiclePopoverOpen, setVehiclePopoverOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -107,7 +110,6 @@ export default function FilterPanel({
   const content = (
     <div className="text-xs">
       <div className="mb-1 font-bold">Filters</div>
-
       <div className="flex flex-wrap gap-1">
         <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
           <Label htmlFor="camera-select" className="whitespace-nowrap text-xs">
@@ -208,7 +210,7 @@ export default function FilterPanel({
             <Select
               value={binSize}
               onValueChange={(val) =>
-                setBinSize(val as "hour" | "day" | "week")
+                setBinSize(val as "hour" | "day" | "week" | "month")
               }
             >
               <SelectTrigger
@@ -222,7 +224,6 @@ export default function FilterPanel({
                 <SelectItem value="day">Daily</SelectItem>
                 <SelectItem value="week">Weekly</SelectItem>
                 <SelectItem value="month">Monthly</SelectItem>
-
               </SelectContent>
             </Select>
           </div>
@@ -245,6 +246,5 @@ export default function FilterPanel({
     </div>
   );
 
-  // Optionally wrap content in a Card, but reduce padding
   return useCardWrapper ? <Card className="p-2 mb-4">{content}</Card> : content;
 }

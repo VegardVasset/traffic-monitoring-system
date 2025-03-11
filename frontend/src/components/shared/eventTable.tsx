@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -12,14 +12,6 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from "@/components/ui/table";
 import { ArrowUp, ArrowDown, ArrowUpDown, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +20,16 @@ import {
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
 import { useData } from "@/context/DataContext";
+import { useAnalytics } from "@/context/analyticsContext";
 
 export interface Event {
   id: number;
@@ -48,6 +49,7 @@ interface EventTableProps {
   selectedVehicleTypes: string[];
 }
 
+/** Dynamically generate column definitions based on the domain */
 const getColumns = (domain: string): ColumnDef<Event>[] => {
   const baseColumns: ColumnDef<Event>[] = [
     {
@@ -84,10 +86,14 @@ const getColumns = (domain: string): ColumnDef<Event>[] => {
     {
       accessorKey: "confidenceScore",
       header: "Confidence",
-      cell: (info) => `${((info.getValue() as number) * 100).toFixed(2)}%`,
+      cell: (info) => {
+        const value = info.getValue() as number;
+        return `${(value * 100).toFixed(2)}%`;
+      },
     },
   ];
 
+  // If domain is "tires", add tire-specific columns
   if (domain === "tires") {
     baseColumns.push(
       {
@@ -103,6 +109,7 @@ const getColumns = (domain: string): ColumnDef<Event>[] => {
     );
   }
 
+  // If domain is "ferry", add passenger count column
   if (domain === "ferry") {
     baseColumns.push({
       accessorKey: "passengerCount",
@@ -119,9 +126,13 @@ export default function EventTable({
   selectedCamera,
   selectedVehicleTypes,
 }: EventTableProps) {
-  const { data, loading, error } = useData();
+  const { data, loading, error, lastUpdateArrivalTime } = useData();
+  const { logEvent } = useAnalytics();
 
-  // Filter data based on selectedCamera and selectedVehicleTypes
+  // Keep track of the last arrival time we already logged
+  const lastLoggedArrivalRef = useRef<number | null>(null);
+
+  // Filter data based on user selections
   const filteredData = useMemo(() => {
     let dataArr = data as Event[];
     if (selectedCamera !== "all") {
@@ -135,6 +146,19 @@ export default function EventTable({
     return dataArr;
   }, [data, selectedCamera, selectedVehicleTypes]);
 
+  // Measure live mode latency: time from data arrival -> table render
+  useEffect(() => {
+    if (lastUpdateArrivalTime && lastUpdateArrivalTime !== lastLoggedArrivalRef.current) {
+      const now = performance.now();
+      const latency = now - lastUpdateArrivalTime;
+      logEvent("Live mode latency", { latency, dataLength: filteredData.length });
+      console.log(`Live mode latency: ${latency.toFixed(2)} ms`);
+
+      lastLoggedArrivalRef.current = lastUpdateArrivalTime;
+    }
+  }, [filteredData, lastUpdateArrivalTime, logEvent]);
+
+  // Set up table state
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
@@ -156,12 +180,17 @@ export default function EventTable({
     enableRowSelection: true,
   });
 
-  if (loading) return <p className="text-gray-500">Loading events...</p>;
-  if (error) return <p className="text-red-500">Error: {error}</p>;
+  if (loading) {
+    return <p className="text-gray-500">Loading events...</p>;
+  }
+  if (error) {
+    return <p className="text-red-500">Error: {error}</p>;
+  }
 
   return (
     <div className="w-full bg-white shadow rounded-lg">
-      <div className="flex items-center py-1 sm:py:4 px-1 sm:px-4">
+      {/* Table header */}
+      <div className="flex items-center py-1 sm:py-4 px-1 sm:px-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto text-xs px-2">
@@ -183,7 +212,6 @@ export default function EventTable({
         </DropdownMenu>
       </div>
 
-      {/* Overflow container for the actual table */}
       <div className="overflow-x-auto w-full">
         <Table className="w-full table-auto">
           <TableHeader>
@@ -240,10 +268,11 @@ export default function EventTable({
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
       <div className="flex items-center justify-between gap-2 sm:items-center p-2 sm:p-4 text-xs sm:text-sm">
         <div className="text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {filteredData.length} row(s) selected.
+          {table.getFilteredSelectedRowModel().rows.length} of {filteredData.length} row(s) selected.
         </div>
         <div className="flex space-x-1 sm:space-x-2">
           <Button

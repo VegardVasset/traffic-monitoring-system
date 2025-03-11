@@ -37,6 +37,11 @@ export default function Header() {
             label="Tire Scanner"
             active={pathname.startsWith("/tires")}
           />
+           <NavLink
+            href="/analytics"
+            label="Analytics"
+            active={pathname.startsWith("/analytics")}
+          />
         </nav>
       </div>
     </header>
