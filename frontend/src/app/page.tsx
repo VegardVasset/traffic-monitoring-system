@@ -4,6 +4,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 export default function Page() {
   // Which card (if any) is currently expanded; null = none
@@ -57,13 +58,30 @@ thorough inspections.
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-blue-50 to-blue-100 p-6">
-      {/* Fading Header */}
+      {/* Hero Section with Large Logos & Heading */}
       <header className="text-center max-w-4xl mx-auto py-10">
-        <motion.h1
-          className="text-4xl md:text-5xl font-extrabold text-gray-800 mb-4"
+        {/* Fade in the logos first */}
+        <motion.div
+          className="flex flex-col items-center justify-center"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
+        >
+          <Image
+            src="/countin-hero-logo-small.webp"
+            alt="Countin Hero Logo"
+            width={500}
+            height={600}
+            className="object-contain"
+          />
+        </motion.div>
+
+        {/* Headline & Subheading */}
+        <motion.h1
+          className="text-4xl md:text-5xl font-extrabold text-gray-800 mb-4 mt-8"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.1 }}
         >
           Welcome to the Traffic Monitoring Dashboard
         </motion.h1>
@@ -71,7 +89,7 @@ thorough inspections.
           className="text-lg md:text-xl text-gray-600"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.2 }}
+          transition={{ duration: 0.7, delay: 0.3 }}
         >
           Efficient, real-time insights into traffic patterns, vehicle monitoring,
           and ferry passenger counts.

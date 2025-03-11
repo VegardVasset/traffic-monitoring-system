@@ -1,64 +1,65 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils"; // Or your own utility for conditionally joining classes
+import { cn } from "@/lib/utils";
 
-export default function Header() {
-  const pathname = usePathname();
+interface HeaderProps {
+  onOpenSidebar?: () => void; // opens the domain sidebar overlay
+}
 
-  // If your domain pages are /dts, /ferry, /tires, etc.,
-  // and each has a sidebar, we consider them "hasSidebar" pages.
-  const domainRoutes = ["/dts", "/ferry", "/tires"];
-  const hasSidebar = domainRoutes.some((route) => pathname.startsWith(route));
+export default function Header({ onOpenSidebar }: HeaderProps) {
+  // Hard-coded top-level nav (Ferry, DTS, Tires), always visible
+  const topLevelNav = [
+    { label: "Ferry Counter", href: "/ferry" },
+    { label: "Detailed Traffic Statistics", href: "/dts" },
+    { label: "Tire Scanner", href: "/tires" },
+  ];
 
   return (
     <header
-      // Condition: add ml-16 only if it's a "sidebar" route
       className={cn(
-        "bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white shadow-lg",
-        hasSidebar ? "ml-16" : ""
+        "fixed top-0 left-0 w-full h-16 z-50 shadow-sm border-b border-gray-200",
+        "bg-white text-gray-800"
       )}
     >
-      <div className="container mx-auto px-4 py-3 flex items-center justify-center">
-        <nav className="flex items-center space-x-4 md:space-x-6">
-          <NavLink
-            href="/ferry"
-            label="Ferry Counter"
-            active={pathname.startsWith("/ferry")}
-          />
-          <NavLink
-            href="/dts"
-            label="Detailed Traffic Statistics"
-            active={pathname.startsWith("/dts")}
-          />
-          <NavLink
-            href="/tires"
-            label="Tire Scanner"
-            active={pathname.startsWith("/tires")}
-          />
+      <div className="flex items-center justify-between px-4 h-full">
+        {/* Hamburger (visible on all screen sizes) to open domain sidebar */}
+        <button
+          onClick={onOpenSidebar}
+          className="p-2 rounded hover:bg-gray-100 focus:outline-none"
+          aria-label="Open domain sidebar"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="w-6 h-6"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3.75 5.25h16.5m-16.5 6h16.5m-16.5 6h16.5"
+            />
+          </svg>
+        </button>
+
+        {/* Top-level nav (Ferry, DTS, Tires) */}
+        <nav className="flex items-center space-x-4">
+          {topLevelNav.map((item) => (
+            <Link key={item.href} href={item.href}>
+              <span
+                className={cn(
+                  "px-3 py-2 rounded-md font-medium text-gray-700 hover:bg-gray-200 hover:text-gray-900 transition-colors"
+                )}
+              >
+                {item.label}
+              </span>
+            </Link>
+          ))}
         </nav>
       </div>
     </header>
-  );
-}
-
-interface NavLinkProps {
-  href: string;
-  label: string;
-  active: boolean;
-}
-
-function NavLink({ href, label, active }: NavLinkProps) {
-  return (
-    <Link href={href}>
-      <span
-        className={`px-0 py-0 md:px-4 md:py-2 rounded transition-colors ${
-          active ? "bg-blue-600 text-white font-semibold" : "hover:bg-white/10"
-        }`}
-      >
-        {label}
-      </span>
-    </Link>
   );
 }
