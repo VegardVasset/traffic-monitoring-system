@@ -3,13 +3,11 @@
 import React, { useCallback, useMemo, useState, useEffect } from "react";
 import FilterPanel from "@/components/shared/filterPanel";
 import PeriodFilter from "@/components/shared/periodFilter";
-import EventSummary from "@/components/shared/eventSummary";
+import EventSummary from "@/components/shared/eventCount";
+import { MOBILE_MAX_WIDTH } from "@/config/config";
 import TimeSeriesChart from "@/components/shared/charts/timeSeriesChart";
 import VehicleDistributionChart from "@/components/shared/charts/vehicleDistributionChart";
-import { UnifiedLegend } from "@/components/shared/unifiedLegend"; // import your new component
-
-
-// ShadCN UI components
+import { UnifiedLegend } from "@/components/shared/unifiedLegend";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,7 +31,7 @@ export interface BaseEvent {
 
 interface OverviewTemplateProps {
   domainTitle: string;
-  defaultBinSize?: "hour" | "day" | "week";
+  defaultBinSize?: "hour" | "day" | "week" | "month";
   children?: React.ReactNode;
 }
 
@@ -42,20 +40,18 @@ export default function OverviewTemplate({
   defaultBinSize = "day",
   children,
 }: OverviewTemplateProps) {
-  // Data from context
   const { data, loading, isLive, setIsLive } = useData();
 
-  // Local state for filters
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
   const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
-  const [binSize, setBinSize] = useState<"hour" | "day" | "week">(defaultBinSize);
+  const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">(defaultBinSize);
 
-  // Default date range: 1 month ago until today
+  // Default date range: 1 week ago until today
   const today = new Date().toISOString().substring(0, 10);
-  const oneMonthAgo = new Date(new Date().setMonth(new Date().getMonth() - 1))
+  const oneWeekAgo = new Date(new Date().setDate(new Date().getDate() - 7))
     .toISOString()
     .substring(0, 10);
-  const [startDate, setStartDate] = useState<string>(oneMonthAgo);
+  const [startDate, setStartDate] = useState<string>(oneWeekAgo);
   const [endDate, setEndDate] = useState<string>(today);
 
   const handlePeriodChange = useCallback((start: string, end: string) => {
@@ -63,7 +59,6 @@ export default function OverviewTemplate({
     setEndDate(end);
   }, []);
 
-  // Derive unique vehicle types and cameras
   const derivedVehicleTypes = useMemo(() => {
     const types = new Set<string>();
     data.forEach((event) => types.add(event.vehicleType));
@@ -78,37 +73,29 @@ export default function OverviewTemplate({
     return Array.from(cams, ([id, name]) => ({ id, name }));
   }, [data]);
 
-  // Filter the data
   const filteredData = useMemo(() => {
     return data.filter((event) => {
       const eventDate = event.creationTime.substring(0, 10);
       const withinDateRange = eventDate >= startDate && eventDate <= endDate;
-      const matchCamera =
-        selectedCamera === "all" || event.camera === selectedCamera;
+      const matchCamera = selectedCamera === "all" || event.camera === selectedCamera;
       const matchVehicle =
-        selectedVehicleTypes.length === 0 ||
-        selectedVehicleTypes.includes(event.vehicleType);
+        selectedVehicleTypes.length === 0 || selectedVehicleTypes.includes(event.vehicleType);
       return withinDateRange && matchCamera && matchVehicle;
     });
   }, [data, selectedCamera, selectedVehicleTypes, startDate, endDate]);
 
-  // 6) Derive ONLY the vehicle types present in filtered data (for legend)
   const filteredVehicleTypes = useMemo(() => {
     const types = new Set<string>();
-    filteredData.forEach((event) => {
-      types.add(event.vehicleType);
-    });
+    filteredData.forEach((event) => types.add(event.vehicleType));
     return Array.from(types);
   }, [filteredData]);
 
-  // Mobile drawer state
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
-  // Add mobile detection state
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 550); // adjust breakpoint as needed
+      setIsMobile(window.innerWidth < MOBILE_MAX_WIDTH); 
     };
     handleResize();
     window.addEventListener("resize", handleResize);
@@ -121,12 +108,11 @@ export default function OverviewTemplate({
 
   return (
     <div className="px-2 md:px-4 py-2 md:py-4 w-full">
-      {/* =============== TITLE + MOBILE FILTER BUTTON =============== */}
+      {/* TITLE + MOBILE FILTER BUTTON */}
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-base md:text-2xl font-bold">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4">
           {domainTitle} Overview
         </h1>
-        {/* Mobile button to open the filter sheet (hidden on desktop) */}
         <div className="block lg:hidden">
           <Button variant="outline" onClick={() => setMobileFilterOpen(true)}>
             Open Filters
@@ -134,9 +120,8 @@ export default function OverviewTemplate({
         </div>
       </div>
 
-      {/* =============== PERIOD, EVENT SUMMARY, FILTER PANEL ROW =============== */}
+      {/* PERIOD, EVENT SUMMARY, FILTER PANEL ROW */}
       <div className="flex flex-wrap items-start gap-4 mb-4">
-        {/* Period Filter Card */}
         <Card className="p-3 max-w-sm w-full hidden lg:block">
           <PeriodFilter
             startDate={startDate}
@@ -144,13 +129,9 @@ export default function OverviewTemplate({
             onChange={handlePeriodChange}
           />
         </Card>
-
-        {/* Event Summary Card */}
         <Card className="p-3 max-w-sm w-full hidden lg:block">
           <EventSummary count={filteredData.length} />
         </Card>
-
-        {/* FilterPanel Card (desktop only, pinned to the right) */}
         <Card className="p-3 hidden lg:block">
           <FilterPanel
             cameras={derivedCameras}
@@ -168,16 +149,14 @@ export default function OverviewTemplate({
         </Card>
       </div>
 
-      {/* =============== MOBILE FILTER SHEET =============== */}
+      {/* MOBILE FILTER SHEET */}
       <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
         <SheetContent side="right" className="w-[85%] sm:w-[360px] p-2 text-xs">
           <SheetHeader>
             <SheetTitle>{domainTitle} Filters</SheetTitle>
           </SheetHeader>
-
           <Card className="p-4 mt-4">
             <div className="flex flex-col gap-4 w-full">
-              {/* FilterPanel */}
               <FilterPanel
                 cameras={derivedCameras}
                 selectedCamera={selectedCamera}
@@ -192,18 +171,15 @@ export default function OverviewTemplate({
                 showLiveButton={false}
               />
 
-              {/* PeriodFilter */}
               <PeriodFilter
                 startDate={startDate}
                 endDate={endDate}
                 onChange={handlePeriodChange}
               />
 
-              {/* EventSummary */}
               <EventSummary count={filteredData.length} />
             </div>
           </Card>
-
           <div className="mt-4">
             <SheetClose asChild>
               <Button variant="outline">Close</Button>
@@ -214,11 +190,12 @@ export default function OverviewTemplate({
           <div />
         </SheetTrigger>
       </Sheet>
-      {/* =============== SINGLE LEGEND FOR BOTH CHARTS =============== */}
+
+      {/* SINGLE LEGEND */}
       <UnifiedLegend vehicleTypes={filteredVehicleTypes} />
-      {/* =============== CHARTS =============== */}
+
+      {/* CHARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
-        {/* TimeSeriesChart Container */}
         <div
           className="relative w-full"
           style={{ aspectRatio: isMobile ? "1 / 1.5" : "1 / 1" }}
@@ -227,8 +204,6 @@ export default function OverviewTemplate({
             <TimeSeriesChart data={filteredData} binSize={binSize} />
           </div>
         </div>
-
-        {/* VehicleDistributionChart Container */}
         <div
           className="relative w-full"
           style={{ aspectRatio: isMobile ? "1 / 1.5" : "1 / 1" }}

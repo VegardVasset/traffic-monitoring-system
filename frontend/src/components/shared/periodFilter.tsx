@@ -26,8 +26,6 @@ export default function PeriodFilter({
   return (
     <div className="text-xs">
       <div className="mb-1 font-bold">Date Range</div>
-
-      {/* Row format: Start and End side by side */}
       <div className="flex flex-row flex-wrap gap-3">
         <div className="flex flex-row gap-1">
           <Label htmlFor="startDate" className="text-xs self-center">
