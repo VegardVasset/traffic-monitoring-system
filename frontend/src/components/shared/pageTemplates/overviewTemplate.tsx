@@ -1,3 +1,4 @@
+// OverviewTemplate.tsx
 "use client";
 
 import React, { useCallback, useMemo, useState, useEffect } from "react";
@@ -18,7 +19,6 @@ import {
   SheetTitle,
   SheetClose,
 } from "@/components/ui/sheet";
-
 import { useData } from "@/context/DataContext";
 
 export interface BaseEvent {
@@ -40,7 +40,7 @@ export default function OverviewTemplate({
   defaultBinSize = "day",
   children,
 }: OverviewTemplateProps) {
-  const { data, loading, isLive, setIsLive } = useData();
+  const { data, loading, isLive, setIsLive, refetch } = useData();
 
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
   const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
@@ -91,11 +91,11 @@ export default function OverviewTemplate({
   }, [filteredData]);
 
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
-
   const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < MOBILE_MAX_WIDTH); 
+      setIsMobile(window.innerWidth < MOBILE_MAX_WIDTH);
     };
     handleResize();
     window.addEventListener("resize", handleResize);
@@ -123,11 +123,7 @@ export default function OverviewTemplate({
       {/* PERIOD, EVENT SUMMARY, FILTER PANEL ROW */}
       <div className="flex flex-wrap items-start gap-4 mb-4">
         <Card className="p-3 max-w-sm w-full hidden lg:block">
-          <PeriodFilter
-            startDate={startDate}
-            endDate={endDate}
-            onChange={handlePeriodChange}
-          />
+          <PeriodFilter startDate={startDate} endDate={endDate} onChange={handlePeriodChange} />
         </Card>
         <Card className="p-3 max-w-sm w-full hidden lg:block">
           <EventSummary count={filteredData.length} />
@@ -145,6 +141,7 @@ export default function OverviewTemplate({
             isLive={isLive}
             setIsLive={setIsLive}
             showLiveButton={false}
+            onRefetch={refetch} // triggers a REST fetch if desired
           />
         </Card>
       </div>
@@ -169,14 +166,10 @@ export default function OverviewTemplate({
                 isLive={isLive}
                 setIsLive={setIsLive}
                 showLiveButton={false}
+                onRefetch={refetch}
               />
 
-              <PeriodFilter
-                startDate={startDate}
-                endDate={endDate}
-                onChange={handlePeriodChange}
-              />
-
+              <PeriodFilter startDate={startDate} endDate={endDate} onChange={handlePeriodChange} />
               <EventSummary count={filteredData.length} />
             </div>
           </Card>
@@ -196,18 +189,12 @@ export default function OverviewTemplate({
 
       {/* CHARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
-        <div
-          className="relative w-full"
-          style={{ aspectRatio: isMobile ? "1 / 1.5" : "1 / 1" }}
-        >
+        <div className="relative w-full" style={{ aspectRatio: isMobile ? "1 / 1" : "1.5 / 1" }}>
           <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
             <TimeSeriesChart data={filteredData} binSize={binSize} />
           </div>
         </div>
-        <div
-          className="relative w-full"
-          style={{ aspectRatio: isMobile ? "1 / 1.5" : "1 / 1" }}
-        >
+        <div className="relative w-full" style={{ aspectRatio: isMobile ? "1 / 1" : "1.5 / 1" }}>
           <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
             <VehicleDistributionChart data={filteredData} />
           </div>

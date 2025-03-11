@@ -6,8 +6,10 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import { io, Socket } from "socket.io-client";
+import { useAnalytics } from "@/context/analyticsContext";
 
 export interface BaseEvent {
   id: number;
@@ -24,6 +26,7 @@ interface DataContextProps {
   isLive: boolean;
   setIsLive: (live: boolean) => void;
   refetch: () => void;
+  lastUpdateArrivalTime: number | null;
 }
 
 const DataContext = createContext<DataContextProps | undefined>(undefined);
@@ -34,26 +37,34 @@ interface DataProviderProps {
   children: React.ReactNode;
 }
 
-export const DataProvider: React.FC<DataProviderProps> = ({
-  apiUrl,
-  domain,
-  children,
-}) => {
+export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) => {
   const [data, setData] = useState<BaseEvent[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isLive, setIsLive] = useState<boolean>(false);
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [lastUpdateArrivalTime, setLastUpdateArrivalTime] = useState<number | null>(null);
 
-  // Function to fetch data via REST
+  const { logEvent } = useAnalytics();
+
+  // For frequency measurement: count new data events
+  const newDataCountRef = useRef<number>(0);
+
+  /**
+   * REST fetch with timing measurement
+   */
   const refetch = useCallback(async () => {
     setLoading(true);
+    const startTime = performance.now();
     try {
       const res = await fetch(apiUrl);
       if (!res.ok) throw new Error("Failed to fetch data");
       const jsonData = await res.json();
       setData(jsonData);
       setError(null);
+
+      const fetchDuration = performance.now() - startTime;
+      logEvent("REST fetch completed", { fetchDuration });
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error(`Error fetching data for ${domain}:`, err);
@@ -64,9 +75,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [apiUrl, domain]);
+  }, [apiUrl, domain, logEvent]);
 
-  // When live mode is off, disconnect any existing socket.
+  /**
+   * Disconnect socket if live mode is turned off
+   */
   useEffect(() => {
     if (!isLive && socket) {
       socket.disconnect();
@@ -74,22 +87,23 @@ export const DataProvider: React.FC<DataProviderProps> = ({
     }
   }, [isLive, socket]);
 
-  // When live mode is on, connect to Socket.IO for live updates.
+  /**
+   * Connect to WebSocket when live mode is on
+   */
   useEffect(() => {
     if (!isLive) return;
     const newSocket: Socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
       transports: ["websocket", "polling"],
       reconnection: true,
-      reconnectionAttempts: 10,         // Maximum number of reconnection attempts
-      reconnectionDelay: 1000,          // Initial delay before a reconnection attempt (in ms)
-      reconnectionDelayMax: 5000,       // Maximum reconnection delay (in ms)
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
     });
     setSocket(newSocket);
 
     newSocket.on("connect", () => {
       console.log(`Connected to WebSocket for ${domain}`);
       newSocket.emit("requestData", domain);
-      
     });
 
     newSocket.on("initialData", (initialData: BaseEvent[]) => {
@@ -99,7 +113,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({
     });
 
     newSocket.on("newData", (newData: BaseEvent) => {
+      const arrivalTime = performance.now();
+      setLastUpdateArrivalTime(arrivalTime);
       setData((prev) => [newData, ...prev]);
+
+      newDataCountRef.current += 1; // increment the frequency counter
+      logEvent("New data received", { eventId: newData.id, arrivalTime });
     });
 
     newSocket.on("error", (err: unknown) => {
@@ -115,18 +134,35 @@ export const DataProvider: React.FC<DataProviderProps> = ({
       newSocket.disconnect();
       setSocket(null);
     };
-  }, [isLive, domain]);
+  }, [isLive, domain, logEvent]);
 
-  // When live mode is off, fetch data via REST if no data is present.
+  /**
+   * If live mode is off and no data is loaded, do a REST fetch
+   */
   useEffect(() => {
     if (!isLive && data.length === 0) {
       refetch();
     }
   }, [isLive, data.length, refetch]);
 
+  /**
+   * Log frequency of new data arrivals every minute
+   */
+  useEffect(() => {
+    const interval = setInterval(() => {
+      logEvent("Data arrival frequency", {
+        count: newDataCountRef.current,
+        period: "1 minute",
+      });
+      newDataCountRef.current = 0;
+    }, 60000); // every 60s
+
+    return () => clearInterval(interval);
+  }, [logEvent]);
+
   return (
     <DataContext.Provider
-      value={{ data, loading, error, isLive, setIsLive, refetch }}
+      value={{ data, loading, error, isLive, setIsLive, refetch, lastUpdateArrivalTime }}
     >
       {children}
     </DataContext.Provider>
