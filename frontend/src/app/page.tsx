@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 
 export default function Page() {
-  // Which card (if any) is currently expanded; null = none
+  // Which card (if any) is expanded
   const [expandedCard, setExpandedCard] = React.useState<number | null>(null);
 
-  // Toggle logic: if user clicks the same card, collapse it; otherwise expand new card
+  // Toggle expand/collapse
   const handleReadMore = (index: number) => {
     setExpandedCard((prev) => (prev === index ? null : index));
   };
@@ -58,48 +58,50 @@ thorough inspections.
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-blue-50 to-blue-100 p-6">
-      {/* Hero Section with Large Logos & Heading */}
-      <header className="text-center max-w-4xl mx-auto py-10">
-        {/* Fade in the logos first */}
+      {/* HERO SECTION */}
+      <header className="max-w-4xl mx-auto pt-24 pb-10 flex flex-col items-center text-center">
+        {/* Logo (fade in) */}
         <motion.div
-          className="flex flex-col items-center justify-center"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
         >
           <Image
             src="/countin-hero-logo-small.webp"
-            alt="Countin Hero Logo"
+            alt="Counting Hero Logo"
             width={500}
-            height={600}
+            height={500}
             className="object-contain"
           />
         </motion.div>
 
-        {/* Headline & Subheading */}
-        <motion.h1
-          className="text-4xl md:text-5xl font-extrabold text-gray-800 mb-4 mt-8"
-          initial={{ opacity: 0, y: -20 }}
+
+        {/* Subheading */}
+        <motion.h2
+          className="text-2xl text-gray-700 mt-4"
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.1 }}
+          transition={{ duration: 0.7, delay: 0.2 }}
         >
-          Welcome to the Traffic Monitoring Dashboard
-        </motion.h1>
+          Traffic Monitoring Solutions
+        </motion.h2>
+
+        {/* Brief description */}
         <motion.p
-          className="text-lg md:text-xl text-gray-600"
+          className="text-lg text-gray-600 mt-2"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3 }}
         >
-          Efficient, real-time insights into traffic patterns, vehicle monitoring,
+          Real-time insights into traffic patterns, vehicle monitoring, 
           and ferry passenger counts.
         </motion.p>
       </header>
 
-      {/* AnimatePresence to handle transitions between grid view and expanded view */}
+      {/* CARD GRID OR EXPANDED VIEW */}
       <AnimatePresence mode="wait">
         {expandedCard === null ? (
-          // --- GRID VIEW (All three cards) ---
+          // --- GRID VIEW ---
           <motion.div
             key="grid"
             initial={{ opacity: 0 }}
@@ -112,7 +114,6 @@ thorough inspections.
                 key={title}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="flex"
               >
                 <Card className="w-full hover:shadow-xl transition-shadow bg-white rounded-2xl">
                   <CardContent>
@@ -120,7 +121,6 @@ thorough inspections.
                       {title}
                     </h2>
                     <p className="text-gray-500 mb-2">{description}</p>
-
                     <Button
                       onClick={() => handleReadMore(index)}
                       className="bg-blue-600 text-white hover:bg-blue-700 transition-colors"
@@ -133,7 +133,7 @@ thorough inspections.
             ))}
           </motion.div>
         ) : (
-          // --- EXPANDED VIEW (Single card) ---
+          // --- EXPANDED VIEW ---
           <motion.div
             key="expanded"
             initial={{ opacity: 0 }}
@@ -142,10 +142,8 @@ thorough inspections.
             className="max-w-6xl mx-auto"
           >
             {(() => {
-              // Extract the data for the currently expanded card
               const { title, description, expandedDescription } =
                 cardData[expandedCard];
-
               return (
                 <Card className="w-full hover:shadow-xl transition-shadow bg-white rounded-2xl">
                   <CardContent>
@@ -156,7 +154,6 @@ thorough inspections.
                     <div className="text-gray-700 whitespace-pre-line mb-4">
                       {expandedDescription}
                     </div>
-
                     <Button
                       onClick={() => handleReadMore(expandedCard)}
                       className="bg-blue-600 text-white hover:bg-blue-700 transition-colors"

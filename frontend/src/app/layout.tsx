@@ -11,7 +11,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="bg-gray-100 text-gray-900">
-        <Header /> {/* Now the header appears on every page */}
+        <Header hideHamburger /> {/* Now the header appears on every page */}
         <main className="p-0">{children}</main> {/* Page content here */}
       </body>
     </html>

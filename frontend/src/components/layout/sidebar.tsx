@@ -6,7 +6,9 @@ import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Unified NavItem interface now includes id.
 export interface NavItem {
+  id: string;
   label: string;
   href: string;
   icon?: React.ReactNode;
@@ -66,7 +68,7 @@ export default function Sidebar({ navItems, open, onClose, onToggle }: SidebarPr
         {navItems.map((item) => {
           const active = pathname === item.href;
           return (
-            <Link key={item.href} href={item.href}>
+            <Link key={item.id} href={item.href}>
               <div
                 className={`
                   flex items-center justify-center
@@ -94,7 +96,7 @@ export default function Sidebar({ navItems, open, onClose, onToggle }: SidebarPr
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.2 }}
             onClick={onClose}
           >
             {/* Dark backdrop */}
@@ -102,12 +104,11 @@ export default function Sidebar({ navItems, open, onClose, onToggle }: SidebarPr
 
             {/* Slide-out expanded sidebar */}
             <motion.div
-              // same dark gray background
               className="relative h-full bg-gray-800 text-white shadow-md border-r border-gray-700 p-4"
               initial={{ width: "4rem" }}
               animate={{ width: "16rem" }}
               exit={{ width: "4rem" }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
               onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside
             >
               {/* Optional brand or home link at the top */}
@@ -123,7 +124,7 @@ export default function Sidebar({ navItems, open, onClose, onToggle }: SidebarPr
                   <motion.span
                     initial={{ opacity: 0, display: "none" }}
                     animate={{ opacity: 1, display: "block" }}
-                    transition={{ delay: 0.3, duration: 0.3 }}
+                    transition={{ delay: 0.2, duration: 0.2 }}
                     className="font-semibold text-lg"
                   >
                     Home
@@ -144,11 +145,7 @@ export default function Sidebar({ navItems, open, onClose, onToggle }: SidebarPr
                     stroke="currentColor"
                     className="w-6 h-6"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
@@ -158,7 +155,7 @@ export default function Sidebar({ navItems, open, onClose, onToggle }: SidebarPr
                 {navItems.map((item) => {
                   const active = pathname === item.href;
                   return (
-                    <Link key={item.href} href={item.href} onClick={onClose}>
+                    <Link key={item.id} href={item.href} onClick={onClose}>
                       <div
                         className={`
                           flex items-center gap-2 py-2 px-2 rounded cursor-pointer transition-colors
@@ -175,7 +172,7 @@ export default function Sidebar({ navItems, open, onClose, onToggle }: SidebarPr
                         <motion.span
                           initial={{ opacity: 0, display: "none" }}
                           animate={{ opacity: 1, display: "inline" }}
-                          transition={{ delay: 0.3, duration: 0.3 }}
+                          transition={{ delay: 0.2, duration: 0.2 }}
                           className="font-medium"
                         >
                           {item.label}
