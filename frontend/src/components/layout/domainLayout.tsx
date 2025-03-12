@@ -1,11 +1,16 @@
 "use client";
 
 import React, { useState, ReactNode } from "react";
+import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
-import Sidebar, { NavItem } from "@/components/layout/sidebar";
+
+interface NavItem {
+  id: string;
+  label: string;
+  href: string;
+}
 
 interface DomainLayoutProps {
-  // Domain-specific nav items, e.g. Overview, Passings, Cameras
   navItems: NavItem[];
   children: ReactNode;
 }
@@ -13,23 +18,28 @@ interface DomainLayoutProps {
 export default function DomainLayout({ navItems, children }: DomainLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // A single toggle function for both mobile & desktop
+  function toggleSidebar() {
+    setSidebarOpen((prev) => !prev);
+  }
+
   return (
     <div className="relative min-h-screen">
-      {/* 1) Header with top-level nav (Ferry, DTS, Tires) + hamburger */}
-      <Header onOpenSidebar={() => setSidebarOpen(true)} />
-
-      {/* 2) Domain sidebar: mini on desktop, slide-out overlay if sidebarOpen */}
+      {/* SIDEBAR (mini on desktop, overlay on mobile or when expanded) */}
       <Sidebar
         navItems={navItems}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        miniBarWidth={16} // => w-16 => 64px
+        onToggle={toggleSidebar}
       />
 
-      {/* 3) Main content offset:
-          - pt-16 for the fixed header
-          - md:pl-16 for the mini sidebar on desktop */}
-      <main className="pt-16 md:pl-16">
+      {/* HEADER (with mobile-only hamburger) */}
+      <Header onToggleSidebar={toggleSidebar} />
+
+      {/* MAIN CONTENT: 
+          Pushed down by 64px header,
+          on desktop also offset left by 64px for the mini sidebar. */}
+      <main className="pt-16 md:ml-16">
         {children}
       </main>
     </div>
