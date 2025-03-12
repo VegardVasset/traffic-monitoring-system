@@ -148,7 +148,10 @@ export default function EventTable({
 
   // Measure live mode latency: time from data arrival -> table render
   useEffect(() => {
-    if (lastUpdateArrivalTime && lastUpdateArrivalTime !== lastLoggedArrivalRef.current) {
+    if (
+      lastUpdateArrivalTime &&
+      lastUpdateArrivalTime !== lastLoggedArrivalRef.current
+    ) {
       const now = performance.now();
       const latency = now - lastUpdateArrivalTime;
       logEvent("Live mode latency", { latency, dataLength: filteredData.length });
@@ -212,17 +215,27 @@ export default function EventTable({
         </DropdownMenu>
       </div>
 
+      {/* Table with column lines */}
       <div className="overflow-x-auto w-full">
-        <Table className="w-full table-auto">
+        {/* 
+          The key Tailwind classes here are:
+          - border-collapse & border on the <Table> for a solid outer border
+          - border-r and last:border-r-0 on each cell for vertical lines
+          - border-b on each row for horizontal lines
+        */}
+        <Table className="w-full table-auto border-collapse border border-gray-300">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="bg-gray-100">
+              <TableRow
+                key={headerGroup.id}
+                className="bg-gray-100 border-b border-gray-300"
+              >
                 {headerGroup.headers.map((header) => {
                   const sorting = header.column.getIsSorted();
                   return (
                     <TableHead
                       key={header.id}
-                      className="cursor-pointer text-xs sm:text-sm md:text-base p-1 sm:p-2 whitespace-nowrap"
+                      className="cursor-pointer text-xs sm:text-sm md:text-base p-1 sm:p-2 whitespace-nowrap border-r last:border-r-0 border-gray-300"
                       onClick={
                         header.column.getCanSort()
                           ? header.column.getToggleSortingHandler()
@@ -230,20 +243,22 @@ export default function EventTable({
                       }
                     >
                       <div className="flex items-center">
-                        <div className="flex-1">
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                        </div>
-                        {header.column.getCanSort() &&
-                          (sorting === "asc" ? (
-                            <ArrowUp className="ml-2 inline-block w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
-                          ) : sorting === "desc" ? (
-                            <ArrowDown className="ml-2 inline-block w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
-                          ) : (
-                            <ArrowUpDown className="ml-2 inline-block w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
-                          ))}
+                        {/* Remove flex-1 so the text doesn't push the arrow far right */}
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                        {header.column.getCanSort() && (
+                          <span className="ml-1 inline-block">
+                            {sorting === "asc" ? (
+                              <ArrowUp className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                            ) : sorting === "desc" ? (
+                              <ArrowDown className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                            ) : (
+                              <ArrowUpDown className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                            )}
+                          </span>
+                        )}
                       </div>
                     </TableHead>
                   );
@@ -256,10 +271,13 @@ export default function EventTable({
             {table.getRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}
-                className="hover:bg-gray-200 text-xs sm:text-sm md:text-base"
+                className="hover:bg-gray-200 text-xs sm:text-sm md:text-base border-b border-gray-300"
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className="p-1 sm:p-2">
+                  <TableCell
+                    key={cell.id}
+                    className="p-1 sm:p-2 border-r last:border-r-0 border-gray-300"
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
@@ -272,7 +290,8 @@ export default function EventTable({
       {/* Pagination */}
       <div className="flex items-center justify-between gap-2 sm:items-center p-2 sm:p-4 text-xs sm:text-sm">
         <div className="text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of {filteredData.length} row(s) selected.
+          {table.getFilteredSelectedRowModel().rows.length} of{" "}
+          {filteredData.length} row(s) selected.
         </div>
         <div className="flex space-x-1 sm:space-x-2">
           <Button
