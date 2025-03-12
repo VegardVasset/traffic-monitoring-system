@@ -67,7 +67,8 @@ const GeocodedMiniMap: React.FC<GeocodedMiniMapProps> = ({
         center={[location.lat, location.lng]}
         zoom={13}
         scrollWheelZoom={false}
-        style={{ width: "100%", height: "100%" }}
+        // Add zIndex: 0 and position: "relative" to ensure the sidebar is on top
+        style={{ width: "100%", height: "100%", zIndex: 0, position: "relative" }}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -75,6 +76,7 @@ const GeocodedMiniMap: React.FC<GeocodedMiniMapProps> = ({
         />
         <Marker position={[location.lat, location.lng]} />
       </MapContainer>
+
     </div>
   );
 };

@@ -71,7 +71,6 @@ export default function FilterPanel({
   showBinSize = true,
   showLiveButton = true,
   useCardWrapper = false,
-  onRefetch,
 }: FilterPanelProps) {
   const [vehiclePopoverOpen, setVehiclePopoverOpen] = useState(false);
   const [search, setSearch] = useState("");

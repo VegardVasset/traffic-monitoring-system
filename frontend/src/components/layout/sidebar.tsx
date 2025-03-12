@@ -3,8 +3,12 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 
+// Unified NavItem interface now includes id.
 export interface NavItem {
+  id: string;
   label: string;
   href: string;
   icon?: React.ReactNode;
@@ -12,40 +16,38 @@ export interface NavItem {
 
 interface SidebarProps {
   navItems: NavItem[];
-  open: boolean; // Is the full sidebar open?
-  onOpen: () => void; // Function to open it
-  onClose: () => void; // Function to close it
-  miniBarWidth?: number; // Optional: override the mini-bar width (Tailwind spacing)
+  open: boolean;       // whether the overlay sidebar is open
+  onClose: () => void; // function to close the overlay
+  onToggle: () => void; // function to open the overlay
 }
 
-export default function Sidebar({
-  navItems,
-  open,
-  onOpen,
-  onClose,
-  miniBarWidth = 16,
-}: SidebarProps) {
+export default function Sidebar({ navItems, open, onClose, onToggle }: SidebarProps) {
   const pathname = usePathname();
 
   return (
     <>
-      {/* MINI SIDEBAR (always visible) */}
+      {/* MINI SIDEBAR (desktop only, visible when overlay is closed) */}
       <div
         className={`
-          fixed top-0 left-0 h-screen
-          w-${miniBarWidth}
+          hidden md:flex
+          fixed top-0 left-0
+          h-full
+          w-16
+          /* Dark gray background, white text */
           bg-gray-800 text-white
-          flex flex-col items-center
-          py-4 z-40
+          flex-col items-center
+          py-4 z-50
+          shadow-md border-r border-gray-700
+          ${open ? "hidden" : "flex"}
         `}
       >
-        {/* Hamburger button to open expanded sidebar */}
+        {/* HAMBURGER to toggle the overlay (desktop only) */}
         <button
-          onClick={onOpen}
-          className="p-2 rounded hover:bg-gray-700 focus:outline-none"
-          aria-label="Open sidebar"
+          onClick={onToggle}
+          className="p-2 mb-4 rounded hover:bg-gray-700 focus:outline-none"
+          aria-label="Toggle sidebar"
         >
-          {/* Bars3 Icon */}
+          {/* Hamburger icon */}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -62,65 +64,74 @@ export default function Sidebar({
           </svg>
         </button>
 
-        {/* Mini-bar icons for each nav item */}
-        <div className="mt-6 flex flex-col space-y-4">
-          {navItems.map((item) => {
-            const active = pathname === item.href;
-            return (
-              <Link key={item.href} href={item.href}>
-                <div
-                  className={`p-2 rounded cursor-pointer ${
-                    active ? "bg-blue-600" : "hover:bg-gray-700"
-                  }`}
-                >
-                  {item.icon ? item.icon : <span>{item.label[0]}</span>}
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+        {/* Mini icons for each nav item */}
+        {navItems.map((item) => {
+          const active = pathname === item.href;
+          return (
+            <Link key={item.id} href={item.href}>
+              <div
+                className={`
+                  flex items-center justify-center
+                  w-10 h-10
+                  rounded-md cursor-pointer transition-colors
+                  ${
+                    active
+                      ? "bg-blue-600 text-white"
+                      : "hover:bg-gray-700 text-white"
+                  }
+                `}
+              >
+                {item.icon ? item.icon : <span>{item.label[0]}</span>}
+              </div>
+            </Link>
+          );
+        })}
       </div>
 
-      {/* EXPANDED SIDEBAR OVERLAY */}
-      {open && (
-        <div
-          className="fixed inset-0 z-50"
-          onClick={onClose} // close if user clicks the overlay
-        >
-          {/* The actual sidebar panel. Stop propagation so clicks here won't close. */}
-          <div
-            className="relative h-screen w-64 bg-gray-800 text-white"
-            onClick={(e) => e.stopPropagation()}
+      {/* OVERLAY SIDEBAR (for mobile OR expanded on desktop) */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            className="fixed inset-0 z-50 flex"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={onClose}
           >
-            {/* 
-        Flex container for everything inside the sidebar.
-        We add px-4 at this level so that everything lines up horizontally.
-      */}
-            <div className="flex flex-col h-full px-3 py-4">
-              {/* Header area: Home link + close button */}
+            {/* Dark backdrop */}
+            <div className="absolute inset-0 bg-black bg-opacity-50" />
+
+            {/* Slide-out expanded sidebar */}
+            <motion.div
+              className="relative h-full bg-gray-800 text-white shadow-md border-r border-gray-700 p-4"
+              initial={{ width: "4rem" }}
+              animate={{ width: "16rem" }}
+              exit={{ width: "4rem" }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside
+            >
+              {/* Optional brand or home link at the top */}
               <div className="flex items-center justify-between mb-6">
-                {/* Home Link */}
-                <Link href="/" className="flex items-center gap-2 group">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-6 h-6 transition-transform group-hover:scale-105"
+                <Link href="/" onClick={onClose} className="flex items-center gap-2 group">
+                  <Image
+                    src="/CH_LOGO_MASCOT_thicker.png"
+                    alt="Mascot Logo"
+                    width={48}
+                    height={48}
+                    className="transition-transform group-hover:scale-105"
+                  />
+                  <motion.span
+                    initial={{ opacity: 0, display: "none" }}
+                    animate={{ opacity: 1, display: "block" }}
+                    transition={{ delay: 0.2, duration: 0.2 }}
+                    className="font-semibold text-lg"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M3.75 9l7.5-6 7.5 6M4.5 9.75v9.75a1.5 1.5 0 001.5 1.5h3.75m6 0h3.75a1.5 1.5 0 001.5-1.5V9.75M9.75 22.5v-6h4.5v6"
-                    />
-                  </svg>
-                  <span className="font-semibold text-lg transition-colors group-hover:text-gray-50">
                     Home
-                  </span>
+                  </motion.span>
                 </Link>
 
-                {/* Close button (X) */}
+                {/* Close button for overlay */}
                 <button
                   onClick={onClose}
                   className="p-2 rounded hover:bg-gray-700 focus:outline-none"
@@ -134,48 +145,47 @@ export default function Sidebar({
                     stroke="currentColor"
                     className="w-6 h-6"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
 
-              {/* Nav items */}
-              <nav className="flex flex-col gap-2">
+              {/* Full nav items in the expanded overlay */}
+              <nav className="flex flex-col space-y-2">
                 {navItems.map((item) => {
                   const active = pathname === item.href;
                   return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => onClose()} // close on click
-                    >
-                      <span
-                        className={`flex items-center gap-2 py-2 rounded cursor-pointer transition-colors ${
-                          active ? "bg-blue-600" : "hover:bg-gray-700"
-                        }`}
+                    <Link key={item.id} href={item.href} onClick={onClose}>
+                      <div
+                        className={`
+                          flex items-center gap-2 py-2 px-2 rounded cursor-pointer transition-colors
+                          ${
+                            active
+                              ? "bg-blue-600 text-white"
+                              : "hover:bg-gray-700 text-white"
+                          }
+                        `}
                       >
-                        {item.icon && (
-                          <span className="w-5 h-5">{item.icon}</span>
-                        )}
-                        {item.label}
-                      </span>
+                        <div className="w-10 h-10 flex items-center justify-center">
+                          {item.icon ? item.icon : <span>{item.label[0]}</span>}
+                        </div>
+                        <motion.span
+                          initial={{ opacity: 0, display: "none" }}
+                          animate={{ opacity: 1, display: "inline" }}
+                          transition={{ delay: 0.2, duration: 0.2 }}
+                          className="font-medium"
+                        >
+                          {item.label}
+                        </motion.span>
+                      </div>
                     </Link>
                   );
                 })}
               </nav>
-
-              {/* If you have something at the bottom, keep it aligned with px-4 as well */}
-              <div className="mt-auto flex items-center justify-center">
-               
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

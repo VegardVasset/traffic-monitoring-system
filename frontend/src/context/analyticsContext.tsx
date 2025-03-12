@@ -5,12 +5,12 @@ import { createContext, useContext, useState } from "react";
 export interface AnalyticsEvent {
   message: string;
   timestamp: number;
-  data?: any;
+  data?: unknown;
 }
 
 interface AnalyticsContextProps {
   events: AnalyticsEvent[];
-  logEvent: (message: string, data?: any) => void;
+  logEvent: (message: string, data?: unknown) => void;
 }
 
 const AnalyticsContext = createContext<AnalyticsContextProps | undefined>(undefined);
@@ -18,7 +18,7 @@ const AnalyticsContext = createContext<AnalyticsContextProps | undefined>(undefi
 export default function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   const [events, setEvents] = useState<AnalyticsEvent[]>([]);
 
-  const logEvent = (message: string, data?: any) => {
+  const logEvent = (message: string, data?: unknown) => {
     const newEvent: AnalyticsEvent = {
       message,
       timestamp: Date.now(),
