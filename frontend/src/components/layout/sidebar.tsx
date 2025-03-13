@@ -26,67 +26,69 @@ export default function Sidebar({ navItems, open, onClose, onToggle }: SidebarPr
 
   return (
     <>
-      {/* MINI SIDEBAR (desktop only, visible when overlay is closed) */}
-      <div
-        className={`
-          hidden md:flex
-          fixed top-0 left-0
-          h-full
-          w-16
-          /* Dark gray background, white text */
-          bg-gray-800 text-white
-          flex-col items-center
-          py-4 z-50
-          shadow-md border-r border-gray-700
-          ${open ? "hidden" : "flex"}
-        `}
+{/* MINI SIDEBAR (desktop only, visible when overlay is closed) */}
+<div
+  className={`
+    hidden md:flex
+    fixed top-0 left-0
+    h-full
+    w-16
+    bg-gray-800 text-white
+    flex-col items-center
+    py-4 z-50
+    shadow-md border-r border-gray-700
+    ${open ? "hidden" : "flex"}
+  `}
+>
+  {/* WRAP BOTH HAMBURGER & NAV ITEMS IN THE SAME SPACE-Y-3 CONTAINER */}
+  <div className="flex flex-col items-center space-y-5">
+    {/* HAMBURGER to toggle the overlay (desktop only) */}
+    <button
+      onClick={onToggle}
+      className="p-2 rounded hover:bg-gray-700 focus:outline-none"
+      aria-label="Toggle sidebar"
+    >
+      {/* Hamburger icon */}
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        strokeWidth={1.5}
+        stroke="currentColor"
+        className="w-6 h-6"
       >
-        {/* HAMBURGER to toggle the overlay (desktop only) */}
-        <button
-          onClick={onToggle}
-          className="p-2 mb-4 rounded hover:bg-gray-700 focus:outline-none"
-          aria-label="Toggle sidebar"
-        >
-          {/* Hamburger icon */}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-            className="w-6 h-6"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3.75 5.25h16.5m-16.5 6h16.5m-16.5 6h16.5"
-            />
-          </svg>
-        </button>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M3.75 5.25h16.5m-16.5 6h16.5m-16.5 6h16.5"
+        />
+      </svg>
+    </button>
 
-        {/* Mini icons for each nav item */}
-        {navItems.map((item) => {
-          const active = pathname === item.href;
-          return (
-            <Link key={item.id} href={item.href}>
-              <div
-                className={`
-                  flex items-center justify-center
-                  w-10 h-10
-                  rounded-md cursor-pointer transition-colors
-                  ${
-                    active
-                      ? "bg-blue-600 text-white"
-                      : "hover:bg-gray-700 text-white"
-                  }
-                `}
-              >
-                {item.icon ? item.icon : <span>{item.label[0]}</span>}
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+    {/* Mini icons for each nav item */}
+    {navItems.map((item) => {
+      const active = pathname === item.href;
+      return (
+        <Link key={item.id} href={item.href}>
+          <div
+            className={`
+              flex items-center justify-center
+              w-10 h-10
+              rounded-md cursor-pointer transition-colors
+              ${
+                active
+                  ? "bg-blue-600 text-white"
+                  : "hover:bg-gray-700 text-white"
+              }
+            `}
+          >
+            {item.icon ? item.icon : <span>{item.label[0]}</span>}
+          </div>
+        </Link>
+      );
+    })}
+  </div>
+</div>
 
       {/* OVERLAY SIDEBAR (for mobile OR expanded on desktop) */}
       <AnimatePresence>
