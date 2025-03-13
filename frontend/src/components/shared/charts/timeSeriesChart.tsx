@@ -17,7 +17,6 @@ import type { ChartOptions } from "chart.js";
 import { getChartColor } from "@/lib/chartUtils";
 import { formatTimeBin } from "@/lib/timeFormattingUtils";
 
-
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 export interface Event {
@@ -177,12 +176,13 @@ export default function TimeSeriesChart({ data, binSize, onDataPointClick }: Tim
     },
   }), [isMobile]);
 
-  const chartRef = useRef<any>(null);
+  // Updated: use specific types instead of any
+  const chartRef = useRef<ChartJS<"line"> | null>(null);
 
-  const handleChartClick = (event: any) => {
+  const handleChartClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
     if (!chartRef.current) return;
     const elements = chartRef.current.getElementsAtEventForMode(
-      event,
+      event.nativeEvent,
       "nearest",
       { intersect: true },
       false

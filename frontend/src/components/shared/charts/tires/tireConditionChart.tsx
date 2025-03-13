@@ -135,9 +135,6 @@ export default function TireConditionChart({ data }: TireConditionChartProps) {
       <div className="relative w-full h-[400px]">
         <Bar data={chartData} options={chartOptions} plugins={[dataLabelsPlugin]} />
       </div>
-      <p className="text-sm text-gray-600 mt-2">
-        Tire Condition Scale: 1 = Poor, 5 = Excellent.
-      </p>
     </div>
   );
 }

@@ -144,9 +144,6 @@ export default function TireTypeChart({ data, binSize }: TireTypeChartProps) {
       <div className="relative w-full h-[400px]">
         <Line data={chartData} options={chartOptions} />
       </div>
-      <p className="text-sm text-gray-600 mt-2">
-        Distribution of Vinterdekk and Sommerdekk over time, based on your chosen interval.
-      </p>
     </div>
   );
 }
