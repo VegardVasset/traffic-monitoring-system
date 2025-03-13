@@ -64,7 +64,7 @@ function continuouslyAddMockData() {
     mockDatabase.ferry.push(newData.ferry);
     mockDatabase.tires.push(newData.tires);
     mockDatabase.dts.push(newData.dts);
-  }, 10000);
+  }, 100000);
 }
 
 // Handle Socket.IO connections

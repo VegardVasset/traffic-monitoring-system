@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { MOBILE_MAX_WIDTH } from "@/config/config";
 import { Line } from "react-chartjs-2";
 import {
@@ -15,6 +15,8 @@ import {
 } from "chart.js";
 import type { ChartOptions } from "chart.js";
 import { getChartColor } from "@/lib/chartUtils";
+import { formatTimeBin } from "@/lib/timeFormattingUtils";
+
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -27,17 +29,17 @@ export interface Event {
 export interface TimeSeriesChartProps {
   data: Event[];
   binSize: "hour" | "day" | "week" | "month";
+  onDataPointClick?: (binKey: string) => void;
 }
 
 type BinnedCounts = Record<string, Record<string, number>>;
 type AggregatedDataEntry = {
+  binKey: string;
   date: string;
   [vehicleType: string]: number | string;
 };
 
-
 function useIsMobile(maxWidth = MOBILE_MAX_WIDTH) {
-
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const checkSize = () => setIsMobile(window.innerWidth <= maxWidth);
@@ -48,6 +50,7 @@ function useIsMobile(maxWidth = MOBILE_MAX_WIDTH) {
   return isMobile;
 }
 
+// Bin key helper functions remain unchanged
 function getHourBinKey(date: Date): string {
   return date.toISOString().substring(0, 13);
 }
@@ -66,57 +69,17 @@ function getMonthBinKey(date: Date): string {
   return date.toISOString().substring(0, 7);
 }
 
-
-function formatBinLabel(binKey: string, binSize: "hour" | "day" | "week" | "month"): string {
-  if (binSize === "hour") {
-    const date = new Date(binKey + ":00:00Z");
-    return formatHour(date);
-  } else if (binSize === "day") {
-    const date = new Date(binKey);
-    return formatDate(date);
-  } else if (binSize === "week") {
-    const startOfWeek = new Date(binKey);
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(endOfWeek.getDate() + 6);
-    return `${formatDate(startOfWeek)} - ${formatDate(endOfWeek)}`;
-  } else {
-    const date = new Date(binKey + "-01T00:00:00Z");
-    return formatMonth(date);
-  }
-}
-
-function formatDate(date: Date): string {
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = String(date.getFullYear()).slice(-2);
-  return `${day}/${month}/${year}`;
-}
-
-
-
-function formatHour(date: Date): string {
-  const base = formatDate(date); 
-
-  const hour = String(date.getHours()).padStart(2, "0");
-  return `${base} ${hour}:00`;
-}
-
-function formatMonth(date: Date): string {
-  const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
-  ];
-  return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
-}
-
-export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps) {
+export default function TimeSeriesChart({ data, binSize, onDataPointClick }: TimeSeriesChartProps) {
   const isMobile = useIsMobile();
+
+  // Collect vehicle types from the data
   const vehicleTypes = useMemo(() => {
     const types = new Set<string>();
     data.forEach((e) => types.add(e.vehicleType));
     return Array.from(types);
   }, [data]);
 
+  // Choose the appropriate bin key function
   const getBinKey = useMemo(() => {
     switch (binSize) {
       case "hour":
@@ -132,6 +95,7 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
     }
   }, [binSize]);
 
+  // Aggregate the data by bin key
   const binnedCounts: BinnedCounts = useMemo(() => {
     const counts: BinnedCounts = {};
     data.forEach((event) => {
@@ -148,19 +112,18 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
     return counts;
   }, [data, vehicleTypes, getBinKey]);
 
-  const sortedBinKeys = useMemo(() => {
-    return Object.keys(binnedCounts).sort(); 
-  }, [binnedCounts]);
+  const sortedBinKeys = useMemo(() => Object.keys(binnedCounts).sort(), [binnedCounts]);
 
+  // Build final data array using the utility for label formatting
   const aggregatedData: AggregatedDataEntry[] = useMemo(() => {
-    return sortedBinKeys.map((binKey) => {
-      return {
-        date: formatBinLabel(binKey, binSize),
-        ...binnedCounts[binKey],
-      };
-    });
+    return sortedBinKeys.map((binKey) => ({
+      binKey,
+      date: formatTimeBin(binKey, binSize),
+      ...binnedCounts[binKey],
+    }));
   }, [sortedBinKeys, binnedCounts, binSize]);
 
+  // Build chart datasets
   const datasets = useMemo(() => {
     return vehicleTypes.map((type, index) => ({
       label: type,
@@ -174,31 +137,29 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
     }));
   }, [aggregatedData, vehicleTypes, isMobile]);
 
-
-  // Chart data
-  const chartData = {
+  const chartData = useMemo(() => ({
     labels: aggregatedData.map((entry) => entry.date),
     datasets,
-  };
+  }), [aggregatedData, datasets]);
 
+  // Configure Y-axis to show only whole numbers
   const lineChartOptions: ChartOptions<"line"> = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     scales: {
       x: {
         ticks: {
-          font: {
-            size: isMobile ? 10 : 12,
-          },
+          font: { size: isMobile ? 10 : 12 },
           autoSkip: true,
           maxTicksLimit: isMobile ? 4 : 10,
         },
       },
       y: {
+        beginAtZero: true,
         ticks: {
-          font: {
-            size: isMobile ? 10 : 12,
-          },
+          precision: 0,
+          callback: (value) => Number(value).toFixed(0),
+          font: { size: isMobile ? 10 : 12 },
         },
       },
     },
@@ -208,21 +169,33 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
         position: "bottom",
         labels: {
           boxWidth: isMobile ? 6 : 12,
-          font: {
-            size: isMobile ? 6 : 14,
-          },
+          font: { size: isMobile ? 6 : 14 },
         },
       },
-      tooltip: {
-        bodyFont: {
-          size: isMobile ? 4 : 12,
-        },
-      },
-      datalabels: {
-        display: false,
-      },
+      tooltip: { bodyFont: { size: isMobile ? 4 : 12 } },
+      datalabels: { display: false },
     },
   }), [isMobile]);
+
+  const chartRef = useRef<any>(null);
+
+  const handleChartClick = (event: any) => {
+    if (!chartRef.current) return;
+    const elements = chartRef.current.getElementsAtEventForMode(
+      event,
+      "nearest",
+      { intersect: true },
+      false
+    );
+    if (elements.length > 0) {
+      const firstElement = elements[0];
+      const index = firstElement.index;
+      const clickedBinKey = aggregatedData[index]?.binKey;
+      if (clickedBinKey && onDataPointClick) {
+        onDataPointClick(clickedBinKey);
+      }
+    }
+  };
 
   return (
     <div className="flex flex-col w-full h-full">
@@ -230,7 +203,12 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
         Passings Over Time ({binSize})
       </h2>
       <div className="flex-1 relative h-full">
-        <Line data={chartData} options={lineChartOptions} />
+        <Line
+          ref={chartRef}
+          data={chartData}
+          options={lineChartOptions}
+          onClick={handleChartClick}
+        />
       </div>
     </div>
   );

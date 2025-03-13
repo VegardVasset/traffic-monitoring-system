@@ -15,7 +15,7 @@ import {
 } from "chart.js";
 import { BaseEvent } from "@/context/DataContext";
 
-// Register the necessary Chart.js components
+// Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 interface TireEvent extends BaseEvent {
@@ -104,7 +104,7 @@ export default function TireConditionChart({ data }: TireConditionChartProps) {
     },
   };
 
-  // Chart options
+  // Chart options with integer Y-axis formatting
   const chartOptions: ChartOptions<"bar"> = {
     responsive: true,
     maintainAspectRatio: false,
@@ -119,13 +119,19 @@ export default function TireConditionChart({ data }: TireConditionChartProps) {
     },
     scales: {
       x: { ticks: { color: "#555" } },
-      y: { beginAtZero: true, ticks: { color: "#555" } },
+      y: {
+        beginAtZero: true,
+        ticks: {
+          precision: 0,
+          callback: (value) => Number(value).toFixed(0),
+          color: "#555",
+        },
+      },
     },
   };
 
   return (
     <div className="bg-white rounded-lg shadow p-4">
-      {/* Fixed container for the chart */}
       <div className="relative w-full h-[400px]">
         <Bar data={chartData} options={chartOptions} plugins={[dataLabelsPlugin]} />
       </div>
