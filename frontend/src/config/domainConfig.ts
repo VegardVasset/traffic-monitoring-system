@@ -55,6 +55,12 @@ export const domainConfigs: Record<string, DomainConfig> = {
         label: "Cameras",
         href: "/ferry/cameras",
         icon: React.createElement(CameraIcon, { className: "w-6 h-6" }),
+      },
+      {
+        id: "passengerCount",
+        label: "PassengerCount",
+        href: "/ferry/peoplecount",
+        icon: React.createElement(CameraIcon, { className: "w-6 h-6" }),
       }
     ],
   },
