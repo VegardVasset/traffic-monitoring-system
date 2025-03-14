@@ -52,8 +52,8 @@ export default function HeatmapChart({ data, isMobile = false }: HeatmapChartPro
     return sumArr.map((row) => row.map((val) => Math.round(val / totalWeeks)));
   }, [data, totalWeeks]);
 
-  // 3) Days of the week (row labels).
-  const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  // 3) Days of the week (row labels) wrapped in useMemo to ensure stability.
+  const daysOfWeek = useMemo(() => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], []);
 
   // 4) Convert the 7×24 matrix into Nivo HeatMap data format.
   const heatmapData = useMemo(() => {

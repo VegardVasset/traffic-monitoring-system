@@ -17,15 +17,11 @@ import {
   SheetTitle,
   SheetClose,
 } from "@/components/ui/sheet";
-import { useData } from "@/context/DataContext";
+import { useData, BaseEvent as DataContextBaseEvent } from "@/context/DataContext";
 import PeopleCountChart from "@/components/shared/charts/vpc/peopleCountChart";
 
-export interface BaseEvent {
-  id: number;
-  creationTime: string;
-  receptionTime: string;
-  vehicleType: string;
-  camera: string;
+// Create a new type that extends the context's BaseEvent to include passengerCount.
+export interface PassengerEvent extends DataContextBaseEvent {
   passengerCount: number;
 }
 
@@ -80,10 +76,15 @@ export default function PeopleCountTemplate({ children }: PeopleCountTemplatePro
     });
   }, [data, selectedCamera, selectedVehicleTypes, startDate, endDate]);
 
-  const passengerData = filteredData.map((event) => ({
-    ...event,
-    passengerCount: (event as any).passengerCount ?? 0,
-  }));
+  // Here, we map each event to include a passengerCount (defaulting to 0 if missing).
+  // We cast event to include an optional passengerCount so TypeScript allows us to access it.
+  const passengerData: PassengerEvent[] = filteredData.map((event) => {
+    const extendedEvent = event as DataContextBaseEvent & { passengerCount?: number };
+    return {
+      ...extendedEvent,
+      passengerCount: extendedEvent.passengerCount ?? 0,
+    };
+  });
 
   const filteredVehicleTypes = useMemo(() => {
     const types = new Set<string>();
