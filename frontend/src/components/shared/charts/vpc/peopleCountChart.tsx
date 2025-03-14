@@ -56,7 +56,7 @@ export default function PeopleCountChart({
 
     const vehicleTypes = Object.keys(sums);
     const avgValues = vehicleTypes.map((type) =>
-      counts[type] > 0 ? sums[type] / counts[type] : 0
+      counts[type] > 0 ? Math.round(sums[type] / counts[type]) : 0
     );
 
     return {
@@ -91,6 +91,8 @@ export default function PeopleCountChart({
       },
       y: {
         ticks: {
+          precision: 0,
+          callback: (value: any) => Number(value).toFixed(0),
           font: {
             size: isMobile ? 10 : 12,
           },
