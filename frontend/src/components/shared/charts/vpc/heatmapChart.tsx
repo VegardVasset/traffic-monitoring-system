@@ -1,9 +1,14 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { ResponsiveHeatMap, ComputedCell } from "@nivo/heatmap";
+import { Chart as ChartJS, LinearScale, Tooltip, Legend } from "chart.js";
+import { Chart } from "react-chartjs-2";
+import { MatrixController, MatrixElement } from "chartjs-chart-matrix";
 
-// Adjust this interface if your data has different fields or optional fields
+// Register Chart.js components and the matrix plugin.
+ChartJS.register(LinearScale, Tooltip, Legend, MatrixController, MatrixElement);
+
+// Adjust this interface if your data has different fields or optional fields.
 export interface PassengerEvent {
   id: number;
   creationTime: string; // e.g. "2025-03-13T10:12:43Z"
@@ -52,26 +57,15 @@ export default function HeatmapChart({ data, isMobile = false }: HeatmapChartPro
     return sumArr.map((row) => row.map((val) => Math.round(val / totalWeeks)));
   }, [data, totalWeeks]);
 
-  // 3) Days of the week (row labels) wrapped in useMemo to ensure stability.
+  // 3) Days of the week (y-axis labels) and hours (x-axis labels).
   const daysOfWeek = useMemo(() => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], []);
+  const xLabels = useMemo(() => Array.from({ length: 24 }, (_, i) => `${i}`), []);
 
-  // 4) Convert the 7×24 matrix into Nivo HeatMap data format.
-  const heatmapData = useMemo(() => {
-    return daysOfWeek.map((dayName, dayIndex) => ({
-      id: dayName,
-      data: Array.from({ length: 24 }, (_, hour) => ({
-        x: `${hour}`, // label on the X-axis
-        y: averagedArr[dayIndex][hour],
-      })),
-    }));
-  }, [averagedArr, daysOfWeek]);
-
-  // 5) Set up quantized color scale thresholds for a custom legend.
+  // 4) Set up quantized color scale thresholds for a custom legend.
   const flatValues = averagedArr.flat();
   const minValue = Math.min(...flatValues);
   const maxValue = Math.max(...flatValues);
 
-  // These are the color buckets.
   const quantColors = [
     "#fef0d9",
     "#fdd49e",
@@ -85,101 +79,143 @@ export default function HeatmapChart({ data, isMobile = false }: HeatmapChartPro
 
   let thresholds: number[] = [];
   if (maxValue === minValue) {
-    // If all values are the same, create repeated thresholds
     thresholds = Array.from({ length: nBuckets + 1 }, () => minValue);
   } else {
     const step = (maxValue - minValue) / nBuckets;
-    thresholds = Array.from({ length: nBuckets + 1 }, (_, i) => minValue + i * step);
+    thresholds = Array.from({ length: nBuckets + 1 }, (_, i) => Math.round(minValue + i * step));
   }
-  thresholds = thresholds.map(Math.round);
 
-  const legendItems = quantColors.map((color, i) => ({
-    color,
-    range: `${thresholds[i]} – ${thresholds[i + 1]}`,
-  }));
+  // Function to determine the color for a given value.
+  const getColorForValue = (value: number) => {
+    for (let i = 0; i < nBuckets; i++) {
+      if (value >= thresholds[i] && value <= thresholds[i + 1]) {
+        return quantColors[i];
+      }
+    }
+    return quantColors[nBuckets - 1];
+  };
 
-  // 6) Adjust styling for mobile vs. desktop.
-  const margin = isMobile
-    ? { top: 30, right: 10, bottom: 40, left: 40 }
-    : { top: 50, right: 20, bottom: 60, left: 60 };
-  const fontSize = isMobile ? 8 : 12;
+  // 5) Prepare the matrix data points for Chart.js.
+  // Each data point represents a cell with x (hour), y (day) and v (passenger count).
+  const matrixData = useMemo(() => {
+    const points: { x: string; y: string; v: number; backgroundColor: string }[] = [];
+    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+      for (let hour = 0; hour < 24; hour++) {
+        const value = averagedArr[dayIndex][hour];
+        points.push({
+          x: hour.toString(),
+          y: daysOfWeek[dayIndex],
+          v: value,
+          backgroundColor: getColorForValue(value),
+        });
+      }
+    }
+    return points;
+  }, [averagedArr, daysOfWeek, thresholds]);
+
+  // 6) Chart.js data configuration.
+  const chartData = useMemo(
+    () => ({
+      datasets: [
+        {
+          label: "Passenger Count Heatmap",
+          data: matrixData,
+          // Compute cell dimensions based on chart area.
+          width: ({ chart }: { chart: ChartJS }) =>
+            chart.chartArea ? chart.chartArea.width / 24 : 0,
+          height: ({ chart }: { chart: ChartJS }) =>
+            chart.chartArea ? chart.chartArea.height / 7 : 0,
+          // Use the precomputed backgroundColor for each cell.
+          backgroundColor: (ctx: any) => {
+            const index = ctx.dataIndex;
+            return matrixData[index].backgroundColor;
+          },
+          borderColor: "#E2E2E2",
+          borderWidth: 1,
+        },
+      ],
+    }),
+    [matrixData]
+  );
+
+  // 7) Chart.js options (conditionals for mobile).
+  const options = useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        tooltip: {
+          callbacks: {
+            title: (context: any) => {
+              const item = context[0];
+              return `${item.raw.y} – ${item.raw.x}:00`;
+            },
+            label: (context: any) => `${context.raw.v} passengers`,
+          },
+        },
+        legend: {
+          display: false,
+        },
+      },
+      scales: {
+        x: {
+          type: "category" as const,
+          labels: xLabels,
+          title: {
+            display: true,
+            text: "Hour",
+            // Smaller font on mobile
+            font: { size: isMobile ? 10 : 14 },
+          },
+          ticks: {
+            // Smaller tick font on mobile
+            font: { size: isMobile ? 8 : 12 },
+          },
+          grid: { display: false },
+          // Keep offset on desktop, turn it off on mobile
+          offset: true,
+        },
+        y: {
+          type: "category" as const,
+          labels: daysOfWeek,
+          title: {
+            display: true,
+            text: "Day",
+            font: { size: isMobile ? 10 : 14 },
+          },
+          ticks: {
+            font: { size: isMobile ? 8 : 12 },
+          },
+          grid: { display: false },
+          offset: true,
+        },
+      },
+    }),
+    [xLabels, daysOfWeek, isMobile]
+  );
+
+  // 8) Prepare legend items.
+  const legendItems = useMemo(
+    () =>
+      quantColors.map((color, i) => ({
+        color,
+        range: `${thresholds[i]} – ${thresholds[i + 1]}`,
+      })),
+    [quantColors, thresholds]
+  );
+
+  // Use a smaller container on mobile to fit better
+  const containerStyle = { minHeight: isMobile ? 200 : 400 };
 
   return (
-    <div
-      className="flex flex-col w-full h-full"
-      style={{ minHeight: isMobile ? 300 : 400 }}
-    >
+    <div className="flex flex-col w-full h-full">
       <h2 className="ml-4 text-xs md:text-xl font-semibold mb-4">
         Average Passenger Count per Hour
       </h2>
-
-      {/* The chart */}
-      <div className="relative flex-1 w-full h-full">
-        <ResponsiveHeatMap
-          isInteractive={!isMobile}
-          data={heatmapData}
-          margin={margin}
-          theme={{
-            text: { fontSize },
-            axis: {
-              domain: { line: { stroke: "#777777", strokeWidth: 1 } },
-              ticks: {
-                line: { stroke: "#777777", strokeWidth: 1 },
-                text: { fill: "#333333" },
-              },
-            },
-            grid: { line: { stroke: "#dddddd", strokeWidth: 1 } },
-          }}
-          valueFormat=">-.0f"
-          colors={{
-            type: "quantize",
-            colors: quantColors,
-          }}
-          emptyColor="#F8F8F8"
-          borderColor="#E2E2E2"
-          axisTop={null}
-          axisRight={null}
-          axisBottom={{
-            tickSize: isMobile ? 3 : 5,
-            tickPadding: isMobile ? 3 : 5,
-            tickRotation: 0,
-            legend: "Hour",
-            legendPosition: "middle",
-            legendOffset: isMobile ? 30 : 40,
-          }}
-          axisLeft={{
-            tickSize: isMobile ? 3 : 5,
-            tickPadding: isMobile ? 3 : 5,
-            tickRotation: 0,
-            legend: "Day",
-            legendPosition: "middle",
-            legendOffset: isMobile ? -35 : -50,
-          }}
-          // Hide the numeric labels inside each cell on mobile for clarity
-          labelTextColor={{ from: "color", modifiers: [["darker", 1.8]] }}
-          hoverTarget="cell"
-          tooltip={({ cell }: { cell: ComputedCell<{ x: string; y: number }> }) => (
-            <div
-              style={{
-                background: "white",
-                padding: "5px",
-                border: "1px solid #ccc",
-              }}
-            >
-              <strong>
-                {cell.serieId} – {cell.x}:00
-              </strong>{" "}
-              {cell.value} passengers
-            </div>
-          )}
-        />
+      <div style={containerStyle}>
+        <Chart type="matrix" data={chartData} options={options} />
       </div>
-
-      {/* Custom Legend (placed below the chart) */}
       <div className="flex flex-row flex-wrap items-center justify-center mt-2">
-        <div className="text-sm font-semibold mb-2 w-full text-center">
-          Average passenger count
-        </div>
         {legendItems.map((item, i) => (
           <div key={i} className="flex items-center mr-4 mb-2">
             <div
