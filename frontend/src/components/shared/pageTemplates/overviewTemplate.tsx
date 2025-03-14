@@ -1,4 +1,3 @@
-// OverviewTemplate.tsx
 "use client";
 
 import React, { useCallback, useMemo, useState, useEffect } from "react";
@@ -21,6 +20,9 @@ import {
 } from "@/components/ui/sheet";
 import { useData } from "@/context/DataContext";
 
+// --------------------------------
+// Types & Interfaces
+// --------------------------------
 export interface BaseEvent {
   id: number;
   creationTime: string;
@@ -29,50 +31,99 @@ export interface BaseEvent {
   camera: string;
 }
 
+/** Helper function: convert ISO date (yyyy-mm-dd) to dd-mm-yyyy */
+function formatIsoDate(iso: string): string {
+  const [year, month, day] = iso.split("-");
+  return `${day}-${month}-${year}`;
+}
+
+/** Helper function: compute ISO week number for a given date */
+function getWeekNumber(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+/**
+ * formatDrillDownLabel
+ * Converts the clicked binKey + binSize to a user-friendly label
+ * e.g. "Hour 14", "Week 10-2025", "10-03-2025", etc.
+ */
+function formatDrillDownLabel(
+  binKey: string,
+  currentBinSize: "hour" | "day" | "week" | "month"
+): string {
+  if (currentBinSize === "hour") {
+    // e.g. binKey "2025-03-10T14" => "10-03-2025 14:00"
+    return formatIsoDate(binKey.substring(0, 10)) + " " + binKey.substring(11) + ":00";
+  } else if (currentBinSize === "day") {
+    // e.g. binKey "2025-03-10" => "10-03-2025"
+    return formatIsoDate(binKey);
+  } else if (currentBinSize === "week") {
+    // e.g. binKey "2025-03-10" => "Week 10-2025"
+    const date = new Date(binKey);
+    const weekNo = getWeekNumber(date);
+    const year = date.getFullYear();
+    return `Week ${weekNo}-${year}`;
+  } else if (currentBinSize === "month") {
+    // e.g. binKey "2025-03" => "03-2025"
+    const [year, month] = binKey.split("-");
+    return `${month}-${year}`;
+  }
+  return binKey;
+}
+
 interface OverviewTemplateProps {
   domainTitle: string;
   defaultBinSize?: "hour" | "day" | "week" | "month";
   children?: React.ReactNode;
 }
 
+// --------------------------------
+// Main Component
+// --------------------------------
 export default function OverviewTemplate({
   domainTitle,
   defaultBinSize = "day",
   children,
 }: OverviewTemplateProps) {
+  // Data from context
   const { data, loading, isLive, setIsLive, refetch } = useData();
 
+  // Local states
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
   const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
   const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">(defaultBinSize);
 
-  // Default date range: 1 week ago until today
+  // Default date range: 1 week ago until today (ISO format)
   const today = new Date().toISOString().substring(0, 10);
   const oneWeekAgo = new Date(new Date().setDate(new Date().getDate() - 7))
     .toISOString()
     .substring(0, 10);
+
   const [startDate, setStartDate] = useState<string>(oneWeekAgo);
   const [endDate, setEndDate] = useState<string>(today);
 
-  const handlePeriodChange = useCallback((start: string, end: string) => {
-    setStartDate(start);
-    setEndDate(end);
-  }, []);
+  // --------------------------------
+  // Derived Data
+  // --------------------------------
 
+  // 1) Collect all vehicle types from the raw data (for the filter panel).
   const derivedVehicleTypes = useMemo(() => {
     const types = new Set<string>();
     data.forEach((event) => types.add(event.vehicleType));
     return Array.from(types);
   }, [data]);
 
+  // 2) Collect all cameras from the raw data (for the filter panel).
   const derivedCameras = useMemo(() => {
     const cams = new Map<string, string>();
-    data.forEach((event) => {
-      cams.set(event.camera, event.camera);
-    });
+    data.forEach((event) => cams.set(event.camera, event.camera));
     return Array.from(cams, ([id, name]) => ({ id, name }));
   }, [data]);
 
+  // 3) filteredData respects user’s chosen camera, vehicle type, and date range
   const filteredData = useMemo(() => {
     return data.filter((event) => {
       const eventDate = event.creationTime.substring(0, 10);
@@ -80,16 +131,21 @@ export default function OverviewTemplate({
       const matchCamera = selectedCamera === "all" || event.camera === selectedCamera;
       const matchVehicle =
         selectedVehicleTypes.length === 0 || selectedVehicleTypes.includes(event.vehicleType);
+
       return withinDateRange && matchCamera && matchVehicle;
     });
   }, [data, selectedCamera, selectedVehicleTypes, startDate, endDate]);
 
+  // 4) For the main chart’s legend, we only show the types actually present in filteredData
   const filteredVehicleTypes = useMemo(() => {
     const types = new Set<string>();
     filteredData.forEach((event) => types.add(event.vehicleType));
     return Array.from(types);
   }, [filteredData]);
 
+  // --------------------------------
+  // Responsiveness
+  // --------------------------------
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -102,58 +158,107 @@ export default function OverviewTemplate({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  if (loading && !isLive) {
-    return <p className="text-gray-500">Loading {domainTitle} data...</p>;
-  }
+  // --------------------------------
+  // Drill-Down Logic
+  // --------------------------------
+  const [drillDownOpen, setDrillDownOpen] = useState(false);
+  const [drillDownBinKey, setDrillDownBinKey] = useState<string | null>(null);
 
+  // When user clicks a data point, store the binKey & open the overlay
+  const handleDataPointClick = useCallback((binKey: string) => {
+    setDrillDownBinKey(binKey);
+    setDrillDownOpen(true);
+  }, []);
+
+  // For the overlay, we shift from day->hour, week->day, month->week, etc.
+  const getDrillDownBinSize = useCallback(() => {
+    if (binSize === "day") return "hour";
+    if (binSize === "week") return "day";
+    if (binSize === "month") return "week";
+    return "hour";
+  }, [binSize]);
+
+  /**
+   * The key fix: we base our drill-down on `filteredData`, 
+   * not on the raw `data`, so it respects camera/vehicle filters.
+   */
+  const getDrillDownData = useCallback(() => {
+    if (!drillDownBinKey) return [];
+
+    // Use filteredData so camera & vehicle filters are carried over
+    if (binSize === "day") {
+      // e.g. "2025-03-10"
+      const dayString = drillDownBinKey.substring(0, 10);
+      return filteredData.filter((evt) => evt.creationTime.substring(0, 10) === dayString);
+    } else if (binSize === "week") {
+      // e.g. "2025-03-10"
+      const startOfWeek = new Date(drillDownBinKey);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(endOfWeek.getDate() + 6);
+      return filteredData.filter((evt) => {
+        const evtDate = new Date(evt.creationTime.substring(0, 10));
+        return evtDate >= startOfWeek && evtDate <= endOfWeek;
+      });
+    } else if (binSize === "month") {
+      // e.g. "2025-03"
+      return filteredData.filter((evt) => evt.creationTime.startsWith(drillDownBinKey));
+    }
+    return [];
+  }, [binSize, drillDownBinKey, filteredData]);
+
+  // Build the actual array for the overlay chart
+  const drillDownData = getDrillDownData();
+
+  // We derive which vehicle types appear in that overlay data
+  const drillDownVehicleTypes = useMemo(() => {
+    const types = new Set<string>();
+    drillDownData.forEach((evt) => {
+      types.add(evt.vehicleType);
+    });
+    return Array.from(types);
+  }, [drillDownData]);
+
+  const isLoading = loading && !isLive;
+
+  // --------------------------------
+  // Render
+  // --------------------------------
   return (
     <div className="px-2 md:px-4 py-2 md:py-4 w-full">
-      {/* TITLE + MOBILE FILTER BUTTON */}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4">
-          {domainTitle} Overview
-        </h1>
-        <div className="block lg:hidden">
-          <Button variant="outline" onClick={() => setMobileFilterOpen(true)}>
-            Open Filters
-          </Button>
-        </div>
-      </div>
+      {isLoading ? (
+        <p className="text-gray-500">Loading {domainTitle} data...</p>
+      ) : (
+        <>
+          {/* TOP HEADER & MOBILE FILTER BUTTON */}
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4">
+              {domainTitle} Overview
+            </h1>
+            <div className="block lg:hidden">
+              <Button variant="outline" onClick={() => setMobileFilterOpen(true)}>
+                Open Filters
+              </Button>
+            </div>
+          </div>
 
-      {/* PERIOD, EVENT SUMMARY, FILTER PANEL ROW */}
-      <div className="flex flex-wrap items-start gap-4 mb-4">
-        <Card className="p-3 max-w-sm w-full hidden lg:block">
-          <PeriodFilter startDate={startDate} endDate={endDate} onChange={handlePeriodChange} />
-        </Card>
-        <Card className="p-3 max-w-sm w-full hidden lg:block">
-          <EventSummary count={filteredData.length} />
-        </Card>
-        <Card className="p-3 hidden lg:block">
-          <FilterPanel
-            cameras={derivedCameras}
-            selectedCamera={selectedCamera}
-            setSelectedCamera={setSelectedCamera}
-            vehicleTypes={derivedVehicleTypes}
-            selectedVehicleTypes={selectedVehicleTypes}
-            setSelectedVehicleTypes={setSelectedVehicleTypes}
-            binSize={binSize}
-            setBinSize={setBinSize}
-            isLive={isLive}
-            setIsLive={setIsLive}
-            showLiveButton={false}
-            onRefetch={refetch} // triggers a REST fetch if desired
-          />
-        </Card>
-      </div>
+          {/* PERIOD, EVENT SUMMARY, FILTER PANEL ROW */}
+          <div className="flex flex-wrap items-start gap-4 mb-4">
+            <Card className="p-3 max-w-sm w-full hidden lg:block">
+              <PeriodFilter
+                startDate={startDate}
+                endDate={endDate}
+                onChange={(start, end) => {
+                  setStartDate(start);
+                  setEndDate(end);
+                }}
+              />
+            </Card>
 
-      {/* MOBILE FILTER SHEET */}
-      <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
-        <SheetContent side="right" className="w-[85%] sm:w-[360px] p-2 text-xs">
-          <SheetHeader>
-            <SheetTitle>{domainTitle} Filters</SheetTitle>
-          </SheetHeader>
-          <Card className="p-4 mt-4">
-            <div className="flex flex-col gap-4 w-full">
+            <Card className="p-3 max-w-sm w-full hidden lg:block">
+              <EventSummary count={filteredData.length} />
+            </Card>
+
+            <Card className="p-3 hidden lg:block">
               <FilterPanel
                 cameras={derivedCameras}
                 selectedCamera={selectedCamera}
@@ -168,40 +273,142 @@ export default function OverviewTemplate({
                 showLiveButton={false}
                 onRefetch={refetch}
               />
+            </Card>
+          </div>
 
-              <PeriodFilter startDate={startDate} endDate={endDate} onChange={handlePeriodChange} />
-              <EventSummary count={filteredData.length} />
+          {/* MOBILE FILTER SHEET */}
+          <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
+            <SheetContent side="right" className="w-[85%] sm:w-[360px] p-2 text-xs">
+              <SheetHeader>
+                <SheetTitle>{domainTitle} Filters</SheetTitle>
+              </SheetHeader>
+              <Card className="p-4 mt-4">
+                <div className="flex flex-col gap-4 w-full">
+                  <FilterPanel
+                    cameras={derivedCameras}
+                    selectedCamera={selectedCamera}
+                    setSelectedCamera={setSelectedCamera}
+                    vehicleTypes={derivedVehicleTypes}
+                    selectedVehicleTypes={selectedVehicleTypes}
+                    setSelectedVehicleTypes={setSelectedVehicleTypes}
+                    binSize={binSize}
+                    setBinSize={setBinSize}
+                    isLive={isLive}
+                    setIsLive={setIsLive}
+                    showLiveButton={false}
+                    onRefetch={refetch}
+                  />
+                  <PeriodFilter
+                    startDate={startDate}
+                    endDate={endDate}
+                    onChange={(start, end) => {
+                      setStartDate(start);
+                      setEndDate(end);
+                    }}
+                  />
+                  <EventSummary count={filteredData.length} />
+                </div>
+              </Card>
+              <div className="mt-4">
+                <SheetClose asChild>
+                  <Button variant="outline">Close</Button>
+                </SheetClose>
+              </div>
+            </SheetContent>
+            <SheetTrigger asChild>
+              <div />
+            </SheetTrigger>
+          </Sheet>
+
+          {/* MAIN LEGEND */}
+          <UnifiedLegend vehicleTypes={filteredVehicleTypes} />
+
+          {/* MAIN CHARTS */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
+            <div className="relative w-full" style={{ aspectRatio: isMobile ? "1 / 1" : "1.5 / 1" }}>
+              <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
+                <TimeSeriesChart
+                  data={filteredData}
+                  binSize={binSize}
+                  onDataPointClick={handleDataPointClick}
+                />
+              </div>
             </div>
-          </Card>
-          <div className="mt-4">
-            <SheetClose asChild>
-              <Button variant="outline">Close</Button>
-            </SheetClose>
+            <div className="relative w-full" style={{ aspectRatio: isMobile ? "1 / 1" : "1.5 / 1" }}>
+              <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
+                <VehicleDistributionChart data={filteredData} />
+              </div>
+            </div>
           </div>
-        </SheetContent>
-        <SheetTrigger asChild>
-          <div />
-        </SheetTrigger>
-      </Sheet>
 
-      {/* SINGLE LEGEND */}
-      <UnifiedLegend vehicleTypes={filteredVehicleTypes} />
+          {children && <div className="mt-4">{children}</div>}
 
-      {/* CHARTS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
-        <div className="relative w-full" style={{ aspectRatio: isMobile ? "1 / 1" : "1.5 / 1" }}>
-          <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
-            <TimeSeriesChart data={filteredData} binSize={binSize} />
-          </div>
-        </div>
-        <div className="relative w-full" style={{ aspectRatio: isMobile ? "1 / 1" : "1.5 / 1" }}>
-          <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
-            <VehicleDistributionChart data={filteredData} />
-          </div>
-        </div>
-      </div>
+          {/* DRILL-DOWN SHEET / MODAL */}
+          <Sheet open={drillDownOpen} onOpenChange={setDrillDownOpen}>
+            <SheetContent
+              side="right"
+              className="
+      !max-w-none
+      w-[85%]            /* Overlay width on small screens */
+      sm:w-[700px]       /* Then 700px on sm+ */
+      md:w-[900px]       /* 900px on md+ */
+      lg:w-[1200px]      /* 1200px on lg+ */
+      text-xs
+      h-screen           /* Full screen height */
+      flex
+      flex-col
+      overflow-hidden    /* No scrolling: everything must fit */
+      p-2
+    "
+            >
+              <SheetHeader className="flex-none">
+                <SheetTitle>Detailed View</SheetTitle>
+              </SheetHeader>
 
-      {children && <div className="mt-4">{children}</div>}
+              {/* Main content area fills leftover vertical space */}
+              <div className="flex-1 flex flex-col mt-4">
+                {drillDownBinKey ? (
+                  <>
+                    {/* 1) Header info for the chart */}
+                    <p className="text-sm mb-2">
+                      Detailed breakdown for <b>{formatDrillDownLabel(drillDownBinKey, binSize)}</b>
+                      <br />
+                      (Drill-down bin size: {getDrillDownBinSize()})
+                    </p>
+
+                    {/* 2) Chart container (flex-1) so it expands/shrinks in the middle */}
+                    <div className="flex-1 bg-white shadow rounded-lg p-2">
+                      <TimeSeriesChart
+                        data={drillDownData}
+                        binSize={getDrillDownBinSize()}
+                      />
+                    </div>
+
+                    {/* 3) Legend container (flex-none) pinned below the chart */}
+                    <div className="mt-2 flex-none">
+                      <UnifiedLegend vehicleTypes={drillDownVehicleTypes} />
+                    </div>
+                  </>
+                ) : (
+                  <p>No bin selected yet.</p>
+                )}
+              </div>
+
+              {/* 4) Close button at the bottom (flex-none) */}
+              <div className="flex-none">
+                <SheetClose asChild>
+                  <Button variant="outline">Close</Button>
+                </SheetClose>
+              </div>
+            </SheetContent>
+            <SheetTrigger asChild>
+              <div />
+            </SheetTrigger>
+          </Sheet>
+
+
+        </>
+      )}
     </div>
   );
 }
