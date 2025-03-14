@@ -92,7 +92,9 @@ export default function PeopleCountChart({
       y: {
         ticks: {
           precision: 0,
-          callback: (value: any) => Number(value).toFixed(0),
+          callback: function (tickValue: string | number) {
+            return Number(tickValue).toFixed(0);
+          },
           font: {
             size: isMobile ? 10 : 12,
           },
@@ -101,7 +103,6 @@ export default function PeopleCountChart({
       },
     },
     plugins: {
-
       datalabels: {
         display: false,
       },
@@ -111,10 +112,9 @@ export default function PeopleCountChart({
       },
       tooltip: {
         callbacks: {
-          label(context: any) {
+          label: (context: { parsed: { y: number } }) => {
             const value = context.parsed.y;
             return `Avg: ${Math.round(value)}`;
-            
           },
         },
       },

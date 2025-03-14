@@ -1,7 +1,7 @@
 // src/config/domainConfig.ts
 
 import { NavItem } from "@/components/layout/sidebar";
-import { CameraIcon, ChartBarSquareIcon, TruckIcon, ChartBarIcon } from "@heroicons/react/24/outline";
+import { CameraIcon, ChartBarSquareIcon, TruckIcon } from "@heroicons/react/24/outline";
 
 import  {GiCarWheel} from "react-icons/gi";
 import { GrGroup } from "react-icons/gr";
