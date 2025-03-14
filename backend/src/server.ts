@@ -14,7 +14,7 @@ const io = new Server(server, {
 
 // In-memory mock database
 const mockDatabase: Record<string, MockRecord[]> = {
-  ferry: [],
+  vpc: [],
   tires: [],
   dts: [],
 };
@@ -22,7 +22,7 @@ const mockDatabase: Record<string, MockRecord[]> = {
 // Generate initial 10,000 records for each entity type
 function initializeMockDatabase() {
   console.log("Generating initial mock data...");
-  mockDatabase.ferry = generateMockData("ferry", 10000);
+  mockDatabase.vpc = generateMockData("vpc", 10000);
   mockDatabase.tires = generateMockData("tires", 10000);
   mockDatabase.dts = generateMockData("dts", 10000);
   console.log("Initial mock data generated successfully!");
@@ -41,9 +41,9 @@ function continuouslyAddMockData() {
     const receptionTime = getReceptionTime(creationTime);
 
     const newData = {
-      ferry: {
-        ...generateMockData("ferry", 1, { creationTime, receptionTime })[0],
-        id: getNextId("ferry"),
+      vpc: {
+        ...generateMockData("vpc", 1, { creationTime, receptionTime })[0],
+        id: getNextId("vpc"),
       },
       tires: {
         ...generateMockData("tires", 1, { creationTime, receptionTime })[0],
@@ -61,7 +61,7 @@ function continuouslyAddMockData() {
     });
 
     // Update in-memory database
-    mockDatabase.ferry.push(newData.ferry);
+    mockDatabase.vpc.push(newData.vpc);
     mockDatabase.tires.push(newData.tires);
     mockDatabase.dts.push(newData.dts);
   }, 1000000);

@@ -15,7 +15,7 @@ describe("Header Component", () => {
   it("renders navigation links", () => {
     render(<Header />);
 
-    expect(screen.getByText("Ferry Counter")).toBeInTheDocument();
+    expect(screen.getByText("Vehicle Passenger Counter")).toBeInTheDocument();
     expect(screen.getByText("Detailed Traffic Statistics")).toBeInTheDocument();
     expect(screen.getByText("Tire Scanner")).toBeInTheDocument();
   });

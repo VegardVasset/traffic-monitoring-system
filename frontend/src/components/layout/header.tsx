@@ -12,7 +12,7 @@ interface HeaderProps {
 export default function Header({ onToggleSidebar, hideHamburger }: HeaderProps) {
   // Updated top-level navigation with id for consistency
   const topLevelNav = [
-    { id: "ferry", label: "Ferry Counter", href: "/ferry" },
+    { id: "vpc", label: "Vehicle Passenger Counter", href: "/vpc" },
     { id: "dts", label: "Detailed Traffic Statistics", href: "/dts" },
     { id: "tires", label: "Tire Scanner", href: "/tires" },
   ];

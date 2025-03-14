@@ -28,7 +28,7 @@ into types of traffic on the road. Web portal showing passings and statistics.
       `,
     },
     {
-      title: "Ferry Passenger Counting (VPCS)",
+      title: "Vehicle Passenger Counting (VPCS)",
       description:
         "Accurately count passengers in moving vehicles with advanced optics and real-time data.",
       expandedDescription: `
@@ -94,7 +94,7 @@ thorough inspections.
           transition={{ duration: 0.7, delay: 0.3 }}
         >
           Real-time insights into traffic patterns, vehicle monitoring, 
-          and ferry passenger counts.
+          and vehicle passenger counts.
         </motion.p>
       </header>
 

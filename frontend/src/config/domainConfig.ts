@@ -1,8 +1,11 @@
 // src/config/domainConfig.ts
 
 import { NavItem } from "@/components/layout/sidebar";
-import { CameraIcon, ChartBarSquareIcon, TruckIcon } from "@heroicons/react/24/outline";
+import { CameraIcon, ChartBarSquareIcon, TruckIcon, ChartBarIcon } from "@heroicons/react/24/outline";
+
 import  {GiCarWheel} from "react-icons/gi";
+import { GrGroup } from "react-icons/gr";
+
 import React from "react";
 
 export interface DomainConfig {
@@ -35,26 +38,32 @@ export const domainConfigs: Record<string, DomainConfig> = {
       }
     ],
   },
-  ferry: {
-    title: "Ferry Counter",
+  vpc: {
+    title: "Vehicle Passenger Counter",
     navItems: [
       {
         id: "overview",
         label: "Overview",
-        href: "/ferry/overview",
+        href: "/vpc/overview",
         icon: React.createElement(ChartBarSquareIcon, { className: "w-6 h-6" }),
       },
       {
         id: "passings",
         label: "Passings",
-        href: "/ferry/events",
+        href: "/vpc/events",
         icon: React.createElement(TruckIcon, { className: "w-6 h-6" }),
       },
       {
         id: "cameras",
         label: "Cameras",
-        href: "/ferry/cameras",
+        href: "/vpc/cameras",
         icon: React.createElement(CameraIcon, { className: "w-6 h-6" }),
+      },
+      {
+        id: "passengerCount",
+        label: "People Counting",
+        href: "/vpc/peoplecounting",
+        icon: React.createElement(GrGroup, { className: "w-6 h-6" }),
       }
     ],
   },
