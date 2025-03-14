@@ -109,8 +109,8 @@ const getColumns = (domain: string): ColumnDef<Event>[] => {
     );
   }
 
-  // If domain is "ferry", add passenger count column
-  if (domain === "ferry") {
+  // If domain is "vpc", add passenger count column
+  if (domain === "vpc") {
     baseColumns.push({
       accessorKey: "passengerCount",
       header: "Passenger Count",

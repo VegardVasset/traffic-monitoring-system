@@ -4,7 +4,7 @@ import { ReactNode } from "react";
 import { domainConfigs } from "@/config/domainConfig";
 
 export default function DtsLayout({ children }: { children: ReactNode }) {
-  const config = domainConfigs.ferry;
+  const config = domainConfigs.vpc;
   return (
     <DomainLayout navItems={config.navItems}>
       {children}

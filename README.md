@@ -3,12 +3,12 @@
 ## Backend Updates 🔧  
 ### API & WebSocket Setup  
 - Created **API endpoints** to fetch initial event data:  
-  - `GET /api/ferry`  
+  - `GET /api/vpc`  
   - `GET /api/tires`  
   - `GET /api/vehicles`  
 - Implemented **WebSocket server** to send real-time updates.  
 - Clients subscribe **only to relevant data** (room-based WebSocket filtering).  
-- **Optimized data broadcasting** so each client only receives updates for their domain (e.g., ferry page only gets ferry data).  
+- **Optimized data broadcasting** so each client only receives updates for their domain (e.g., vpc page only gets vpc data).  
 
 ### Data Handling  
 - **Mock database** initialized with **1000 records per entity**.  
@@ -20,7 +20,7 @@
 
 ## Frontend Updates 🎨  
 ### Table Features  
-- **Displays ferry, tire, and vehicle events dynamically.**  
+- **Displays vpc, tire, and vehicle events dynamically.**  
 - **Pagination, sorting, filtering, and column visibility toggling** added.  
 - **Row selection** with checkboxes (sorting disabled for selection column).  
 - **Three-way sorting** (ascending, descending, reset).  

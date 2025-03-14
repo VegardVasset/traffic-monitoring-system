@@ -13,7 +13,7 @@ const camerasByDomain: Record<string, { name: string; weight: number }[]> = {
     { name: "Oslo Parkering", weight: 35 },
     { name: "Vardø", weight: 25 },
   ],
-  ferry: [
+  vpc: [
     { name: "Rutledal", weight: 45 },
     { name: "Isane", weight: 35 },
     { name: "Lavik", weight: 20 },
@@ -22,7 +22,6 @@ const camerasByDomain: Record<string, { name: string; weight: number }[]> = {
 
 function getRandomTireCondition(): number {
   const weightedValues: number[] = [];
-
   const distribution = [
     { value: 5, weight: 50 },
     { value: 4, weight: 30 },
@@ -40,9 +39,46 @@ function getRandomTireCondition(): number {
   return weightedValues[Math.floor(Math.random() * weightedValues.length)];
 }
 
-
-function getRandomPassengerCount(): number {
-  return faker.number.int({ min: 1, max: 5 });
+/**
+ * Generate a passenger count based on the vehicle type.
+ * - "buss": 20-50 passengers
+ * - "person transport": 1-5 passengers
+ * - "motorsykkel": usually 1, sometimes 2
+ * - "lastebil" (lukket, åpen, sylinder) & "lett industri": 1-2 passengers
+ * - "tilhenger": 0 passengers
+ * - "camping kjøretøy": 1-4 passengers
+ * - "utrykningskjøretøy": 1-3 passengers
+ * - "myke trafikanter": always 1
+ * - "traktor": always 1
+ * - Default: 1-5 passengers
+ */
+function getRandomPassengerCount(vehicleType: MockRecord["vehicleType"]): number {
+  switch (vehicleType) {
+    case "buss":
+      return faker.number.int({ min: 1, max: 5 });
+    case "person transport":
+      return faker.number.int({ min: 1, max: 5 });
+    case "motorsykkel":
+      return Math.random() < 0.8 ? 1 : 2;
+    case "lastebil lukket":
+    case "lastebil åpen":
+    case "lastebil sylinder":
+      return faker.number.int({ min: 1, max: 2 });
+    case "lett industri":
+      return faker.number.int({ min: 1, max: 2 });
+    case "tilhenger":
+      return faker.number.int({ min: 1, max: 2 });
+    case "camping kjøretøy":
+      return faker.number.int({ min: 1, max: 4 });
+    case "utrykningskjøretøy":
+      return faker.number.int({ min: 1, max: 3 });
+    case "myke trafikanter":
+      return 1;
+    case "traktor":
+      return 1;
+    default:
+      return faker.number.int({ min: 1, max: 5 });
+  }
 }
 
 function getRandomTireType(timestamp: string): "Sommerdekk" | "Vinterdekk" {
@@ -52,10 +88,10 @@ function getRandomTireType(timestamp: string): "Sommerdekk" | "Vinterdekk" {
   let winterProbability = 0;
 
   if (month >= 12 || month <= 2) {
-    // Winter months (December, January, February) → ~100% winter tires
+    // Winter months → ~100% winter tires
     winterProbability = 0.95;
   } else if (month >= 6 && month <= 8) {
-    // Summer months (June, July, August) → ~100% summer tires
+    // Summer months → ~100% summer tires
     winterProbability = 0.05;
   } else if (month >= 3 && month <= 5) {
     // Transition Spring: Gradually decrease winter tires
@@ -68,12 +104,41 @@ function getRandomTireType(timestamp: string): "Sommerdekk" | "Vinterdekk" {
   return Math.random() < winterProbability ? "Vinterdekk" : "Sommerdekk";
 }
 
+function getWeightedHour(): number {
+  // 75% chance for a daytime hour, 25% for a nighttime hour
+  if (Math.random() < 0.75) {
+    // Within daytime, decide if it's rush hour (50% chance of daytime)
+    if (Math.random() < 0.5) {
+      // Choose randomly between morning rush (8-10) and afternoon rush (15-17)
+      return Math.random() < 0.5
+        ? faker.number.int({ min: 8, max: 10 })
+        : faker.number.int({ min: 15, max: 17 });
+    } else {
+      // Choose a non-rush daytime hour
+      const nonRushHours = [6, 7, 11, 12, 13, 14, 18, 19, 20];
+      return nonRushHours[faker.number.int({ min: 0, max: nonRushHours.length - 1 })];
+    }
+  } else {
+    // Nighttime hours: early morning or late night
+    const nightHours = [0, 1, 2, 3, 4, 5, 21, 22, 23];
+    return nightHours[faker.number.int({ min: 0, max: nightHours.length - 1 })];
+  }
+}
 
 function getRandomTimestamp(): string {
   const start = new Date();
-  start.setFullYear(start.getFullYear() - 1); 
+  start.setFullYear(start.getFullYear() - 1);
   const end = new Date();
-  return faker.date.between({ from: start, to: end }).toISOString();
+
+  // Generate a random date between start and end
+  let randomDate = faker.date.between({ from: start, to: end });
+
+  // Set the hour using the weighted distribution that favors rush hours
+  randomDate.setHours(getWeightedHour());
+  randomDate.setMinutes(faker.number.int({ min: 0, max: 59 }));
+  randomDate.setSeconds(faker.number.int({ min: 0, max: 59 }));
+
+  return randomDate.toISOString();
 }
 
 export function getReceptionTime(creationTime: string): string {
@@ -96,7 +161,7 @@ function getRandomVehicleType(): MockRecord["vehicleType"] {
     { type: "utrykningskjøretøy", weight: 3 },
     { type: "lastebil sylinder", weight: 3 },
     { type: "myke trafikanter", weight: 2 },
-    { type: "traktor", weight: 0 },
+    { type: "traktor", weight: 1 },
   ];
 
   const weightedList: MockRecord["vehicleType"][] = [];
@@ -129,7 +194,7 @@ function getRealisticConfidenceScore(): number {
  * Generate an array of mock records for the given entityType.
  */
 export function generateMockData(
-  entityType: "ferry" | "tires" | "dts",
+  entityType: "vpc" | "tires" | "dts",
   count: number,
   fixedTimes?: { creationTime: string; receptionTime: string }
 ): MockRecord[] {
@@ -137,12 +202,13 @@ export function generateMockData(
   for (let i = 0; i < count; i++) {
     const creationTime = fixedTimes?.creationTime || getRandomTimestamp();
     const receptionTime = fixedTimes?.receptionTime || getReceptionTime(creationTime);
+    const vehicleType = getRandomVehicleType();
 
     const record: MockRecord = {
       id: i + 1,
       creationTime,
       receptionTime,
-      vehicleType: getRandomVehicleType(),
+      vehicleType,
       camera: getRandomCamera(entityType),
       laneId: `Lane_${faker.number.int({ min: 1, max: 5 })}`,
       edgeId: `Edge_${faker.number.int({ min: 1, max: 3 })}`,
@@ -156,8 +222,9 @@ export function generateMockData(
       record.tireCondition = getRandomTireCondition();
     }
 
-    if (entityType === "ferry") {
-      record.passengerCount = getRandomPassengerCount();
+    if (entityType === "vpc") {
+      // Generate passenger count based on the vehicle type for more logical results
+      record.passengerCount = getRandomPassengerCount(vehicleType);
     }
 
     mockData.push(record);
