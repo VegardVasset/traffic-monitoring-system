@@ -4,9 +4,9 @@ import { MockRecord } from "../types";
 // Cameras for each domain
 const camerasByDomain: Record<string, { name: string; weight: number }[]> = {
   dts: [
-    { name: "Os", weight: 50 },
-    { name: "Hopseide", weight: 30 },
-    { name: "Gedjne", weight: 20 },
+    { name: "Trondheim", weight: 50 },
+    { name: "Lillehammer", weight: 30 },
+    { name: "Hamar", weight: 20 },
   ],
   tires: [
     { name: "Bergen Parkering", weight: 40 },
@@ -14,8 +14,8 @@ const camerasByDomain: Record<string, { name: string; weight: number }[]> = {
     { name: "Vardø", weight: 25 },
   ],
   ferry: [
-    { name: "Os", weight: 45 },
-    { name: "Manheller", weight: 35 },
+    { name: "Rutledal", weight: 45 },
+    { name: "Isane", weight: 35 },
     { name: "Lavik", weight: 20 },
   ],
 };
