@@ -13,7 +13,7 @@ const camerasByDomain: Record<string, { name: string; weight: number }[]> = {
     { name: "Oslo Parkering", weight: 35 },
     { name: "Vardø", weight: 25 },
   ],
-  ferry: [
+  vpc: [
     { name: "Rutledal", weight: 45 },
     { name: "Isane", weight: 35 },
     { name: "Lavik", weight: 20 },
@@ -55,7 +55,7 @@ function getRandomTireCondition(): number {
 function getRandomPassengerCount(vehicleType: MockRecord["vehicleType"]): number {
   switch (vehicleType) {
     case "buss":
-      return faker.number.int({ min: 20, max: 50 });
+      return faker.number.int({ min: 1, max: 5 });
     case "person transport":
       return faker.number.int({ min: 1, max: 5 });
     case "motorsykkel":
@@ -67,7 +67,7 @@ function getRandomPassengerCount(vehicleType: MockRecord["vehicleType"]): number
     case "lett industri":
       return faker.number.int({ min: 1, max: 2 });
     case "tilhenger":
-      return 0;
+      return faker.number.int({ min: 1, max: 2 });
     case "camping kjøretøy":
       return faker.number.int({ min: 1, max: 4 });
     case "utrykningskjøretøy":
@@ -161,7 +161,7 @@ function getRandomVehicleType(): MockRecord["vehicleType"] {
     { type: "utrykningskjøretøy", weight: 3 },
     { type: "lastebil sylinder", weight: 3 },
     { type: "myke trafikanter", weight: 2 },
-    { type: "traktor", weight: 0 },
+    { type: "traktor", weight: 1 },
   ];
 
   const weightedList: MockRecord["vehicleType"][] = [];
@@ -194,7 +194,7 @@ function getRealisticConfidenceScore(): number {
  * Generate an array of mock records for the given entityType.
  */
 export function generateMockData(
-  entityType: "ferry" | "tires" | "dts",
+  entityType: "vpc" | "tires" | "dts",
   count: number,
   fixedTimes?: { creationTime: string; receptionTime: string }
 ): MockRecord[] {
@@ -222,7 +222,7 @@ export function generateMockData(
       record.tireCondition = getRandomTireCondition();
     }
 
-    if (entityType === "ferry") {
+    if (entityType === "vpc") {
       // Generate passenger count based on the vehicle type for more logical results
       record.passengerCount = getRandomPassengerCount(vehicleType);
     }

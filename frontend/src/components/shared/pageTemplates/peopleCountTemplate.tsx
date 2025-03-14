@@ -5,7 +5,7 @@ import FilterPanel from "@/components/shared/filterPanel";
 import PeriodFilter from "@/components/shared/periodFilter";
 import EventSummary from "@/components/shared/eventCount";
 import { MOBILE_MAX_WIDTH } from "@/config/config";
-import HeatmapChart from "@/components/shared/charts/ferry/heatmapChart.tsx";
+import HeatmapChart from "@/components/shared/charts/vpc/heatmapChart";
 import { UnifiedLegend } from "@/components/shared/unifiedLegend";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,8 +18,7 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { useData } from "@/context/DataContext";
-import PeopleCountChart from "@/components/shared/charts/ferry/peopleCountChart";
-
+import PeopleCountChart from "@/components/shared/charts/vpc/peopleCountChart";
 
 export interface BaseEvent {
   id: number;
@@ -27,19 +26,14 @@ export interface BaseEvent {
   receptionTime: string;
   vehicleType: string;
   camera: string;
-  passengerCount: number; 
+  passengerCount: number;
 }
 
-
 interface PeopleCountTemplateProps {
-  domainTitle: string;
   children?: React.ReactNode;
 }
 
-export default function PeopleCountTemplate({
-  domainTitle,
-  children,
-}: PeopleCountTemplateProps) {
+export default function PeopleCountTemplate({ children }: PeopleCountTemplateProps) {
   const { data, loading, isLive, setIsLive, refetch } = useData();
 
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
@@ -80,16 +74,16 @@ export default function PeopleCountTemplate({
       const withinDateRange = eventDate >= startDate && eventDate <= endDate;
       const matchCamera = selectedCamera === "all" || event.camera === selectedCamera;
       const matchVehicle =
-        selectedVehicleTypes.length === 0 || selectedVehicleTypes.includes(event.vehicleType);
+        selectedVehicleTypes.length === 0 ||
+        selectedVehicleTypes.includes(event.vehicleType);
       return withinDateRange && matchCamera && matchVehicle;
     });
   }, [data, selectedCamera, selectedVehicleTypes, startDate, endDate]);
 
-  const passengerData = filteredData.map(event => ({
+  const passengerData = filteredData.map((event) => ({
     ...event,
     passengerCount: (event as any).passengerCount ?? 0,
   }));
-  
 
   const filteredVehicleTypes = useMemo(() => {
     const types = new Set<string>();
@@ -110,7 +104,7 @@ export default function PeopleCountTemplate({
   }, []);
 
   if (loading && !isLive) {
-    return <p className="text-gray-500">Loading {domainTitle} data...</p>;
+    return <p className="text-gray-500">Loading data...</p>;
   }
 
   return (
@@ -118,7 +112,7 @@ export default function PeopleCountTemplate({
       {/* TITLE + MOBILE FILTER BUTTON */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4">
-          {domainTitle} Passenger Overview
+          Person Counting Statistics
         </h1>
         <div className="block lg:hidden">
           <Button variant="outline" onClick={() => setMobileFilterOpen(true)}>
@@ -157,7 +151,7 @@ export default function PeopleCountTemplate({
       <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
         <SheetContent side="right" className="w-[85%] sm:w-[360px] p-2 text-xs">
           <SheetHeader>
-            <SheetTitle>{domainTitle} Filters</SheetTitle>
+            <SheetTitle>VPC Filters</SheetTitle>
           </SheetHeader>
           <Card className="p-4 mt-4">
             <div className="flex flex-col gap-4 w-full">
@@ -175,7 +169,11 @@ export default function PeopleCountTemplate({
                 showLiveButton={false}
                 onRefetch={refetch}
               />
-              <PeriodFilter startDate={startDate} endDate={endDate} onChange={handlePeriodChange} />
+              <PeriodFilter
+                startDate={startDate}
+                endDate={endDate}
+                onChange={handlePeriodChange}
+              />
               <EventSummary count={filteredData.length} />
             </div>
           </Card>
@@ -196,14 +194,21 @@ export default function PeopleCountTemplate({
       {/* CHARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
         {/* Heatmap Chart */}
-        <div className="relative w-full" style={{ aspectRatio: isMobile ? "1 / 1" : "1.5 / 1" }}>
+        <div
+          className="relative w-full"
+          style={{ aspectRatio: isMobile ? "1 / 1" : "1.5 / 1" }}
+        >
           <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
-            <HeatmapChart data={passengerData} />
+            {/* Pass isMobile down to HeatmapChart */}
+            <HeatmapChart data={passengerData} isMobile={isMobile} />
           </div>
         </div>
 
         {/* Average Passenger Count Chart */}
-        <div className="relative w-full" style={{ aspectRatio: isMobile ? "1 / 1" : "1.5 / 1" }}>
+        <div
+          className="relative w-full"
+          style={{ aspectRatio: isMobile ? "1 / 1" : "1.5 / 1" }}
+        >
           <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
             <PeopleCountChart data={passengerData} />
           </div>

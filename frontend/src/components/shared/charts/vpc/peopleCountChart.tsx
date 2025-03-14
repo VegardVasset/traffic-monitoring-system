@@ -99,6 +99,10 @@ export default function PeopleCountChart({
       },
     },
     plugins: {
+
+      datalabels: {
+        display: false,
+      },
       legend: {
         display: false,
         position: "bottom" as const,
@@ -106,9 +110,9 @@ export default function PeopleCountChart({
       tooltip: {
         callbacks: {
           label(context: any) {
-            // Show average to 1 decimal
             const value = context.parsed.y;
-            return `Avg: ${value.toFixed(1)}`;
+            return `Avg: ${Math.round(value)}`;
+            
           },
         },
       },

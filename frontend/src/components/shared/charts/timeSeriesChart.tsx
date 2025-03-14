@@ -169,7 +169,7 @@ export default function TimeSeriesChart({ data, binSize }: TimeSeriesChartProps)
       backgroundColor: getChartColor(index, 0.5),
       fill: false,
       borderWidth: isMobile ? 1 : 2,
-      pointRadius: isMobile ? 1 : 2,
+      pointRadius: isMobile ? 3 : 4,
       pointHoverRadius: isMobile ? 3 : 4,
     }));
   }, [aggregatedData, vehicleTypes, isMobile]);

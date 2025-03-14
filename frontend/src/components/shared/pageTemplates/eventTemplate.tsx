@@ -7,7 +7,7 @@ import { useData } from "@/context/DataContext";
 import { BaseEvent } from "@/context/DataContext"; // Reuse the BaseEvent type from your context
 
 interface EventTemplateProps {
-  /** Domain identifier (e.g., "dts", "ferry", "tires") */
+  /** Domain identifier (e.g., "dts", "vpc", "tires") */
   domain: string;
 }
 
