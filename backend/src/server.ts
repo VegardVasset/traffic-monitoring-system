@@ -33,7 +33,7 @@ function getNextId(entityType: keyof typeof mockDatabase): number {
   return (mockDatabase[entityType]?.length ?? 0) + 1;
 }
 
-// Continuously add new mock data every 10 seconds
+// Continuously add mock data every 1 hour
 function continuouslyAddMockData() {
   console.log("Starting continuous mock data generation...");
   setInterval(() => {
@@ -64,7 +64,7 @@ function continuouslyAddMockData() {
     mockDatabase.ferry.push(newData.ferry);
     mockDatabase.tires.push(newData.tires);
     mockDatabase.dts.push(newData.dts);
-  }, 1000000);
+  }, 1000 * 60 * 60); // 1 hour
 }
 
 // Handle Socket.IO connections
