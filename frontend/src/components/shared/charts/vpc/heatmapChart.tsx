@@ -1,9 +1,20 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { ResponsiveHeatMap, ComputedCell } from "@nivo/heatmap";
+import {
+  Chart as ChartJS,
+  LinearScale,
+  Tooltip,
+  Legend,
+  ScriptableContext,
+  TooltipItem,
+} from "chart.js";
+import { Chart } from "react-chartjs-2";
+import { MatrixController, MatrixElement } from "chartjs-chart-matrix";
 
-// Adjust this interface if your data has different fields or optional fields
+// Register Chart.js components and the matrix plugin.
+ChartJS.register(LinearScale, Tooltip, Legend, MatrixController, MatrixElement);
+
 export interface PassengerEvent {
   id: number;
   creationTime: string; // e.g. "2025-03-13T10:12:43Z"
@@ -17,169 +28,237 @@ interface HeatmapChartProps {
   isMobile?: boolean;
 }
 
-// Helper function to compute an ISO week identifier for a given date.
-function getWeekNumber(date: Date): string {
-  // Copy date so we don't modify the original.
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  // ISO week date weeks start on Monday.
-  const dayNum = d.getUTCDay() || 7; // Sunday is 0, make it 7.
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-  return `${d.getUTCFullYear()}-W${weekNo}`;
+/** 
+ * Converts Sunday=0, Monday=1, etc. into Monday=0, Tuesday=1, ... Sunday=6.
+ * getDay() => 0..6 => [Sun..Sat]
+ * We want => [Mon=0..Sun=6].
+ */
+function mapDayIndex(originalDay: number): number {
+  // Sunday (0) -> 6
+  // Monday (1) -> 0
+  // Tuesday (2) -> 1
+  // Wednesday (3) -> 2
+  // Thursday (4) -> 3
+  // Friday (5) -> 4
+  // Saturday (6) -> 5
+  const reorderMap = [6, 0, 1, 2, 3, 4, 5];
+  return reorderMap[originalDay];
 }
 
-export default function HeatmapChart({ data, isMobile = false }: HeatmapChartProps) {
-  // 1) Count how many unique weeks are in the data.
-  const totalWeeks = useMemo(() => {
-    const weekSet = new Set<string>();
-    data.forEach((evt) => {
-      weekSet.add(getWeekNumber(new Date(evt.creationTime)));
-    });
-    return weekSet.size || 1; // Avoid division by 0 if there's no data.
-  }, [data]);
+/** Represents one cell in the heatmap. */
+interface MatrixDataPoint {
+  x: string; // hour
+  y: string; // day label
+  v: number; // passenger sum
+}
 
-  // 2) Sum up passenger counts per day/hour in a 7×24 matrix.
-  const averagedArr = useMemo(() => {
-    const sumArr = Array.from({ length: 7 }, () => Array(24).fill(0));
-    data.forEach((evt) => {
-      const date = new Date(evt.creationTime);
-      const day = date.getDay(); // 0=Sun ... 6=Sat
-      const hour = date.getHours(); // 0..23
-      sumArr[day][hour] += evt.passengerCount;
-    });
-    // Compute average (divide by the number of weeks).
-    return sumArr.map((row) => row.map((val) => Math.round(val / totalWeeks)));
-  }, [data, totalWeeks]);
+// Discrete color scale array (original "before" colors).
+const quantColors = [
+  "#fef0d9",
+  "#fdd49e",
+  "#fdbb84",
+  "#fc8d59",
+  "#ef6548",
+  "#d7301f",
+  "#b30000",
+];
+const nBuckets = quantColors.length;
 
-  // 3) Days of the week (row labels) wrapped in useMemo to ensure stability.
-  const daysOfWeek = useMemo(() => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], []);
-
-  // 4) Convert the 7×24 matrix into Nivo HeatMap data format.
-  const heatmapData = useMemo(() => {
-    return daysOfWeek.map((dayName, dayIndex) => ({
-      id: dayName,
-      data: Array.from({ length: 24 }, (_, hour) => ({
-        x: `${hour}`, // label on the X-axis
-        y: averagedArr[dayIndex][hour],
-      })),
-    }));
-  }, [averagedArr, daysOfWeek]);
-
-  // 5) Set up quantized color scale thresholds for a custom legend.
-  const flatValues = averagedArr.flat();
-  const minValue = Math.min(...flatValues);
-  const maxValue = Math.max(...flatValues);
-
-  // These are the color buckets.
-  const quantColors = [
-    "#fef0d9",
-    "#fdd49e",
-    "#fdbb84",
-    "#fc8d59",
-    "#ef6548",
-    "#d7301f",
-    "#b30000",
-  ];
-  const nBuckets = quantColors.length;
-
+/** 
+ * Returns a discrete color based on thresholds 
+ * derived from minValue..maxValue.
+ */
+function createDiscreteColorFunc(minValue: number, maxValue: number) {
+  // Build thresholds array
   let thresholds: number[] = [];
   if (maxValue === minValue) {
-    // If all values are the same, create repeated thresholds
     thresholds = Array.from({ length: nBuckets + 1 }, () => minValue);
   } else {
     const step = (maxValue - minValue) / nBuckets;
-    thresholds = Array.from({ length: nBuckets + 1 }, (_, i) => minValue + i * step);
+    thresholds = Array.from({ length: nBuckets + 1 }, (_, i) =>
+      Math.round(minValue + i * step)
+    );
   }
-  thresholds = thresholds.map(Math.round);
 
-  const legendItems = quantColors.map((color, i) => ({
-    color,
-    range: `${thresholds[i]} – ${thresholds[i + 1]}`,
-  }));
+  // The function that picks the color
+  return (value: number) => {
+    for (let i = 0; i < nBuckets; i++) {
+      if (value >= thresholds[i] && value <= thresholds[i + 1]) {
+        return quantColors[i];
+      }
+    }
+    return quantColors[nBuckets - 1];
+  };
+}
 
-  // 6) Adjust styling for mobile vs. desktop.
-  const margin = isMobile
-    ? { top: 30, right: 10, bottom: 40, left: 40 }
-    : { top: 50, right: 20, bottom: 60, left: 60 };
-  const fontSize = isMobile ? 8 : 12;
+export default function HeatmapChart({ data, isMobile = false }: HeatmapChartProps) {
+  // 1) Create a 7×24 matrix for passenger sums (no averaging).
+  const matrixArr = useMemo(() => {
+    const sumArr = Array.from({ length: 7 }, () => Array(24).fill(0));
+    data.forEach((evt) => {
+      const date = new Date(evt.creationTime);
+      const mappedDay = mapDayIndex(date.getDay());
+      const hour = date.getHours();
+      sumArr[mappedDay][hour] += evt.passengerCount;
+    });
+    return sumArr;
+  }, [data]);
+
+  // 2) Days of the week (re-labeled so Monday=0, Sunday=6).
+  const daysOfWeek = useMemo(() => ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], []);
+  const xLabels = useMemo(() => Array.from({ length: 24 }, (_, i) => i.toString()), []);
+
+  // 3) Compute min/max passenger counts for the entire matrix (for color scale).
+  const flatValues = matrixArr.flat();
+  const minValue = Math.min(...flatValues);
+  const maxValue = Math.max(...flatValues);
+
+  // 4) Create a discrete color function based on minValue and maxValue
+  const getColorForValue = useMemo(
+    () => createDiscreteColorFunc(minValue, maxValue),
+    [minValue, maxValue]
+  );
+
+  // 5) Prepare the matrix data points for Chart.js.
+  // Each data point represents a cell with x (hour), y (day) and v (passenger count).
+  const matrixData = useMemo<MatrixDataPoint[]>(() => {
+    const points: MatrixDataPoint[] = [];
+    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+      for (let hour = 0; hour < 24; hour++) {
+        const value = matrixArr[dayIndex][hour];
+        points.push({
+          x: hour.toString(),
+          y: daysOfWeek[dayIndex],
+          v: value,
+        });
+      }
+    }
+    return points;
+  }, [matrixArr, daysOfWeek]);
+
+  // 6) Chart.js data configuration.
+  const chartData = useMemo(
+    () => ({
+      datasets: [
+        {
+          label: "Passenger Count Heatmap",
+          data: matrixData,
+          width: ({ chart }: { chart: ChartJS }) =>
+            chart.chartArea ? chart.chartArea.width / 24 : 0,
+          height: ({ chart }: { chart: ChartJS }) =>
+            chart.chartArea ? chart.chartArea.height / 7 : 0,
+          backgroundColor: (ctx: ScriptableContext<"matrix">) => {
+            const idx = ctx.dataIndex;
+            const v = matrixData[idx].v;
+            return getColorForValue(v);
+          },
+          borderColor: "#E2E2E2",
+          borderWidth: 1,
+        },
+      ],
+    }),
+    [matrixData, getColorForValue]
+  );
+
+  // 7) Chart.js options (conditionals for mobile).
+  const options = useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        // If you have chartjs-plugin-datalabels globally registered,
+        // disable it for this chart to avoid text overlays:
+        datalabels: {
+          display: false,
+        },
+        tooltip: {
+          callbacks: {
+            title: (items: TooltipItem<"matrix">[]) => {
+              if (!items.length) return "";
+              const raw = items[0].raw as MatrixDataPoint;
+              return `${raw.y} – ${raw.x}:00`;
+            },
+            label: (item: TooltipItem<"matrix">) => {
+              const raw = item.raw as MatrixDataPoint;
+              return `${raw.v} passengers`;
+            },
+          },
+        },
+        legend: {
+          display: false,
+        },
+      },
+      scales: {
+        x: {
+          type: "category" as const,
+          labels: xLabels,
+          title: {
+            display: true,
+            text: "Hour",
+            font: { size: isMobile ? 10 : 14 },
+          },
+          ticks: {
+            font: { size: isMobile ? 8 : 12 },
+          },
+          grid: { display: false },
+          offset: true,
+        },
+        y: {
+          type: "category" as const,
+          labels: daysOfWeek,
+          title: {
+            display: true,
+            text: "Day",
+            font: { size: isMobile ? 10 : 14 },
+          },
+          ticks: {
+            font: { size: isMobile ? 8 : 12 },
+          },
+          grid: { display: false },
+          offset: true,
+        },
+      },
+    }),
+    [xLabels, daysOfWeek, isMobile]
+  );
+
+  // 8) Build discrete legend items from thresholds
+  const legendItems = useMemo(() => {
+    // Rebuild thresholds in the same way as createDiscreteColorFunc
+    let thresholds: number[] = [];
+    if (maxValue === minValue) {
+      thresholds = Array.from({ length: nBuckets + 1 }, () => minValue);
+    } else {
+      const step = (maxValue - minValue) / nBuckets;
+      thresholds = Array.from({ length: nBuckets + 1 }, (_, i) =>
+        Math.round(minValue + i * step)
+      );
+    }
+
+    // Pair each color with a range label like "0–1", "2–3", etc.
+    return quantColors.map((color, i) => {
+      const rangeStart = thresholds[i];
+      const rangeEnd = thresholds[i + 1];
+      return {
+        color,
+        rangeLabel: `${rangeStart} – ${rangeEnd}`,
+      };
+    });
+  }, [minValue, maxValue]);
+
+  // Use a smaller container on mobile to fit better
+  const containerStyle = { minHeight: isMobile ? 200 : 400 };
 
   return (
-    <div
-      className="flex flex-col w-full h-full"
-      style={{ minHeight: isMobile ? 300 : 400 }}
-    >
+    <div className="flex flex-col w-full h-full">
       <h2 className="ml-4 text-xs md:text-xl font-semibold mb-4">
-        Average Passenger Count per Hour
+        Weekly Heatmap of Passenger Counts (Mon–Sun)
       </h2>
-
-      {/* The chart */}
-      <div className="relative flex-1 w-full h-full">
-        <ResponsiveHeatMap
-          isInteractive={!isMobile}
-          data={heatmapData}
-          margin={margin}
-          theme={{
-            text: { fontSize },
-            axis: {
-              domain: { line: { stroke: "#777777", strokeWidth: 1 } },
-              ticks: {
-                line: { stroke: "#777777", strokeWidth: 1 },
-                text: { fill: "#333333" },
-              },
-            },
-            grid: { line: { stroke: "#dddddd", strokeWidth: 1 } },
-          }}
-          valueFormat=">-.0f"
-          colors={{
-            type: "quantize",
-            colors: quantColors,
-          }}
-          emptyColor="#F8F8F8"
-          borderColor="#E2E2E2"
-          axisTop={null}
-          axisRight={null}
-          axisBottom={{
-            tickSize: isMobile ? 3 : 5,
-            tickPadding: isMobile ? 3 : 5,
-            tickRotation: 0,
-            legend: "Hour",
-            legendPosition: "middle",
-            legendOffset: isMobile ? 30 : 40,
-          }}
-          axisLeft={{
-            tickSize: isMobile ? 3 : 5,
-            tickPadding: isMobile ? 3 : 5,
-            tickRotation: 0,
-            legend: "Day",
-            legendPosition: "middle",
-            legendOffset: isMobile ? -35 : -50,
-          }}
-          // Hide the numeric labels inside each cell on mobile for clarity
-          labelTextColor={{ from: "color", modifiers: [["darker", 1.8]] }}
-          hoverTarget="cell"
-          tooltip={({ cell }: { cell: ComputedCell<{ x: string; y: number }> }) => (
-            <div
-              style={{
-                background: "white",
-                padding: "5px",
-                border: "1px solid #ccc",
-              }}
-            >
-              <strong>
-                {cell.serieId} – {cell.x}:00
-              </strong>{" "}
-              {cell.value} passengers
-            </div>
-          )}
-        />
+      <div style={containerStyle}>
+        <Chart type="matrix" data={chartData} options={options} />
       </div>
-
-      {/* Custom Legend (placed below the chart) */}
+      {/* Discrete Legend */}
       <div className="flex flex-row flex-wrap items-center justify-center mt-2">
-        <div className="text-sm font-semibold mb-2 w-full text-center">
-          Average passenger count
-        </div>
         {legendItems.map((item, i) => (
           <div key={i} className="flex items-center mr-4 mb-2">
             <div
@@ -190,7 +269,7 @@ export default function HeatmapChart({ data, isMobile = false }: HeatmapChartPro
                 marginRight: 5,
               }}
             />
-            <span style={{ fontSize: isMobile ? 10 : 12 }}>{item.range}</span>
+            <span style={{ fontSize: isMobile ? 10 : 12 }}>{item.rangeLabel}</span>
           </div>
         ))}
       </div>
