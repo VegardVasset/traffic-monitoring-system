@@ -5,6 +5,7 @@ import { CameraIcon, ChartBarSquareIcon, TruckIcon } from "@heroicons/react/24/o
 
 import  {GiCarWheel} from "react-icons/gi";
 import { GrGroup } from "react-icons/gr";
+import {SlSpeedometer} from "react-icons/sl";
 
 import React from "react";
 
@@ -35,6 +36,12 @@ export const domainConfigs: Record<string, DomainConfig> = {
         label: "Cameras",
         href: "/dts/cameras",
         icon: React.createElement(CameraIcon, { className: "w-6 h-6" }),
+      },
+      {
+        id: "analysis",
+        label: "Speed Analysis",
+        href: "/dts/analysis",
+        icon: React.createElement(SlSpeedometer, { className: "w-6 h-6" }),
       }
     ],
   },
