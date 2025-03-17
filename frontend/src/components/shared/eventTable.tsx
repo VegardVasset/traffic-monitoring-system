@@ -220,7 +220,7 @@ export default function EventTable({
 
       return baseColumns;
     },
-    [handleEdit, tableData]
+    [handleEdit]
   );
 
   const columns = useMemo(() => getColumns(domain), [domain, getColumns]);

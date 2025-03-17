@@ -19,9 +19,6 @@ export interface BaseEvent {
   vehicleType: string;
   camera: string;
   confidenceScore: number;
-  tireType?: "Sommerdekk" | "Vinterdekk";
-  tireCondition?: number;
-  passengerCount?: number;
 }
 
 interface DataContextProps {

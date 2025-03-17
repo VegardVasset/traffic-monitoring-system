@@ -28,7 +28,7 @@
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
-    "@types/node": "^22.13.4",
+    "@types/node": "^22.13.10",
     "@types/react-leaflet": "^2.8.3",
     "@types/ws": "^8.5.14",
     "nodemon": "^3.1.9",
