@@ -67,7 +67,7 @@ thorough inspections.
           transition={{ duration: 0.7 }}
         >
           <Image
-            src="/countin-hero-logo-small.webp"
+            src="/CH-logo.webp"
             alt="Counting Hero Logo"
             width={500}
             height={500}

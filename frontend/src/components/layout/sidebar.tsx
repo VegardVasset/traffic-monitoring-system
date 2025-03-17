@@ -117,7 +117,7 @@ export default function Sidebar({ navItems, open, onClose, onToggle }: SidebarPr
               <div className="flex items-center justify-between mb-6">
                 <Link href="/" onClick={onClose} className="flex items-center gap-2 group">
                   <Image
-                    src="/CH_LOGO_MASCOT_thicker.png"
+                    src="/CH-mascot.png"
                     alt="Mascot Logo"
                     width={48}
                     height={48}
