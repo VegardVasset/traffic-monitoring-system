@@ -1,3 +1,4 @@
+// DataContext.tsx
 "use client";
 
 import React, {
@@ -17,6 +18,10 @@ export interface BaseEvent {
   receptionTime: string;
   vehicleType: string;
   camera: string;
+  confidenceScore: number;
+  tireType?: "Sommerdekk" | "Vinterdekk";
+  tireCondition?: number;
+  passengerCount?: number;
 }
 
 interface DataContextProps {
@@ -27,6 +32,7 @@ interface DataContextProps {
   setIsLive: (live: boolean) => void;
   refetch: () => void;
   lastUpdateArrivalTime: number | null;
+  updateEvent: (updatedEvent: BaseEvent) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextProps | undefined>(undefined);
@@ -46,13 +52,8 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
   const [lastUpdateArrivalTime, setLastUpdateArrivalTime] = useState<number | null>(null);
 
   const { logEvent } = useAnalytics();
-
-  // For frequency measurement: count new data events
   const newDataCountRef = useRef<number>(0);
 
-  /**
-   * REST fetch with timing measurement
-   */
   const refetch = useCallback(async () => {
     setLoading(true);
     const startTime = performance.now();
@@ -62,7 +63,6 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
       const jsonData = await res.json();
       setData(jsonData);
       setError(null);
-
       const fetchDuration = performance.now() - startTime;
       logEvent("REST fetch completed", { fetchDuration });
     } catch (err: unknown) {
@@ -77,9 +77,27 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
     }
   }, [apiUrl, domain, logEvent]);
 
-  /**
-   * Disconnect socket if live mode is turned off
-   */
+  // New: updateEvent function
+  const updateEvent = useCallback(async (updatedEvent: BaseEvent) => {
+    try {
+      // Replace the URL with your actual endpoint for updating events.
+      const res = await fetch(`${apiUrl}/${updatedEvent.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedEvent),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to update event");
+      }
+      // Update local state once backend update is successful.
+      setData((prev) =>
+        prev.map((ev) => (ev.id === updatedEvent.id ? updatedEvent : ev))
+      );
+    } catch (error) {
+      console.error("Error updating event", error);
+    }
+  }, [apiUrl]);
+
   useEffect(() => {
     if (!isLive && socket) {
       socket.disconnect();
@@ -87,9 +105,6 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
     }
   }, [isLive, socket]);
 
-  /**
-   * Connect to WebSocket when live mode is on
-   */
   useEffect(() => {
     if (!isLive) return;
     const newSocket: Socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
@@ -116,8 +131,7 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
       const arrivalTime = performance.now();
       setLastUpdateArrivalTime(arrivalTime);
       setData((prev) => [newData, ...prev]);
-
-      newDataCountRef.current += 1; // increment the frequency counter
+      newDataCountRef.current += 1;
       logEvent("New data received", { eventId: newData.id, arrivalTime });
     });
 
@@ -136,18 +150,12 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
     };
   }, [isLive, domain, logEvent]);
 
-  /**
-   * If live mode is off and no data is loaded, do a REST fetch
-   */
   useEffect(() => {
     if (!isLive && data.length === 0) {
       refetch();
     }
   }, [isLive, data.length, refetch]);
 
-  /**
-   * Log frequency of new data arrivals every minute
-   */
   useEffect(() => {
     const interval = setInterval(() => {
       logEvent("Data arrival frequency", {
@@ -155,14 +163,22 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
         period: "1 minute",
       });
       newDataCountRef.current = 0;
-    }, 60000); // every 60s
-
+    }, 60000);
     return () => clearInterval(interval);
   }, [logEvent]);
 
   return (
     <DataContext.Provider
-      value={{ data, loading, error, isLive, setIsLive, refetch, lastUpdateArrivalTime }}
+      value={{
+        data,
+        loading,
+        error,
+        isLive,
+        setIsLive,
+        refetch,
+        lastUpdateArrivalTime,
+        updateEvent,
+      }}
     >
       {children}
     </DataContext.Provider>

@@ -1,6 +1,13 @@
+// eventTable.tsx
 "use client";
 
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, {
+  useMemo,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -28,113 +35,45 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { useData } from "@/context/DataContext";
 import { useAnalytics } from "@/context/analyticsContext";
-
-export interface Event {
-  id: number;
-  creationTime: string;
-  receptionTime: string;
-  vehicleType: string;
-  confidenceScore: number;
-  camera: string;
-  tireType?: "Sommerdekk" | "Vinterdekk";
-  tireCondition?: number;
-  passengerCount?: number;
-}
-
-interface EventTableProps {
-  domain: string;
-  selectedCamera: string;
-  selectedVehicleTypes: string[];
-}
-
-/** Dynamically generate column definitions based on the domain */
-const getColumns = (domain: string): ColumnDef<Event>[] => {
-  const baseColumns: ColumnDef<Event>[] = [
-    {
-      id: "select",
-      header: ({ table }) => (
-        <div>
-          <input
-            type="checkbox"
-            checked={table.getIsAllRowsSelected()}
-            onChange={table.getToggleAllRowsSelectedHandler()}
-          />
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div>
-          <input
-            type="checkbox"
-            checked={row.getIsSelected()}
-            onChange={row.getToggleSelectedHandler()}
-          />
-        </div>
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-    { accessorKey: "id", header: "ID" },
-    {
-      accessorKey: "creationTime",
-      header: "Time",
-      cell: (info) => new Date(info.getValue() as string).toLocaleString(),
-    },
-    { accessorKey: "vehicleType", header: "Vehicle Type" },
-    { accessorKey: "camera", header: "Camera" },
-    {
-      accessorKey: "confidenceScore",
-      header: "Confidence",
-      cell: (info) => {
-        const value = info.getValue() as number;
-        return `${(value * 100).toFixed(2)}%`;
-      },
-    },
-  ];
-
-  // If domain is "tires", add tire-specific columns
-  if (domain === "tires") {
-    baseColumns.push(
-      {
-        accessorKey: "tireType",
-        header: "Tire Type",
-        cell: (info) => info.getValue() || "N/A",
-      },
-      {
-        accessorKey: "tireCondition",
-        header: "Tire Condition (1-5)",
-        cell: (info) => info.getValue() || "N/A",
-      }
-    );
-  }
-
-  // If domain is "vpc", add passenger count column
-  if (domain === "vpc") {
-    baseColumns.push({
-      accessorKey: "passengerCount",
-      header: "Passenger Count",
-      cell: (info) => info.getValue() || "N/A",
-    });
-  }
-
-  return baseColumns;
-};
 
 export default function EventTable({
   domain,
   selectedCamera,
   selectedVehicleTypes,
-}: EventTableProps) {
-  const { data, loading, error, lastUpdateArrivalTime } = useData();
+}: {
+  domain: string;
+  selectedCamera: string;
+  selectedVehicleTypes: string[];
+}) {
+  const { data, loading, error, lastUpdateArrivalTime, updateEvent } = useData();
   const { logEvent } = useAnalytics();
 
-  // Keep track of the last arrival time we already logged
-  const lastLoggedArrivalRef = useRef<number | null>(null);
+  // Use a local copy for editing (optional if you want to show immediate UI changes)
+  const [tableData, setTableData] = useState<typeof data>(() => [...data]);
+  useEffect(() => {
+    setTableData([...data]);
+  }, [data]);
 
-  // Filter data based on user selections
+  // Filter based on user selection
   const filteredData = useMemo(() => {
-    let dataArr = data as Event[];
+    let dataArr = tableData;
     if (selectedCamera !== "all") {
       dataArr = dataArr.filter((record) => record.camera === selectedCamera);
     }
@@ -144,31 +83,151 @@ export default function EventTable({
       );
     }
     return dataArr;
-  }, [data, selectedCamera, selectedVehicleTypes]);
+  }, [tableData, selectedCamera, selectedVehicleTypes]);
 
-  // Measure live mode latency: time from data arrival -> table render
+  // Log live mode latency
+  const lastLoggedArrivalRef = useRef<number | null>(null);
   useEffect(() => {
-    if (
-      lastUpdateArrivalTime &&
-      lastUpdateArrivalTime !== lastLoggedArrivalRef.current
-    ) {
+    if (lastUpdateArrivalTime && lastUpdateArrivalTime !== lastLoggedArrivalRef.current) {
       const now = performance.now();
       const latency = now - lastUpdateArrivalTime;
       logEvent("Live mode latency", { latency, dataLength: filteredData.length });
       console.log(`Live mode latency: ${latency.toFixed(2)} ms`);
-
       lastLoggedArrivalRef.current = lastUpdateArrivalTime;
     }
   }, [filteredData, lastUpdateArrivalTime, logEvent]);
 
-  // Set up table state
+  // React Table state
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 
+  // ---------------------------
+  // Edit dialog state & logic
+  // ---------------------------
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<typeof tableData[0] | null>(null);
+  const [editVehicleType, setEditVehicleType] = useState("");
+
+  // Compute unique vehicle types for the select in the dialog
+  const uniqueVehicleTypes = useMemo(() => {
+    const types = new Set(tableData.map((e) => e.vehicleType));
+    return Array.from(types);
+  }, [tableData]);
+
+  const handleEdit = useCallback((event: typeof tableData[0]) => {
+    setSelectedEvent(event);
+    setEditVehicleType(event.vehicleType);
+    setEditDialogOpen(true);
+  }, []);
+
+  const handleSave = useCallback(async () => {
+    if (!selectedEvent) return;
+    const updatedEvent = { ...selectedEvent, vehicleType: editVehicleType };
+    // Persist the change by calling updateEvent from your DataContext
+    await updateEvent(updatedEvent);
+    setEditDialogOpen(false);
+  }, [selectedEvent, editVehicleType, updateEvent]);
+
+  // ---------------------------
+  // Define columns for the table
+  // ---------------------------
+  const getColumns = useCallback(
+    (domain: string) => {
+      const baseColumns: ColumnDef<typeof tableData[0]>[] = [
+        {
+          id: "select",
+          header: ({ table }) => (
+            <div>
+              <input
+                type="checkbox"
+                checked={table.getIsAllRowsSelected()}
+                onChange={table.getToggleAllRowsSelectedHandler()}
+              />
+            </div>
+          ),
+          cell: ({ row }) => (
+            <div>
+              <input
+                type="checkbox"
+                checked={row.getIsSelected()}
+                onChange={row.getToggleSelectedHandler()}
+              />
+            </div>
+          ),
+          enableSorting: false,
+          enableHiding: false,
+        },
+        { accessorKey: "id", header: "ID" },
+        {
+          accessorKey: "creationTime",
+          header: "Time",
+          cell: (info) =>
+            new Date(info.getValue() as string).toLocaleString(),
+        },
+        { accessorKey: "vehicleType", header: "Vehicle Type" },
+        { accessorKey: "camera", header: "Camera" },
+        {
+          accessorKey: "confidenceScore",
+          header: "Confidence",
+          cell: (info) => {
+            const value = info.getValue() as number;
+            return `${(value * 100).toFixed(2)}%`;
+          },
+        },
+      ];
+
+      if (domain === "tires") {
+        baseColumns.push(
+          {
+            accessorKey: "tireType",
+            header: "Tire Type",
+            cell: (info) => info.getValue() || "N/A",
+          },
+          {
+            accessorKey: "tireCondition",
+            header: "Tire Condition (1-5)",
+            cell: (info) => info.getValue() || "N/A",
+          }
+        );
+      }
+
+      if (domain === "vpc") {
+        baseColumns.push({
+          accessorKey: "passengerCount",
+          header: "Passenger Count",
+          cell: (info) => info.getValue() || "N/A",
+        });
+      }
+
+      // Add an Actions column for editing
+      baseColumns.push({
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => {
+          const event = row.original;
+          return (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleEdit(event)}
+            >
+              Korriger
+            </Button>
+          );
+        },
+      });
+
+      return baseColumns;
+    },
+    [handleEdit, tableData]
+  );
+
+  const columns = useMemo(() => getColumns(domain), [domain, getColumns]);
+
   const table = useReactTable({
     data: filteredData,
-    columns: getColumns(domain),
+    columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -191,129 +250,155 @@ export default function EventTable({
   }
 
   return (
-    <div className="w-full bg-white shadow rounded-lg">
-      {/* Table header */}
-      <div className="flex items-center py-1 sm:py-4 px-1 sm:px-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto text-xs px-2">
-              Columns <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table.getAllColumns().map((column) => (
-              <DropdownMenuCheckboxItem
-                key={column.id}
-                className="capitalize"
-                checked={column.getIsVisible()}
-                onCheckedChange={(value) => column.toggleVisibility(!!value)}
-              >
-                {column.id}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+    <>
+      <div className="w-full bg-white shadow rounded-lg">
+        {/* Table header with column visibility options */}
+        <div className="flex items-center py-1 sm:py-4 px-1 sm:px-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="ml-auto text-xs px-2">
+                Columns <ChevronDown />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table.getAllColumns().map((column) => (
+                <DropdownMenuCheckboxItem
+                  key={column.id}
+                  className="capitalize"
+                  checked={column.getIsVisible()}
+                  onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                >
+                  {column.id}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
-      {/* Table with column lines */}
-      <div className="overflow-x-auto w-full">
-        {/* 
-          The key Tailwind classes here are:
-          - border-collapse & border on the <Table> for a solid outer border
-          - border-r and last:border-r-0 on each cell for vertical lines
-          - border-b on each row for horizontal lines
-        */}
-        <Table className="w-full table-auto border-collapse border border-gray-300">
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow
-                key={headerGroup.id}
-                className="bg-gray-100 border-b border-gray-300"
-              >
-                {headerGroup.headers.map((header) => {
-                  const sorting = header.column.getIsSorted();
-                  return (
-                    <TableHead
-                      key={header.id}
-                      className="cursor-pointer text-xs sm:text-sm md:text-base p-1 sm:p-2 whitespace-nowrap border-r last:border-r-0 border-gray-300"
-                      onClick={
-                        header.column.getCanSort()
-                          ? header.column.getToggleSortingHandler()
-                          : undefined
-                      }
+        {/* Table */}
+        <div className="overflow-x-auto w-full">
+          <Table className="w-full table-auto border-collapse border border-gray-300">
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow
+                  key={headerGroup.id}
+                  className="bg-gray-100 border-b border-gray-300"
+                >
+                  {headerGroup.headers.map((header) => {
+                    const sorting = header.column.getIsSorted();
+                    return (
+                      <TableHead
+                        key={header.id}
+                        className="cursor-pointer text-xs sm:text-sm md:text-base p-1 sm:p-2 whitespace-nowrap border-r last:border-r-0 border-gray-300"
+                        onClick={
+                          header.column.getCanSort()
+                            ? header.column.getToggleSortingHandler()
+                            : undefined
+                        }
+                      >
+                        <div className="flex items-center">
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                          {header.column.getCanSort() && (
+                            <span className="ml-1 inline-block">
+                              {sorting === "asc" ? (
+                                <ArrowUp className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                              ) : sorting === "desc" ? (
+                                <ArrowDown className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                              ) : (
+                                <ArrowUpDown className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                              )}
+                            </span>
+                          )}
+                        </div>
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  className="hover:bg-gray-200 text-xs sm:text-sm md:text-base border-b border-gray-300"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
+                      key={cell.id}
+                      className="p-1 sm:p-2 border-r last:border-r-0 border-gray-300"
                     >
-                      <div className="flex items-center">
-                        {/* Remove flex-1 so the text doesn't push the arrow far right */}
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                        {header.column.getCanSort() && (
-                          <span className="ml-1 inline-block">
-                            {sorting === "asc" ? (
-                              <ArrowUp className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
-                            ) : sorting === "desc" ? (
-                              <ArrowDown className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
-                            ) : (
-                              <ArrowUpDown className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
 
-          <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                className="hover:bg-gray-200 text-xs sm:text-sm md:text-base border-b border-gray-300"
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell
-                    key={cell.id}
-                    className="p-1 sm:p-2 border-r last:border-r-0 border-gray-300"
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
+        {/* Pagination */}
+        <div className="flex items-center justify-between gap-2 sm:items-center p-2 sm:p-4 text-xs sm:text-sm">
+          <div className="text-muted-foreground">
+            {table.getFilteredSelectedRowModel().rows.length} of {filteredData.length} row(s) selected.
+          </div>
+          <div className="flex space-x-1 sm:space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+              className="h-6 px-2 sm:h-8 sm:px-3"
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+              className="h-6 px-2 sm:h-8 sm:px-3"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Korriger Vehicle Type</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 mt-2">
+            <Label className="text-sm">Vehicle Type:</Label>
+            <Select value={editVehicleType} onValueChange={setEditVehicleType}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Choose type" />
+              </SelectTrigger>
+              <SelectContent>
+                {uniqueVehicleTypes.map((vt) => (
+                  <SelectItem key={vt} value={vt}>
+                    {vt}
+                  </SelectItem>
                 ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Pagination */}
-      <div className="flex items-center justify-between gap-2 sm:items-center p-2 sm:p-4 text-xs sm:text-sm">
-        <div className="text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {filteredData.length} row(s) selected.
-        </div>
-        <div className="flex space-x-1 sm:space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-            className="h-6 px-2 sm:h-8 sm:px-3"
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-            className="h-6 px-2 sm:h-8 sm:px-3"
-          >
-            Next
-          </Button>
-        </div>
-      </div>
-    </div>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
