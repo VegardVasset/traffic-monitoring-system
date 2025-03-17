@@ -39,6 +39,18 @@ function getRandomTireCondition(): number {
   return weightedValues[Math.floor(Math.random() * weightedValues.length)];
 }
 
+function getRandomSpeed(): number {
+  // 90% of values are within a normal range (40-100 km/h)
+  // 10% of values are anomalies (either very low < 20 km/h or very high > 140 km/h)
+  if (Math.random() < 0.9) {
+    return faker.number.int({ min: 40, max: 100 });
+  } else {
+    return Math.random() < 0.5
+      ? faker.number.int({ min: 5, max: 20 })  // Slow anomalies
+      : faker.number.int({ min: 140, max: 200 }); // Fast anomalies
+  }
+}
+
 /**
  * Generate a passenger count based on the vehicle type.
  * - "buss": 20-50 passengers
@@ -223,11 +235,16 @@ export function generateMockData(
     }
 
     if (entityType === "vpc") {
-      // Generate passenger count based on the vehicle type for more logical results
       record.passengerCount = getRandomPassengerCount(vehicleType);
+    }
+
+    if (entityType === "dts") {
+      record.speed = getRandomSpeed();
     }
 
     mockData.push(record);
   }
   return mockData;
 }
+
+

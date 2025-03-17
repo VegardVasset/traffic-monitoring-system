@@ -6,10 +6,8 @@ import React, {
   useState,
   useEffect,
   useCallback,
-  useRef,
 } from "react";
 import { io, Socket } from "socket.io-client";
-import { useAnalytics } from "@/context/analyticsContext";
 
 export interface BaseEvent {
   id: number;
@@ -45,26 +43,17 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
   const [socket, setSocket] = useState<Socket | null>(null);
   const [lastUpdateArrivalTime, setLastUpdateArrivalTime] = useState<number | null>(null);
 
-  const { logEvent } = useAnalytics();
-
-  // For frequency measurement: count new data events
-  const newDataCountRef = useRef<number>(0);
-
   /**
-   * REST fetch with timing measurement
+   * REST fetch
    */
   const refetch = useCallback(async () => {
     setLoading(true);
-    const startTime = performance.now();
     try {
       const res = await fetch(apiUrl);
       if (!res.ok) throw new Error("Failed to fetch data");
       const jsonData = await res.json();
       setData(jsonData);
       setError(null);
-
-      const fetchDuration = performance.now() - startTime;
-      logEvent("REST fetch completed", { fetchDuration });
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error(`Error fetching data for ${domain}:`, err);
@@ -75,7 +64,7 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
     } finally {
       setLoading(false);
     }
-  }, [apiUrl, domain, logEvent]);
+  }, [apiUrl, domain]);
 
   /**
    * Disconnect socket if live mode is turned off
@@ -116,9 +105,6 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
       const arrivalTime = performance.now();
       setLastUpdateArrivalTime(arrivalTime);
       setData((prev) => [newData, ...prev]);
-
-      newDataCountRef.current += 1; // increment the frequency counter
-      logEvent("New data received", { eventId: newData.id, arrivalTime });
     });
 
     newSocket.on("error", (err: unknown) => {
@@ -134,7 +120,7 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
       newSocket.disconnect();
       setSocket(null);
     };
-  }, [isLive, domain, logEvent]);
+  }, [isLive, domain]);
 
   /**
    * If live mode is off and no data is loaded, do a REST fetch
@@ -145,24 +131,17 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
     }
   }, [isLive, data.length, refetch]);
 
-  /**
-   * Log frequency of new data arrivals every minute
-   */
-  useEffect(() => {
-    const interval = setInterval(() => {
-      logEvent("Data arrival frequency", {
-        count: newDataCountRef.current,
-        period: "1 minute",
-      });
-      newDataCountRef.current = 0;
-    }, 60000); // every 60s
-
-    return () => clearInterval(interval);
-  }, [logEvent]);
-
   return (
     <DataContext.Provider
-      value={{ data, loading, error, isLive, setIsLive, refetch, lastUpdateArrivalTime }}
+      value={{
+        data,
+        loading,
+        error,
+        isLive,
+        setIsLive,
+        refetch,
+        lastUpdateArrivalTime,
+      }}
     >
       {children}
     </DataContext.Provider>

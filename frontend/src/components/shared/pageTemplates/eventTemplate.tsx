@@ -13,9 +13,7 @@ interface EventTemplateProps {
 
 export default function EventTemplate({ domain }: EventTemplateProps) {
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
-  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>(
-    []
-  );
+  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
   const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">("day");
 
   const { data, loading, isLive, setIsLive } = useData();
@@ -41,11 +39,8 @@ export default function EventTemplate({ domain }: EventTemplateProps) {
   }
 
   return (
-    // Make the container full width on small screens and add responsive padding
     <div className="max-w-full px-1 py-6 sm:px-6">
-      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4">
-        Passings
-      </h1>
+      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4">Passings</h1>
 
       {/* Filter component */}
       <FilterPanel
@@ -63,7 +58,7 @@ export default function EventTemplate({ domain }: EventTemplateProps) {
         useCardWrapper={true}
       />
 
-      {/* Wrap table in an overflow-x container to allow horizontal scroll if it’s too wide */}
+      {/* Table container */}
       <div className="mt-4 overflow-x-auto">
         <EventTable
           domain={domain}
