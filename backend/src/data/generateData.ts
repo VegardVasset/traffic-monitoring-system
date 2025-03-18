@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { MockRecord } from "../types";
+import { c } from "framer-motion/dist/types.d-6pKw1mTI";
 
 // Cameras for each domain
 const camerasByDomain: Record<string, { name: string; weight: number }[]> = {
@@ -37,6 +38,38 @@ function getRandomTireCondition(): number {
   });
 
   return weightedValues[Math.floor(Math.random() * weightedValues.length)];
+}
+function getRandomSpeed(timestamp: string | number | Date) {
+  // Default normal range: 40-120 km/h.
+  let normalMin = 40;
+  let normalMax = 120;
+
+  if (timestamp) {
+    const date = new Date(timestamp);
+    const hour = date.getHours();
+
+    // Adjust the normal speed range based on the hour of the day.
+    if ((hour >= 8 && hour <= 10) || (hour >= 15 && hour <= 17)) {
+      // Rush hours: lower speeds due to heavy traffic.
+      normalMin = 30;
+      normalMax = 80;
+    } else if (hour >= 21 || hour <= 5) {
+      // Nighttime: higher speeds as speeding is more common.
+      normalMin = 60;
+      normalMax = 130;
+    }
+    // Otherwise, the default range is used.
+  }
+
+  // 90% of values are within the adjusted normal range,
+  // 10% are anomalies (keeping the original anomaly logic)
+  if (Math.random() < 0.9) {
+    return faker.number.int({ min: normalMin, max: normalMax });
+  } else {
+    return Math.random() < 0.5
+      ? faker.number.int({ min: 5, max: 20 })   // Slow anomalies
+      : faker.number.int({ min: 120, max: 200 }); // Fast anomalies
+  }
 }
 
 /**
@@ -223,11 +256,16 @@ export function generateMockData(
     }
 
     if (entityType === "vpc") {
-      // Generate passenger count based on the vehicle type for more logical results
       record.passengerCount = getRandomPassengerCount(vehicleType);
+    }
+
+    if (entityType === "dts") {
+      record.speed = getRandomSpeed(creationTime);
     }
 
     mockData.push(record);
   }
   return mockData;
 }
+
+

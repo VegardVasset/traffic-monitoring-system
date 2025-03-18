@@ -25,7 +25,6 @@ router.patch<{ id: string }, any, Partial<MockRecord>>(
     // Update the record in memory
     mockDatabase.vpc[index] = { ...mockDatabase.vpc[index], ...updateData };
 
-
     // Send updated record
     res.json(mockDatabase.vpc[index]);
   }

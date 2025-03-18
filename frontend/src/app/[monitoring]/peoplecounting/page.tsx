@@ -9,9 +9,8 @@ export default function PassengerCountPage() {
     const { monitoring } = useParams() as { monitoring: string };
   
 
-   // If you ONLY want to allow `/tires/analysis`:
    if (monitoring !== "vpc") {
-    return <p>People Counter is not available for domain "{monitoring}".</p>;
+    return <p>People Counter is not available for domain &quot;{monitoring}&quot;.</p>;
   }
 
   const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/${monitoring}`;

@@ -1,4 +1,3 @@
-// EventTable.tsx
 "use client";
 
 import React, {
@@ -35,14 +34,6 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { useData, BaseEvent } from "@/context/DataContext";
 import { useAnalytics } from "@/context/analyticsContext";
 import EditDialog from "./editDialog";
@@ -157,6 +148,14 @@ export default function EventTable({
         baseColumns.push({
           accessorKey: "passengerCount",
           header: "Passenger Count",
+          cell: (info) => info.getValue() || "N/A",
+        });
+      }
+
+      if (domain === "dts") {
+        baseColumns.push({
+          accessorKey: "speed",
+          header: "Speed (km/h)",
           cell: (info) => info.getValue() || "N/A",
         });
       }

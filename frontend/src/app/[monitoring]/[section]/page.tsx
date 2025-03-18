@@ -6,12 +6,25 @@ import { DataProvider } from "@/context/DataContext";
 import CameraTemplate from "@/components/shared/pageTemplates/cameraTemplate";
 import EventTemplate from "@/components/shared/pageTemplates/eventTemplate";
 import OverviewTemplate from "@/components/shared/pageTemplates/overviewTemplate";
+import AnomalyAlert from "@/components/alerts/tireAnomalyAlert";
+import SpeedAnomalyAlert from "@/components/alerts/speedAnomalyAlert";
 
-// Map sections to their respective components. Now 'overview' is included.
+// Create a wrapper for events that conditionally shows AnomalyAlert for tires.
+const EventsWrapper: React.FC<{ domain: string }> = ({ domain }) => {
+    return (
+      <>
+        {domain === "tires" && <AnomalyAlert />}
+        {domain === "dts" && <SpeedAnomalyAlert />}
+        <EventTemplate domain={domain} />
+      </>
+    );
+  };
+
+// Map sections to their respective components.
 const SECTION_COMPONENTS: Record<string, React.FC<{ domain: string }>> = {
   overview: OverviewTemplate,
   cameras: CameraTemplate,
-  events: EventTemplate,
+  events: EventsWrapper,
 };
 
 export default function MonitoringSectionPage() {

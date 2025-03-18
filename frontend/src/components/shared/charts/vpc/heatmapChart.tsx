@@ -173,7 +173,7 @@ export default function HeatmapChart({ data, isMobile = false }: HeatmapChartPro
   );
 
   const legendItems = useMemo(() => {
-    let thresholds = maxValue === minValue
+    const thresholds = maxValue === minValue
       ? Array.from({ length: nBuckets + 1 }, (_, i) => minValue + i)
       : Array.from({ length: nBuckets + 1 }, (_, i) =>
           Math.round(minValue + i * ((maxValue - minValue) / nBuckets))

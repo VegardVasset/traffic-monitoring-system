@@ -68,11 +68,9 @@ interface CameraRow {
   passings: number;
 }
 
-interface CameraTemplateProps {
-  domain: string;
-}
 
-export default function CameraTemplate({ domain }: CameraTemplateProps) {
+
+export default function CameraTemplate() {
   const { data, loading, error } = useData();
   const [selectedLocation, setSelectedLocation] =
     useState<{ lat: number; lng: number } | null>(null);
