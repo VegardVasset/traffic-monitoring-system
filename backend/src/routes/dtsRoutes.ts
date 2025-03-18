@@ -25,8 +25,6 @@ router.patch<{ id: string }, any, Partial<MockRecord>>(
     // Update the record in memory
     mockDatabase.dts[index] = { ...mockDatabase.dts[index], ...updateData };
 
-    console.log(`Updated DTS record ${id}:`, mockDatabase.dts[index]);
-
     res.json(mockDatabase.dts[index]);
   }
 );

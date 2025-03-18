@@ -1,4 +1,3 @@
-// EventTable.tsx
 "use client";
 
 import React, {
@@ -35,14 +34,6 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { useData, BaseEvent } from "@/context/DataContext";
 import { useAnalytics } from "@/context/analyticsContext";
 import EditDialog from "./editDialog";

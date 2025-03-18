@@ -1,4 +1,3 @@
-// DataContext.tsx
 "use client";
 
 import React, {
@@ -10,7 +9,6 @@ import React, {
   useRef,
 } from "react";
 import { io, Socket } from "socket.io-client";
-import { useAnalytics } from "@/context/analyticsContext";
 
 export interface BaseEvent {
   id: number;
@@ -48,9 +46,17 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
   const [socket, setSocket] = useState<Socket | null>(null);
   const [lastUpdateArrivalTime, setLastUpdateArrivalTime] = useState<number | null>(null);
 
-  const { logEvent } = useAnalytics();
-  const newDataCountRef = useRef<number>(0);
+  // Ref to count new data events
+  const newDataCountRef = useRef(0);
 
+  // Define a stable logEvent function with a specific type for its second parameter
+  const logEvent = useCallback((message: string, data: Record<string, unknown>) => {
+    console.log(message, data);
+  }, []);
+
+  /**
+   * REST fetch with timing measurement
+   */
   const refetch = useCallback(async () => {
     setLoading(true);
     const startTime = performance.now();
@@ -60,6 +66,7 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
       const jsonData = await res.json();
       setData(jsonData);
       setError(null);
+
       const fetchDuration = performance.now() - startTime;
       logEvent("REST fetch completed", { fetchDuration });
     } catch (err: unknown) {
@@ -74,7 +81,7 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
     }
   }, [apiUrl, domain, logEvent]);
 
-  // New: updateEvent function
+  // updateEvent function now gets used in the context value
   const updateEvent = useCallback(async (updatedEvent: BaseEvent) => {
     try {
       // Replace the URL with your actual endpoint for updating events.
@@ -125,11 +132,10 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
     });
 
     newSocket.on("newData", (newData: BaseEvent) => {
+      newDataCountRef.current += 1;
       const arrivalTime = performance.now();
       setLastUpdateArrivalTime(arrivalTime);
       setData((prev) => [newData, ...prev]);
-      newDataCountRef.current += 1;
-      logEvent("New data received", { eventId: newData.id, arrivalTime });
     });
 
     newSocket.on("error", (err: unknown) => {
@@ -145,7 +151,7 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
       newSocket.disconnect();
       setSocket(null);
     };
-  }, [isLive, domain, logEvent]);
+  }, [isLive, domain]);
 
   useEffect(() => {
     if (!isLive && data.length === 0) {
@@ -166,16 +172,7 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
 
   return (
     <DataContext.Provider
-      value={{
-        data,
-        loading,
-        error,
-        isLive,
-        setIsLive,
-        refetch,
-        lastUpdateArrivalTime,
-        updateEvent,
-      }}
+      value={{ data, loading, error, isLive, setIsLive, refetch, lastUpdateArrivalTime, updateEvent }}
     >
       {children}
     </DataContext.Provider>
