@@ -152,6 +152,14 @@ export default function EventTable({
         });
       }
 
+      if (domain === "dts") {
+        baseColumns.push({
+          accessorKey: "speed",
+          header: "Speed (km/h)",
+          cell: (info) => info.getValue() || "N/A",
+        });
+      }
+
       // Actions column for editing
       baseColumns.push({
         id: "actions",
