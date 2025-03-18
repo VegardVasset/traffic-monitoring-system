@@ -1,6 +1,13 @@
+// EventTable.tsx
 "use client";
 
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, {
+  useMemo,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -28,20 +35,17 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
-import { useData } from "@/context/DataContext";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { useData, BaseEvent } from "@/context/DataContext";
 import { useAnalytics } from "@/context/analyticsContext";
-
-export interface Event {
-  id: number;
-  creationTime: string;
-  receptionTime: string;
-  vehicleType: string;
-  confidenceScore: number;
-  camera: string;
-  tireType?: "Sommerdekk" | "Vinterdekk";
-  tireCondition?: number;
-  passengerCount?: number;
-}
+import EditDialog from "./editDialog";
 
 interface EventTableProps {
   domain: string;
@@ -49,92 +53,18 @@ interface EventTableProps {
   selectedVehicleTypes: string[];
 }
 
-/** Dynamically generate column definitions based on the domain */
-const getColumns = (domain: string): ColumnDef<Event>[] => {
-  const baseColumns: ColumnDef<Event>[] = [
-    {
-      id: "select",
-      header: ({ table }) => (
-        <div>
-          <input
-            type="checkbox"
-            checked={table.getIsAllRowsSelected()}
-            onChange={table.getToggleAllRowsSelectedHandler()}
-          />
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div>
-          <input
-            type="checkbox"
-            checked={row.getIsSelected()}
-            onChange={row.getToggleSelectedHandler()}
-          />
-        </div>
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-    { accessorKey: "id", header: "ID" },
-    {
-      accessorKey: "creationTime",
-      header: "Time",
-      cell: (info) => new Date(info.getValue() as string).toLocaleString(),
-    },
-    { accessorKey: "vehicleType", header: "Vehicle Type" },
-    { accessorKey: "camera", header: "Camera" },
-    {
-      accessorKey: "confidenceScore",
-      header: "Confidence",
-      cell: (info) => {
-        const value = info.getValue() as number;
-        return `${(value * 100).toFixed(2)}%`;
-      },
-    },
-  ];
-
-  // If domain is "tires", add tire-specific columns
-  if (domain === "tires") {
-    baseColumns.push(
-      {
-        accessorKey: "tireType",
-        header: "Tire Type",
-        cell: (info) => info.getValue() || "N/A",
-      },
-      {
-        accessorKey: "tireCondition",
-        header: "Tire Condition (1-5)",
-        cell: (info) => info.getValue() || "N/A",
-      }
-    );
-  }
-
-  // If domain is "vpc", add passenger count column
-  if (domain === "vpc") {
-    baseColumns.push({
-      accessorKey: "passengerCount",
-      header: "Passenger Count",
-      cell: (info) => info.getValue() || "N/A",
-    });
-  }
-
-  return baseColumns;
-};
-
 export default function EventTable({
   domain,
   selectedCamera,
   selectedVehicleTypes,
 }: EventTableProps) {
-  const { data, loading, error, lastUpdateArrivalTime } = useData();
+  const { data, loading, error, lastUpdateArrivalTime, updateEvent } =
+    useData();
   const { logEvent } = useAnalytics();
 
-  // Keep track of the last arrival time we already logged
-  const lastLoggedArrivalRef = useRef<number | null>(null);
-
-  // Filter data based on user selections
-  const filteredData = useMemo(() => {
-    let dataArr = data as Event[];
+  // Filter based on user selection using context data directly
+  const filteredData: BaseEvent[] = useMemo(() => {
+    let dataArr = data;
     if (selectedCamera !== "all") {
       dataArr = dataArr.filter((record) => record.camera === selectedCamera);
     }
@@ -146,7 +76,8 @@ export default function EventTable({
     return dataArr;
   }, [data, selectedCamera, selectedVehicleTypes]);
 
-  // Measure live mode latency: time from data arrival -> table render
+  // Log live mode latency
+  const lastLoggedArrivalRef = useRef<number | null>(null);
   useEffect(() => {
     if (
       lastUpdateArrivalTime &&
@@ -154,21 +85,106 @@ export default function EventTable({
     ) {
       const now = performance.now();
       const latency = now - lastUpdateArrivalTime;
-      logEvent("Live mode latency", { latency, dataLength: filteredData.length });
+      logEvent("Live mode latency", {
+        latency,
+        dataLength: filteredData.length,
+      });
       console.log(`Live mode latency: ${latency.toFixed(2)} ms`);
-
       lastLoggedArrivalRef.current = lastUpdateArrivalTime;
     }
   }, [filteredData, lastUpdateArrivalTime, logEvent]);
 
-  // Set up table state
+  // React Table state
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 
+  // Edit dialog state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<BaseEvent | null>(null);
+
+  // Callback to open edit dialog
+  const handleEdit = useCallback((event: BaseEvent) => {
+    setSelectedEvent(event);
+    setEditDialogOpen(true);
+  }, []);
+
+  // Compute unique vehicle types from context data
+  const uniqueVehicleTypes = useMemo((): string[] => {
+    const types = new Set(data.map((e) => e.vehicleType));
+    return Array.from(types);
+  }, [data]);
+
+  // Define columns for the table
+  const getColumns = useCallback(
+    (domain: string): ColumnDef<BaseEvent>[] => {
+      const baseColumns: ColumnDef<BaseEvent>[] = [
+        { accessorKey: "id", header: "ID" },
+        {
+          accessorKey: "creationTime",
+          header: "Time",
+          cell: (info) =>
+            new Date(info.getValue() as string).toLocaleString(),
+        },
+        { accessorKey: "vehicleType", header: "Vehicle Type" },
+        { accessorKey: "camera", header: "Camera" },
+        {
+          accessorKey: "confidenceScore",
+          header: "Confidence",
+          cell: (info) => {
+            const value = info.getValue() as number;
+            return `${(value * 100).toFixed(2)}%`;
+          },
+        },
+      ];
+
+      if (domain === "tires") {
+        baseColumns.push(
+          {
+            accessorKey: "tireType",
+            header: "Tire Type",
+            cell: (info) => info.getValue() || "N/A",
+          },
+          {
+            accessorKey: "tireCondition",
+            header: "Tire Condition (1-5)",
+            cell: (info) => info.getValue() || "N/A",
+          }
+        );
+      }
+
+      if (domain === "vpc") {
+        baseColumns.push({
+          accessorKey: "passengerCount",
+          header: "Passenger Count",
+          cell: (info) => info.getValue() || "N/A",
+        });
+      }
+
+      // Actions column for editing
+      baseColumns.push({
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => {
+          const event = row.original;
+          return (
+            <Button variant="outline" size="sm" onClick={() => handleEdit(event)}>
+              Correct
+            </Button>
+          );
+        },
+      });
+
+      return baseColumns;
+    },
+    [handleEdit]
+  );
+
+  const columns = useMemo(() => getColumns(domain), [domain, getColumns]);
+
   const table = useReactTable({
     data: filteredData,
-    columns: getColumns(domain),
+    columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -179,7 +195,7 @@ export default function EventTable({
     state: { columnFilters, columnVisibility, pagination },
     pageCount: Math.ceil(filteredData.length / pagination.pageSize),
     manualPagination: false,
-    getRowId: (row) => row.id.toString(),
+    getRowId: (row: BaseEvent) => row.id.toString(),
     enableRowSelection: true,
   });
 
@@ -191,129 +207,148 @@ export default function EventTable({
   }
 
   return (
-    <div className="w-full bg-white shadow rounded-lg">
-      {/* Table header */}
-      <div className="flex items-center py-1 sm:py-4 px-1 sm:px-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto text-xs px-2">
-              Columns <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table.getAllColumns().map((column) => (
-              <DropdownMenuCheckboxItem
-                key={column.id}
-                className="capitalize"
-                checked={column.getIsVisible()}
-                onCheckedChange={(value) => column.toggleVisibility(!!value)}
-              >
-                {column.id}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+    <>
+      <div className="w-full bg-white shadow rounded-lg">
+        {/* Table header with column visibility options */}
+        <div className="flex items-center py-1 sm:py-4 px-1 sm:px-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="ml-auto text-xs px-2">
+                Columns <ChevronDown />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table.getAllColumns().map((column) => (
+                <DropdownMenuCheckboxItem
+                  key={column.id}
+                  className="capitalize"
+                  checked={column.getIsVisible()}
+                  onCheckedChange={(value) =>
+                    column.toggleVisibility(!!value)
+                  }
+                >
+                  {column.id}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
-      {/* Table with column lines */}
-      <div className="overflow-x-auto w-full">
-        {/* 
-          The key Tailwind classes here are:
-          - border-collapse & border on the <Table> for a solid outer border
-          - border-r and last:border-r-0 on each cell for vertical lines
-          - border-b on each row for horizontal lines
-        */}
-        <Table className="w-full table-auto border-collapse border border-gray-300">
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow
-                key={headerGroup.id}
-                className="bg-gray-100 border-b border-gray-300"
-              >
-                {headerGroup.headers.map((header) => {
-                  const sorting = header.column.getIsSorted();
-                  return (
-                    <TableHead
-                      key={header.id}
-                      className="cursor-pointer text-xs sm:text-sm md:text-base p-1 sm:p-2 whitespace-nowrap border-r last:border-r-0 border-gray-300"
-                      onClick={
-                        header.column.getCanSort()
-                          ? header.column.getToggleSortingHandler()
-                          : undefined
-                      }
+        {/* Table */}
+        <div className="overflow-x-auto w-full">
+          <Table className="w-full table-auto border-collapse border border-gray-300">
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow
+                  key={headerGroup.id}
+                  className="bg-gray-100 border-b border-gray-300"
+                >
+                  {headerGroup.headers.map((header) => {
+                    const sorting = header.column.getIsSorted();
+                    return (
+                      <TableHead
+                        key={header.id}
+                        className="cursor-pointer text-xs sm:text-sm md:text-base p-1 sm:p-2 whitespace-nowrap border-r last:border-r-0 border-gray-300"
+                        onClick={
+                          header.column.getCanSort()
+                            ? header.column.getToggleSortingHandler()
+                            : undefined
+                        }
+                      >
+                        <div className="flex items-center">
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                          {header.column.getCanSort() && (
+                            <span className="ml-1 inline-block">
+                              {sorting === "asc" ? (
+                                <ArrowUp className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                              ) : sorting === "desc" ? (
+                                <ArrowDown className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                              ) : (
+                                <ArrowUpDown className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                              )}
+                            </span>
+                          )}
+                        </div>
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  className="hover:bg-gray-200 text-xs sm:text-sm md:text-base border-b border-gray-300"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
+                      key={cell.id}
+                      className="p-1 sm:p-2 border-r last:border-r-0 border-gray-300"
                     >
-                      <div className="flex items-center">
-                        {/* Remove flex-1 so the text doesn't push the arrow far right */}
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                        {header.column.getCanSort() && (
-                          <span className="ml-1 inline-block">
-                            {sorting === "asc" ? (
-                              <ArrowUp className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
-                            ) : sorting === "desc" ? (
-                              <ArrowDown className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
-                            ) : (
-                              <ArrowUpDown className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-
-          <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                className="hover:bg-gray-200 text-xs sm:text-sm md:text-base border-b border-gray-300"
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell
-                    key={cell.id}
-                    className="p-1 sm:p-2 border-r last:border-r-0 border-gray-300"
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Pagination */}
-      <div className="flex items-center justify-between gap-2 sm:items-center p-2 sm:p-4 text-xs sm:text-sm">
-        <div className="text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {filteredData.length} row(s) selected.
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
-        <div className="flex space-x-1 sm:space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-            className="h-6 px-2 sm:h-8 sm:px-3"
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-            className="h-6 px-2 sm:h-8 sm:px-3"
-          >
-            Next
-          </Button>
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between gap-2 sm:items-center p-2 sm:p-4 text-xs sm:text-sm">
+          <div className="text-muted-foreground">
+            {filteredData.length} row(s).
+          </div>
+          <div className="flex space-x-1 sm:space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+              className="h-6 px-2 sm:h-8 sm:px-3"
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+              className="h-6 px-2 sm:h-8 sm:px-3"
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Edit Dialog */}
+      {editDialogOpen && selectedEvent && (
+        <EditDialog
+          event={selectedEvent}
+          uniqueVehicleTypes={uniqueVehicleTypes}
+          onClose={() => setEditDialogOpen(false)}
+          onSave={async (newVehicleType: string) => {
+            try {
+              const updatedEvent: BaseEvent = {
+                ...selectedEvent,
+                vehicleType: newVehicleType,
+              };
+              await updateEvent(updatedEvent);
+              setEditDialogOpen(false);
+            } catch (err) {
+              console.error("Error updating event:", err);
+            }
+          }}
+        />
+      )}
+    </>
   );
 }
