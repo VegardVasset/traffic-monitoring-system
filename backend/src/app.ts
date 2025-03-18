@@ -5,6 +5,8 @@ import tiresRoutes from "./routes/tiresRoutes";
 import dtsRoutes from "./routes/dtsRoutes";
 
 const app = express();
+app.use(express.json());
+
 
 app.use(cors()); 
 app.use("/api/vpc", vpcRoutes);

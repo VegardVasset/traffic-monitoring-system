@@ -6,6 +6,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import { io, Socket } from "socket.io-client";
 
@@ -15,6 +16,7 @@ export interface BaseEvent {
   receptionTime: string;
   vehicleType: string;
   camera: string;
+  confidenceScore: number;
 }
 
 interface DataContextProps {
@@ -25,6 +27,7 @@ interface DataContextProps {
   setIsLive: (live: boolean) => void;
   refetch: () => void;
   lastUpdateArrivalTime: number | null;
+  updateEvent: (updatedEvent: BaseEvent) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextProps | undefined>(undefined);
@@ -43,17 +46,29 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
   const [socket, setSocket] = useState<Socket | null>(null);
   const [lastUpdateArrivalTime, setLastUpdateArrivalTime] = useState<number | null>(null);
 
+  // Ref to count new data events
+  const newDataCountRef = useRef(0);
+
+  // Define a stable logEvent function with a specific type for its second parameter
+  const logEvent = useCallback((message: string, data: Record<string, unknown>) => {
+    console.log(message, data);
+  }, []);
+
   /**
-   * REST fetch
+   * REST fetch with timing measurement
    */
   const refetch = useCallback(async () => {
     setLoading(true);
+    const startTime = performance.now();
     try {
       const res = await fetch(apiUrl);
       if (!res.ok) throw new Error("Failed to fetch data");
       const jsonData = await res.json();
       setData(jsonData);
       setError(null);
+
+      const fetchDuration = performance.now() - startTime;
+      logEvent("REST fetch completed", { fetchDuration });
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error(`Error fetching data for ${domain}:`, err);
@@ -64,11 +79,29 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
     } finally {
       setLoading(false);
     }
-  }, [apiUrl, domain]);
+  }, [apiUrl, domain, logEvent]);
 
-  /**
-   * Disconnect socket if live mode is turned off
-   */
+  // updateEvent function now gets used in the context value
+  const updateEvent = useCallback(async (updatedEvent: BaseEvent) => {
+    try {
+      // Replace the URL with your actual endpoint for updating events.
+      const res = await fetch(`${apiUrl}/${updatedEvent.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedEvent),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to update event");
+      }
+      // Update local state once backend update is successful.
+      setData((prev) =>
+        prev.map((ev) => (ev.id === updatedEvent.id ? updatedEvent : ev))
+      );
+    } catch (error) {
+      console.error("Error updating event", error);
+    }
+  }, [apiUrl]);
+
   useEffect(() => {
     if (!isLive && socket) {
       socket.disconnect();
@@ -76,9 +109,6 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
     }
   }, [isLive, socket]);
 
-  /**
-   * Connect to WebSocket when live mode is on
-   */
   useEffect(() => {
     if (!isLive) return;
     const newSocket: Socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
@@ -102,6 +132,7 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
     });
 
     newSocket.on("newData", (newData: BaseEvent) => {
+      newDataCountRef.current += 1;
       const arrivalTime = performance.now();
       setLastUpdateArrivalTime(arrivalTime);
       setData((prev) => [newData, ...prev]);
@@ -122,26 +153,26 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
     };
   }, [isLive, domain]);
 
-  /**
-   * If live mode is off and no data is loaded, do a REST fetch
-   */
   useEffect(() => {
     if (!isLive && data.length === 0) {
       refetch();
     }
   }, [isLive, data.length, refetch]);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      logEvent("Data arrival frequency", {
+        count: newDataCountRef.current,
+        period: "1 minute",
+      });
+      newDataCountRef.current = 0;
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [logEvent]);
+
   return (
     <DataContext.Provider
-      value={{
-        data,
-        loading,
-        error,
-        isLive,
-        setIsLive,
-        refetch,
-        lastUpdateArrivalTime,
-      }}
+      value={{ data, loading, error, isLive, setIsLive, refetch, lastUpdateArrivalTime, updateEvent }}
     >
       {children}
     </DataContext.Provider>
