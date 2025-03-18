@@ -25,7 +25,6 @@ router.patch<{ id: string }, any, Partial<MockRecord>>(
 
     // Update the record in memory
     mockDatabase.tires[index] = { ...mockDatabase.tires[index], ...updateData };
-    console.log(`Updated Tires record ${id}:`, mockDatabase.tires[index]);
 
     // Call res.json without returning its value
     res.json(mockDatabase.tires[index]);
