@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -90,21 +90,26 @@ export default function FilterPanel({
     ? "All Types"
     : `${selectedCount} Selected`;
 
-  function toggleVehicleType(type: string) {
-    if (selectedVehicleTypes.includes(type)) {
-      setSelectedVehicleTypes(selectedVehicleTypes.filter((t) => t !== type));
-    } else {
-      setSelectedVehicleTypes([...selectedVehicleTypes, type]);
-    }
-  }
+  const toggleVehicleType = useCallback(
+    (type: string) => {
+      if (selectedVehicleTypes.includes(type)) {
+        setSelectedVehicleTypes(
+          selectedVehicleTypes.filter((t) => t !== type)
+        );
+      } else {
+        setSelectedVehicleTypes([...selectedVehicleTypes, type]);
+      }
+    },
+    [selectedVehicleTypes, setSelectedVehicleTypes]
+  );
 
-  function handleSelectAll() {
+  const handleSelectAll = useCallback(() => {
     setSelectedVehicleTypes(vehicleTypes);
-  }
+  }, [setSelectedVehicleTypes, vehicleTypes]);
 
-  function handleClearAll() {
+  const handleClearAll = useCallback(() => {
     setSelectedVehicleTypes([]);
-  }
+  }, [setSelectedVehicleTypes]);
 
   const content = (
     <div className="text-xs">

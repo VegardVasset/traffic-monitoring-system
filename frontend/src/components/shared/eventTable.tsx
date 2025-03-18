@@ -1,4 +1,4 @@
-// eventTable.tsx
+// EventTable.tsx
 "use client";
 
 import React, {
@@ -36,13 +36,6 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
   Select,
   SelectTrigger,
   SelectValue,
@@ -50,30 +43,28 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { useData } from "@/context/DataContext";
+import { useData, BaseEvent } from "@/context/DataContext";
 import { useAnalytics } from "@/context/analyticsContext";
+import EditDialog from "./editDialog";
+
+interface EventTableProps {
+  domain: string;
+  selectedCamera: string;
+  selectedVehicleTypes: string[];
+}
 
 export default function EventTable({
   domain,
   selectedCamera,
   selectedVehicleTypes,
-}: {
-  domain: string;
-  selectedCamera: string;
-  selectedVehicleTypes: string[];
-}) {
-  const { data, loading, error, lastUpdateArrivalTime, updateEvent } = useData();
+}: EventTableProps) {
+  const { data, loading, error, lastUpdateArrivalTime, updateEvent } =
+    useData();
   const { logEvent } = useAnalytics();
 
-  // Use a local copy for editing (optional if you want to show immediate UI changes)
-  const [tableData, setTableData] = useState<typeof data>(() => [...data]);
-  useEffect(() => {
-    setTableData([...data]);
-  }, [data]);
-
-  // Filter based on user selection
-  const filteredData = useMemo(() => {
-    let dataArr = tableData;
+  // Filter based on user selection using context data directly
+  const filteredData: BaseEvent[] = useMemo(() => {
+    let dataArr = data;
     if (selectedCamera !== "all") {
       dataArr = dataArr.filter((record) => record.camera === selectedCamera);
     }
@@ -83,15 +74,21 @@ export default function EventTable({
       );
     }
     return dataArr;
-  }, [tableData, selectedCamera, selectedVehicleTypes]);
+  }, [data, selectedCamera, selectedVehicleTypes]);
 
   // Log live mode latency
   const lastLoggedArrivalRef = useRef<number | null>(null);
   useEffect(() => {
-    if (lastUpdateArrivalTime && lastUpdateArrivalTime !== lastLoggedArrivalRef.current) {
+    if (
+      lastUpdateArrivalTime &&
+      lastUpdateArrivalTime !== lastLoggedArrivalRef.current
+    ) {
       const now = performance.now();
       const latency = now - lastUpdateArrivalTime;
-      logEvent("Live mode latency", { latency, dataLength: filteredData.length });
+      logEvent("Live mode latency", {
+        latency,
+        dataLength: filteredData.length,
+      });
       console.log(`Live mode latency: ${latency.toFixed(2)} ms`);
       lastLoggedArrivalRef.current = lastUpdateArrivalTime;
     }
@@ -102,62 +99,26 @@ export default function EventTable({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 
-  // ---------------------------
-  // Edit dialog state & logic
-  // ---------------------------
+  // Edit dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<typeof tableData[0] | null>(null);
-  const [editVehicleType, setEditVehicleType] = useState("");
+  const [selectedEvent, setSelectedEvent] = useState<BaseEvent | null>(null);
 
-  // Compute unique vehicle types for the select in the dialog
-  const uniqueVehicleTypes = useMemo(() => {
-    const types = new Set(tableData.map((e) => e.vehicleType));
-    return Array.from(types);
-  }, [tableData]);
-
-  const handleEdit = useCallback((event: typeof tableData[0]) => {
+  // Callback to open edit dialog
+  const handleEdit = useCallback((event: BaseEvent) => {
     setSelectedEvent(event);
-    setEditVehicleType(event.vehicleType);
     setEditDialogOpen(true);
   }, []);
 
-  const handleSave = useCallback(async () => {
-    if (!selectedEvent) return;
-    const updatedEvent = { ...selectedEvent, vehicleType: editVehicleType };
-    // Persist the change by calling updateEvent from your DataContext
-    await updateEvent(updatedEvent);
-    setEditDialogOpen(false);
-  }, [selectedEvent, editVehicleType, updateEvent]);
+  // Compute unique vehicle types from context data
+  const uniqueVehicleTypes = useMemo((): string[] => {
+    const types = new Set(data.map((e) => e.vehicleType));
+    return Array.from(types);
+  }, [data]);
 
-  // ---------------------------
   // Define columns for the table
-  // ---------------------------
   const getColumns = useCallback(
-    (domain: string) => {
-      const baseColumns: ColumnDef<typeof tableData[0]>[] = [
-        {
-          id: "select",
-          header: ({ table }) => (
-            <div>
-              <input
-                type="checkbox"
-                checked={table.getIsAllRowsSelected()}
-                onChange={table.getToggleAllRowsSelectedHandler()}
-              />
-            </div>
-          ),
-          cell: ({ row }) => (
-            <div>
-              <input
-                type="checkbox"
-                checked={row.getIsSelected()}
-                onChange={row.getToggleSelectedHandler()}
-              />
-            </div>
-          ),
-          enableSorting: false,
-          enableHiding: false,
-        },
+    (domain: string): ColumnDef<BaseEvent>[] => {
+      const baseColumns: ColumnDef<BaseEvent>[] = [
         { accessorKey: "id", header: "ID" },
         {
           accessorKey: "creationTime",
@@ -200,19 +161,15 @@ export default function EventTable({
         });
       }
 
-      // Add an Actions column for editing
+      // Actions column for editing
       baseColumns.push({
         id: "actions",
         header: "Actions",
         cell: ({ row }) => {
           const event = row.original;
           return (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleEdit(event)}
-            >
-              Korriger
+            <Button variant="outline" size="sm" onClick={() => handleEdit(event)}>
+              Correct
             </Button>
           );
         },
@@ -238,7 +195,7 @@ export default function EventTable({
     state: { columnFilters, columnVisibility, pagination },
     pageCount: Math.ceil(filteredData.length / pagination.pageSize),
     manualPagination: false,
-    getRowId: (row) => row.id.toString(),
+    getRowId: (row: BaseEvent) => row.id.toString(),
     enableRowSelection: true,
   });
 
@@ -266,7 +223,9 @@ export default function EventTable({
                   key={column.id}
                   className="capitalize"
                   checked={column.getIsVisible()}
-                  onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                  onCheckedChange={(value) =>
+                    column.toggleVisibility(!!value)
+                  }
                 >
                   {column.id}
                 </DropdownMenuCheckboxItem>
@@ -345,7 +304,7 @@ export default function EventTable({
         {/* Pagination */}
         <div className="flex items-center justify-between gap-2 sm:items-center p-2 sm:p-4 text-xs sm:text-sm">
           <div className="text-muted-foreground">
-            {table.getFilteredSelectedRowModel().rows.length} of {filteredData.length} row(s) selected.
+            {filteredData.length} row(s).
           </div>
           <div className="flex space-x-1 sm:space-x-2">
             <Button
@@ -371,34 +330,25 @@ export default function EventTable({
       </div>
 
       {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Korriger Vehicle Type</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2 mt-2">
-            <Label className="text-sm">Vehicle Type:</Label>
-            <Select value={editVehicleType} onValueChange={setEditVehicleType}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Choose type" />
-              </SelectTrigger>
-              <SelectContent>
-                {uniqueVehicleTypes.map((vt) => (
-                  <SelectItem key={vt} value={vt}>
-                    {vt}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {editDialogOpen && selectedEvent && (
+        <EditDialog
+          event={selectedEvent}
+          uniqueVehicleTypes={uniqueVehicleTypes}
+          onClose={() => setEditDialogOpen(false)}
+          onSave={async (newVehicleType: string) => {
+            try {
+              const updatedEvent: BaseEvent = {
+                ...selectedEvent,
+                vehicleType: newVehicleType,
+              };
+              await updateEvent(updatedEvent);
+              setEditDialogOpen(false);
+            } catch (err) {
+              console.error("Error updating event:", err);
+            }
+          }}
+        />
+      )}
     </>
   );
 }

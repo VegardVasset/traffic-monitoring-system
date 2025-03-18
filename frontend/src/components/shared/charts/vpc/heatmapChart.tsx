@@ -24,23 +24,13 @@ export interface PassengerEvent {
 
 interface HeatmapChartProps {
   data: PassengerEvent[];
-  /** Whether we're on a mobile viewport. */
   isMobile?: boolean;
 }
 
 /** 
  * Converts Sunday=0, Monday=1, etc. into Monday=0, Tuesday=1, ... Sunday=6.
- * getDay() => 0..6 => [Sun..Sat]
- * We want => [Mon=0..Sun=6].
  */
 function mapDayIndex(originalDay: number): number {
-  // Sunday (0) -> 6
-  // Monday (1) -> 0
-  // Tuesday (2) -> 1
-  // Wednesday (3) -> 2
-  // Thursday (4) -> 3
-  // Friday (5) -> 4
-  // Saturday (6) -> 5
   const reorderMap = [6, 0, 1, 2, 3, 4, 5];
   return reorderMap[originalDay];
 }
@@ -52,27 +42,21 @@ interface MatrixDataPoint {
   v: number; // passenger sum
 }
 
-// Discrete color scale array (original "before" colors).
-const quantColors = [
-  "#fef0d9",
-  "#fdd49e",
-  "#fdbb84",
-  "#fc8d59",
-  "#ef6548",
-  "#d7301f",
-  "#b30000",
-];
+// Extracted constants
+const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const xLabels = Array.from({ length: 24 }, (_, i) => i.toString());
+const quantColors = ["#fef0d9", "#fdd49e", "#fdbb84", "#fc8d59", "#ef6548", "#d7301f", "#b30000"];
 const nBuckets = quantColors.length;
 
 /** 
- * Returns a discrete color based on thresholds 
- * derived from minValue..maxValue.
+ * Returns a discrete color based on thresholds derived from minValue..maxValue.
  */
 function createDiscreteColorFunc(minValue: number, maxValue: number) {
-  // Build thresholds array
   let thresholds: number[] = [];
+
   if (maxValue === minValue) {
-    thresholds = Array.from({ length: nBuckets + 1 }, () => minValue);
+    // Ensure color variance when all values are the same
+    thresholds = Array.from({ length: nBuckets + 1 }, (_, i) => minValue + i);
   } else {
     const step = (maxValue - minValue) / nBuckets;
     thresholds = Array.from({ length: nBuckets + 1 }, (_, i) =>
@@ -80,19 +64,17 @@ function createDiscreteColorFunc(minValue: number, maxValue: number) {
     );
   }
 
-  // The function that picks the color
   return (value: number) => {
     for (let i = 0; i < nBuckets; i++) {
-      if (value >= thresholds[i] && value <= thresholds[i + 1]) {
+      if (value >= thresholds[i] && value < thresholds[i + 1]) {
         return quantColors[i];
       }
     }
-    return quantColors[nBuckets - 1];
+    return quantColors[nBuckets - 1]; // Ensures last bucket catches all values
   };
 }
 
 export default function HeatmapChart({ data, isMobile = false }: HeatmapChartProps) {
-  // 1) Create a 7×24 matrix for passenger sums (no averaging).
   const matrixArr = useMemo(() => {
     const sumArr = Array.from({ length: 7 }, () => Array(24).fill(0));
     data.forEach((evt) => {
@@ -104,23 +86,11 @@ export default function HeatmapChart({ data, isMobile = false }: HeatmapChartPro
     return sumArr;
   }, [data]);
 
-  // 2) Days of the week (re-labeled so Monday=0, Sunday=6).
-  const daysOfWeek = useMemo(() => ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], []);
-  const xLabels = useMemo(() => Array.from({ length: 24 }, (_, i) => i.toString()), []);
-
-  // 3) Compute min/max passenger counts for the entire matrix (for color scale).
   const flatValues = matrixArr.flat();
   const minValue = Math.min(...flatValues);
   const maxValue = Math.max(...flatValues);
+  const getColorForValue = useMemo(() => createDiscreteColorFunc(minValue, maxValue), [minValue, maxValue]);
 
-  // 4) Create a discrete color function based on minValue and maxValue
-  const getColorForValue = useMemo(
-    () => createDiscreteColorFunc(minValue, maxValue),
-    [minValue, maxValue]
-  );
-
-  // 5) Prepare the matrix data points for Chart.js.
-  // Each data point represents a cell with x (hour), y (day) and v (passenger count).
   const matrixData = useMemo<MatrixDataPoint[]>(() => {
     const points: MatrixDataPoint[] = [];
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
@@ -134,9 +104,8 @@ export default function HeatmapChart({ data, isMobile = false }: HeatmapChartPro
       }
     }
     return points;
-  }, [matrixArr, daysOfWeek]);
+  }, [matrixArr]);
 
-  // 6) Chart.js data configuration.
   const chartData = useMemo(
     () => ({
       datasets: [
@@ -144,12 +113,12 @@ export default function HeatmapChart({ data, isMobile = false }: HeatmapChartPro
           label: "Passenger Count Heatmap",
           data: matrixData,
           width: ({ chart }: { chart: ChartJS }) =>
-            chart.chartArea ? chart.chartArea.width / 24 : 0,
+            chart.chartArea ? chart.chartArea.width / 24 : 20, // Fallback to 20px
           height: ({ chart }: { chart: ChartJS }) =>
-            chart.chartArea ? chart.chartArea.height / 7 : 0,
+            chart.chartArea ? chart.chartArea.height / 7 : 20,
           backgroundColor: (ctx: ScriptableContext<"matrix">) => {
             const idx = ctx.dataIndex;
-            const v = matrixData[idx].v;
+            const v = matrixData[idx]?.v ?? 0;
             return getColorForValue(v);
           },
           borderColor: "#E2E2E2",
@@ -160,115 +129,74 @@ export default function HeatmapChart({ data, isMobile = false }: HeatmapChartPro
     [matrixData, getColorForValue]
   );
 
-  // 7) Chart.js options (conditionals for mobile).
   const options = useMemo(
     () => ({
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        // If you have chartjs-plugin-datalabels globally registered,
-        // disable it for this chart to avoid text overlays:
-        datalabels: {
-          display: false,
-        },
+        datalabels: { display: false },
         tooltip: {
           callbacks: {
             title: (items: TooltipItem<"matrix">[]) => {
-              if (!items.length) return "";
+              if (!items.length || !items[0].raw) return "Unknown Time";
               const raw = items[0].raw as MatrixDataPoint;
               return `${raw.y} – ${raw.x}:00`;
             },
             label: (item: TooltipItem<"matrix">) => {
               const raw = item.raw as MatrixDataPoint;
-              return `${raw.v} passengers`;
+              return raw ? `${raw.v} passengers` : "No data";
             },
           },
         },
-        legend: {
-          display: false,
-        },
+        legend: { display: false },
       },
       scales: {
         x: {
           type: "category" as const,
           labels: xLabels,
-          title: {
-            display: true,
-            text: "Hour",
-            font: { size: isMobile ? 10 : 14 },
-          },
-          ticks: {
-            font: { size: isMobile ? 8 : 12 },
-          },
+          title: { display: true, text: "Hour", font: { size: isMobile ? 10 : 14 } },
+          ticks: { font: { size: isMobile ? 8 : 12 } },
           grid: { display: false },
           offset: true,
         },
         y: {
           type: "category" as const,
           labels: daysOfWeek,
-          title: {
-            display: true,
-            text: "Day",
-            font: { size: isMobile ? 10 : 14 },
-          },
-          ticks: {
-            font: { size: isMobile ? 8 : 12 },
-          },
+          title: { display: true, text: "Day", font: { size: isMobile ? 10 : 14 } },
+          ticks: { font: { size: isMobile ? 8 : 12 } },
           grid: { display: false },
           offset: true,
         },
       },
     }),
-    [xLabels, daysOfWeek, isMobile]
+    [isMobile]
   );
 
-  // 8) Build discrete legend items from thresholds
   const legendItems = useMemo(() => {
-    // Rebuild thresholds in the same way as createDiscreteColorFunc
-    let thresholds: number[] = [];
-    if (maxValue === minValue) {
-      thresholds = Array.from({ length: nBuckets + 1 }, () => minValue);
-    } else {
-      const step = (maxValue - minValue) / nBuckets;
-      thresholds = Array.from({ length: nBuckets + 1 }, (_, i) =>
-        Math.round(minValue + i * step)
-      );
-    }
+    let thresholds = maxValue === minValue
+      ? Array.from({ length: nBuckets + 1 }, (_, i) => minValue + i)
+      : Array.from({ length: nBuckets + 1 }, (_, i) =>
+          Math.round(minValue + i * ((maxValue - minValue) / nBuckets))
+        );
 
-    // Pair each color with a range label like "0–1", "2–3", etc.
-    return quantColors.map((color, i) => {
-      const rangeStart = thresholds[i];
-      const rangeEnd = thresholds[i + 1];
-      return {
-        color,
-        rangeLabel: `${rangeStart} – ${rangeEnd}`,
-      };
-    });
+    return quantColors.map((color, i) => ({
+      color,
+      rangeLabel: `${thresholds[i]} – ${thresholds[i + 1]}`,
+    }));
   }, [minValue, maxValue]);
-
-  // Use a smaller container on mobile to fit better
-  const containerStyle = { minHeight: isMobile ? 200 : 400 };
 
   return (
     <div className="flex flex-col w-full h-full">
       <h2 className="ml-4 text-xs md:text-xl font-semibold mb-4">
-        Weekly Heatmap of Passenger Counts (Mon–Sun)
+        Weekly Heatmap of Passenger Counts
       </h2>
-      <div style={containerStyle}>
+      <div style={{ minHeight: isMobile ? 200 : 400 }}>
         <Chart type="matrix" data={chartData} options={options} />
       </div>
-      {/* Discrete Legend */}
       <div className="flex flex-row flex-wrap items-center justify-center mt-2">
         {legendItems.map((item, i) => (
           <div key={i} className="flex items-center mr-4 mb-2">
-            <div
-              style={{
-                backgroundColor: item.color,
-                width: isMobile ? 12 : 20,
-                height: isMobile ? 12 : 20,
-                marginRight: 5,
-              }}
-            />
+            <div style={{ backgroundColor: item.color, width: isMobile ? 12 : 20, height: isMobile ? 12 : 20, marginRight: 5 }} />
             <span style={{ fontSize: isMobile ? 10 : 12 }}>{item.rangeLabel}</span>
           </div>
         ))}
