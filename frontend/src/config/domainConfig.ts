@@ -28,7 +28,7 @@ export const domainConfigs: Record<string, DomainConfig> = {
       {
         id: "passings",
         label: "Passings",
-        href: "/dts/events",
+        href: "/dts/passings",
         icon: React.createElement(TruckIcon, { className: "w-6 h-6" }),
       },
       {
@@ -57,7 +57,7 @@ export const domainConfigs: Record<string, DomainConfig> = {
       {
         id: "passings",
         label: "Passings",
-        href: "/vpc/events",
+        href: "/vpc/passings",
         icon: React.createElement(TruckIcon, { className: "w-6 h-6" }),
       },
       {
@@ -86,7 +86,7 @@ export const domainConfigs: Record<string, DomainConfig> = {
       {
         id: "passings",
         label: "Passings",
-        href: "/tires/events",
+        href: "/tires/passings",
         icon: React.createElement(TruckIcon, { className: "w-6 h-6" }),
       },
       {
