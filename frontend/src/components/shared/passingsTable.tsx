@@ -127,6 +127,18 @@ export default function PassingsTable({
             return `${(value * 100).toFixed(2)}%`;
           },
         },
+        {
+          accessorKey: "imageUrl",
+          header: "Image",
+          cell: (info) => (
+            <img
+              src={info.getValue() as string}
+              alt="Vehicle"
+              width="120"
+              style={{ objectFit: "cover" }}
+            />
+          ),
+        },
       ];
 
       if (domain === "tires") {
@@ -158,6 +170,7 @@ export default function PassingsTable({
           header: "Speed (km/h)",
           cell: (info) => info.getValue() || "N/A",
         });
+
       }
 
       // Actions column for editing

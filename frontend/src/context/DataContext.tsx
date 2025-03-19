@@ -17,7 +17,9 @@ export interface BaseEvent {
   vehicleType: string;
   camera: string;
   confidenceScore: number;
+  imageUrl: string; 
 }
+
 
 interface DataContextProps {
   data: BaseEvent[];
