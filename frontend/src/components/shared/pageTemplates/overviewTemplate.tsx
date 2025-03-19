@@ -31,13 +31,13 @@ export interface BaseEvent {
   camera: string;
 }
 
-/** Helper function: convert ISO date (yyyy-mm-dd) to dd-mm-yyyy */
+/** Helper: convert ISO date (yyyy-mm-dd) to dd-mm-yyyy */
 function formatIsoDate(iso: string): string {
   const [year, month, day] = iso.split("-");
   return `${day}-${month}-${year}`;
 }
 
-/** Helper function: compute ISO week number for a given date */
+/** Helper: compute ISO week number for a given date */
 function getWeekNumber(date: Date): number {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
@@ -47,27 +47,22 @@ function getWeekNumber(date: Date): number {
 
 /**
  * formatDrillDownLabel
- * Converts the clicked binKey + binSize to a user-friendly label
- * e.g. "Hour 14", "Week 10-2025", "10-03-2025", etc.
+ * Converts the clicked binKey + binSize to a user-friendly label.
  */
 function formatDrillDownLabel(
   binKey: string,
   currentBinSize: "hour" | "day" | "week" | "month"
 ): string {
   if (currentBinSize === "hour") {
-    // e.g. binKey "2025-03-10T14" => "10-03-2025 14:00"
     return formatIsoDate(binKey.substring(0, 10)) + " " + binKey.substring(11) + ":00";
   } else if (currentBinSize === "day") {
-    // e.g. binKey "2025-03-10" => "10-03-2025"
     return formatIsoDate(binKey);
   } else if (currentBinSize === "week") {
-    // e.g. binKey "2025-03-10" => "Week 10-2025"
     const date = new Date(binKey);
     const weekNo = getWeekNumber(date);
     const year = date.getFullYear();
     return `Week ${weekNo}-${year}`;
   } else if (currentBinSize === "month") {
-    // e.g. binKey "2025-03" => "03-2025"
     const [year, month] = binKey.split("-");
     return `${month}-${year}`;
   }
@@ -109,21 +104,21 @@ export default function OverviewTemplate({
   // Derived Data
   // --------------------------------
 
-  // 1) Collect all vehicle types from the raw data (for the filter panel).
+  // 1) Collect vehicle types for filter panel.
   const derivedVehicleTypes = useMemo(() => {
     const types = new Set<string>();
     data.forEach((event) => types.add(event.vehicleType));
     return Array.from(types);
   }, [data]);
 
-  // 2) Collect all cameras from the raw data (for the filter panel).
+  // 2) Collect cameras for filter panel.
   const derivedCameras = useMemo(() => {
     const cams = new Map<string, string>();
     data.forEach((event) => cams.set(event.camera, event.camera));
     return Array.from(cams, ([id, name]) => ({ id, name }));
   }, [data]);
 
-  // 3) filteredData respects user’s chosen camera, vehicle type, and date range
+  // 3) Filter data based on camera, vehicle types, and date range.
   const filteredData = useMemo(() => {
     return data.filter((event) => {
       const eventDate = event.creationTime.substring(0, 10);
@@ -131,12 +126,11 @@ export default function OverviewTemplate({
       const matchCamera = selectedCamera === "all" || event.camera === selectedCamera;
       const matchVehicle =
         selectedVehicleTypes.length === 0 || selectedVehicleTypes.includes(event.vehicleType);
-
       return withinDateRange && matchCamera && matchVehicle;
     });
   }, [data, selectedCamera, selectedVehicleTypes, startDate, endDate]);
 
-  // 4) For the main chart’s legend, we only show the types actually present in filteredData
+  // 4) For the main chart’s legend, show only vehicle types in filteredData.
   const filteredVehicleTypes = useMemo(() => {
     const types = new Set<string>();
     filteredData.forEach((event) => types.add(event.vehicleType));
@@ -148,7 +142,6 @@ export default function OverviewTemplate({
   // --------------------------------
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < MOBILE_MAX_WIDTH);
@@ -164,13 +157,11 @@ export default function OverviewTemplate({
   const [drillDownOpen, setDrillDownOpen] = useState(false);
   const [drillDownBinKey, setDrillDownBinKey] = useState<string | null>(null);
 
-  // When user clicks a data point, store the binKey & open the overlay
   const handleDataPointClick = useCallback((binKey: string) => {
     setDrillDownBinKey(binKey);
     setDrillDownOpen(true);
   }, []);
 
-  // For the overlay, we shift from day->hour, week->day, month->week, etc.
   const getDrillDownBinSize = useCallback(() => {
     if (binSize === "day") return "hour";
     if (binSize === "week") return "day";
@@ -178,20 +169,12 @@ export default function OverviewTemplate({
     return "hour";
   }, [binSize]);
 
-  /**
-   * The key fix: we base our drill-down on `filteredData`, 
-   * not on the raw `data`, so it respects camera/vehicle filters.
-   */
   const getDrillDownData = useCallback(() => {
     if (!drillDownBinKey) return [];
-
-    // Use filteredData so camera & vehicle filters are carried over
     if (binSize === "day") {
-      // e.g. "2025-03-10"
       const dayString = drillDownBinKey.substring(0, 10);
       return filteredData.filter((evt) => evt.creationTime.substring(0, 10) === dayString);
     } else if (binSize === "week") {
-      // e.g. "2025-03-10"
       const startOfWeek = new Date(drillDownBinKey);
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(endOfWeek.getDate() + 6);
@@ -200,21 +183,16 @@ export default function OverviewTemplate({
         return evtDate >= startOfWeek && evtDate <= endOfWeek;
       });
     } else if (binSize === "month") {
-      // e.g. "2025-03"
       return filteredData.filter((evt) => evt.creationTime.startsWith(drillDownBinKey));
     }
     return [];
   }, [binSize, drillDownBinKey, filteredData]);
 
-  // Build the actual array for the overlay chart
   const drillDownData = getDrillDownData();
 
-  // We derive which vehicle types appear in that overlay data
   const drillDownVehicleTypes = useMemo(() => {
     const types = new Set<string>();
-    drillDownData.forEach((evt) => {
-      types.add(evt.vehicleType);
-    });
+    drillDownData.forEach((evt) => types.add(evt.vehicleType));
     return Array.from(types);
   }, [drillDownData]);
 
@@ -253,11 +231,9 @@ export default function OverviewTemplate({
                 }}
               />
             </Card>
-
             <Card className="p-3 max-w-sm w-full hidden lg:block">
               <EventSummary count={filteredData.length} />
             </Card>
-
             <Card className="p-3 hidden lg:block">
               <FilterPanel
                 cameras={derivedCameras}
@@ -348,43 +324,36 @@ export default function OverviewTemplate({
             <SheetContent
               side="right"
               className="
-      !max-w-none
-      w-[85%]            /* Overlay width on small screens */
-      sm:w-[700px]       /* Then 700px on sm+ */
-      md:w-[900px]       /* 900px on md+ */
-      lg:w-[1200px]      /* 1200px on lg+ */
-      text-xs
-      h-screen           /* Full screen height */
-      flex
-      flex-col
-      overflow-hidden    /* No scrolling: everything must fit */
-      p-2
-    "
+                !max-w-none
+                w-[85%]
+                sm:w-[700px]
+                md:w-[900px]
+                lg:w-[1200px]
+                text-xs
+                h-screen
+                flex
+                flex-col
+                overflow-hidden
+                p-2
+              "
             >
               <SheetHeader className="flex-none">
                 <SheetTitle>Detailed View</SheetTitle>
               </SheetHeader>
-
-              {/* Main content area fills leftover vertical space */}
               <div className="flex-1 flex flex-col mt-4">
                 {drillDownBinKey ? (
                   <>
-                    {/* 1) Header info for the chart */}
                     <p className="text-sm mb-2">
                       Detailed breakdown for <b>{formatDrillDownLabel(drillDownBinKey, binSize)}</b>
                       <br />
                       (Drill-down bin size: {getDrillDownBinSize()})
                     </p>
-
-                    {/* 2) Chart container (flex-1) so it expands/shrinks in the middle */}
                     <div className="flex-1 bg-white shadow rounded-lg p-2">
                       <TimeSeriesChart
-                        data={drillDownData}
+                        data={getDrillDownData()}
                         binSize={getDrillDownBinSize()}
                       />
                     </div>
-
-                    {/* 3) Legend container (flex-none) pinned below the chart */}
                     <div className="mt-2 flex-none">
                       <UnifiedLegend vehicleTypes={drillDownVehicleTypes} />
                     </div>
@@ -393,8 +362,6 @@ export default function OverviewTemplate({
                   <p>No bin selected yet.</p>
                 )}
               </div>
-
-              {/* 4) Close button at the bottom (flex-none) */}
               <div className="flex-none">
                 <SheetClose asChild>
                   <Button variant="outline">Close</Button>
@@ -405,8 +372,6 @@ export default function OverviewTemplate({
               <div />
             </SheetTrigger>
           </Sheet>
-
-
         </>
       )}
     </div>
