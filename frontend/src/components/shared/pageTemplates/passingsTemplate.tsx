@@ -3,15 +3,15 @@
 
 import React, { useMemo, useState } from "react";
 import FilterPanel, { Camera } from "@/components/shared/filterPanel";
-import EventTable from "@/components/shared/eventTable";
+import PassingsTable from "@/components/shared/passingsTable";
 import { useData } from "@/context/DataContext";
 import { BaseEvent } from "@/context/DataContext";
 
-interface EventTemplateProps {
+interface PassingsTemplateProps {
   domain: string;
 }
 
-export default function EventTemplate({ domain }: EventTemplateProps) {
+export default function PassingsTemplate({ domain }: PassingsTemplateProps) {
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
   const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
   const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">("day");
@@ -58,7 +58,7 @@ export default function EventTemplate({ domain }: EventTemplateProps) {
         useCardWrapper={true}
       />
       <div className="mt-4 overflow-x-auto">
-        <EventTable
+        <PassingsTable
           domain={domain}
           selectedCamera={selectedCamera}
           selectedVehicleTypes={selectedVehicleTypes}

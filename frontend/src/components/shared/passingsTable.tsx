@@ -38,17 +38,17 @@ import { useData, BaseEvent } from "@/context/DataContext";
 import { useAnalytics } from "@/context/analyticsContext";
 import EditDialog from "./editDialog";
 
-interface EventTableProps {
+interface PassingsTableProps {
   domain: string;
   selectedCamera: string;
   selectedVehicleTypes: string[];
 }
 
-export default function EventTable({
+export default function PassingsTable({
   domain,
   selectedCamera,
   selectedVehicleTypes,
-}: EventTableProps) {
+}: PassingsTableProps) {
   const { data, loading, error, lastUpdateArrivalTime, updateEvent } =
     useData();
   const { logEvent } = useAnalytics();

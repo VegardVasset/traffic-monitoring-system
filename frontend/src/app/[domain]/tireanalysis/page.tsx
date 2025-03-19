@@ -5,17 +5,17 @@ import { DataProvider } from "@/context/DataContext";
 import TireAnalysisTemplate from "@/components/shared/pageTemplates/tireAnalysisTemplate";
 
 export default function TireAnalysisPage() {
-  const { monitoring } = useParams() as { monitoring: string };
+  const { domain } = useParams() as { domain: string };
 
   // If you ONLY want to allow `/tires/analysis`:
-  if (monitoring !== "tires") {
-    return <p>Analysis is not available for domain &quot;{monitoring}&quot;.</p>;
+  if (domain !== "tires") {
+    return <p>Analysis is not available for domain &quot;{domain}&quot;.</p>;
   }
 
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/${monitoring}`;
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/${domain}`;
 
   return (
-    <DataProvider apiUrl={apiUrl} domain={monitoring}>
+    <DataProvider apiUrl={apiUrl} domain={domain}>
       <TireAnalysisTemplate />
     </DataProvider>
   );

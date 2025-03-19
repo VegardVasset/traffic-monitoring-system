@@ -6,16 +6,16 @@ import { DataProvider } from "@/context/DataContext";
 import PeopleCountTemplate from "@/components/shared/pageTemplates/peopleCountTemplate";
 
 export default function PassengerCountPage() {
-    const { monitoring } = useParams() as { monitoring: string };
+    const { domain } = useParams() as { domain: string };
   
 
-   if (monitoring !== "vpc") {
-    return <p>People Counter is not available for domain &quot;{monitoring}&quot;.</p>;
+   if (domain !== "vpc") {
+    return <p>People Counter is not available for domain &quot;{domain}&quot;.</p>;
   }
 
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/${monitoring}`;
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/${domain}`;
   return (
-    <DataProvider apiUrl={apiUrl} domain={monitoring}>
+    <DataProvider apiUrl={apiUrl} domain={domain}>
       <PeopleCountTemplate/>
     </DataProvider>
   );
