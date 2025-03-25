@@ -3,11 +3,11 @@
 import React from "react";
 import { useParams } from "next/navigation";
 import { DataProvider } from "@/context/DataContext";
-import CameraTemplate from "@/components/shared/pageTemplates/cameraTemplate";
-import PassingsTemplate from "@/components/shared/pageTemplates/passingsTemplate";
-import OverviewTemplate from "@/components/shared/pageTemplates/overviewTemplate";
-import AnomalyAlert from "@/components/alerts/tireAnomalyAlert";
-import SpeedAnomalyAlert from "@/components/alerts/speedAnomalyAlert";
+import CameraTemplate from "@/components/shared/pageTemplates/CameraTemplate";
+import PassingsTemplate from "@/components/shared/pageTemplates/PassingsTemplate";
+import OverviewTemplate from "@/components/shared/pageTemplates/OverviewTemplate";
+import AnomalyAlert from "@/components/tires/alerts/TireAnomalyAlert";
+import SpeedAnomalyAlert from "@/components/dts/alerts/SpeedAnomalyAlert";
 
 // Create a wrapper for passings that conditionally shows AnomalyAlerts
 const PassingsWrapper: React.FC<{ domain: string }> = ({ domain }) => {

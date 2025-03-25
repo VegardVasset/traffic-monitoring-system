@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { useAnalytics } from "@/context/analyticsContext";
+import { useAnalytics } from "@/context/AnalyticsContext";
 
 export default function AnalyticsPage() {
   const { events } = useAnalytics();

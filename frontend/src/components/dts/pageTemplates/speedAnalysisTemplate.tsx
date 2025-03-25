@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
-import FilterPanel from "@/components/shared/filterPanel";
-import PeriodFilter from "@/components/shared/periodFilter";
-import EventCount from "@/components/shared/eventCount";
-import SpeedHistogramChart from "@/components/shared/charts/dts/speedHistogramChart";
-import SpeedTimeOfDayChart from "@/components/shared/charts/dts/speedTimeOfDayChart";
+import FilterPanel from "@/components/shared/FilterPanel";
+import PeriodFilter from "@/components/shared/PeriodFilter";
+import EventCount from "@/components/shared/EventCount";
+import SpeedHistogramChart from "@/components/dts/charts/SpeedHistogramChart";
+import SpeedTimeOfDayChart from "@/components/dts/charts/SpeedTimeOfDayChart";
 
 // ShadCN UI components
 import { Card } from "@/components/ui/card";

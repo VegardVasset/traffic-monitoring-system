@@ -19,7 +19,6 @@ const Marker = dynamic(
   { ssr: false }
 );
 
-// Extend Leaflet Icon interface to include _getIconUrl.
 import { Icon } from "leaflet";
 
 interface ExtendedIconDefault extends Icon {
@@ -31,10 +30,7 @@ interface GeocodedMiniMapProps {
   onClick: (coords: { lat: number; lng: number }) => void;
 }
 
-const GeocodedMiniMap: React.FC<GeocodedMiniMapProps> = ({
-  cameraName,
-  onClick,
-}) => {
+export default function GeocodedMiniMap({ cameraName, onClick }: GeocodedMiniMapProps) {
   const { location, loading, error } = useGeocode(cameraName);
 
   // Configure Leaflet icons using assets from the public folder.
@@ -42,7 +38,7 @@ const GeocodedMiniMap: React.FC<GeocodedMiniMapProps> = ({
     if (typeof window !== "undefined") {
       import("leaflet").then((module) => {
         const L = module.default;
-        // Cast the prototype to our extended interface to safely delete the property.
+        // Remove the _getIconUrl property from the default icon prototype.
         delete (L.Icon.Default.prototype as ExtendedIconDefault)._getIconUrl;
         L.Icon.Default.mergeOptions({
           iconRetinaUrl: "/marker-icon-2x.png",
@@ -53,10 +49,13 @@ const GeocodedMiniMap: React.FC<GeocodedMiniMapProps> = ({
     }
   }, []);
 
-  if (loading)
+  if (loading) {
     return <p className="text-sm text-gray-500">Loading map…</p>;
-  if (error || !location)
+  }
+
+  if (error || !location) {
     return <p className="text-sm text-red-500">Map unavailable</p>;
+  }
 
   return (
     <div
@@ -67,7 +66,6 @@ const GeocodedMiniMap: React.FC<GeocodedMiniMapProps> = ({
         center={[location.lat, location.lng]}
         zoom={13}
         scrollWheelZoom={false}
-        // Add zIndex: 0 and position: "relative" to ensure the sidebar is on top
         style={{ width: "100%", height: "100%", zIndex: 0, position: "relative" }}
       >
         <TileLayer
@@ -76,9 +74,6 @@ const GeocodedMiniMap: React.FC<GeocodedMiniMapProps> = ({
         />
         <Marker position={[location.lat, location.lng]} />
       </MapContainer>
-
     </div>
   );
-};
-
-export default GeocodedMiniMap;
+}

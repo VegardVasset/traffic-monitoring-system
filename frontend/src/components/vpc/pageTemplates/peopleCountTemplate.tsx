@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
-import FilterPanel from "@/components/shared/filterPanel";
-import PeriodFilter from "@/components/shared/periodFilter";
-import EventCount from "@/components/shared/eventCount";
-import TireConditionChart from "@/components/shared/charts/tires/tireConditionChart";
-import TireTypeChart from "@/components/shared/charts/tires/tireTypeChart";
-
-// ShadCN UI components
+import React, { useCallback, useMemo, useState, useEffect } from "react";
+import FilterPanel from "@/components/shared/FilterPanel";
+import PeriodFilter from "@/components/shared/PeriodFilter";
+import EventSummary from "@/components/shared/EventCount";
+import { MOBILE_MAX_WIDTH } from "@/config/config";
+import HeatmapChart from "@/components/vpc/charts/HeatmapChart";
+import { UnifiedLegend } from "@/components/shared/UnifiedLegend";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,33 +17,39 @@ import {
   SheetTitle,
   SheetClose,
 } from "@/components/ui/sheet";
+import { useData, BaseEvent as DataContextBaseEvent } from "@/context/DataContext";
+import PeopleCountChart from "@/components/vpc/charts/PeopleCountChart";
 
-import { useData } from "@/context/DataContext";
+// Create a new type that extends the context's BaseEvent to include passengerCount.
+export interface PassengerEvent extends DataContextBaseEvent {
+  passengerCount: number;
+}
 
-export default function TireAnalysisTemplate() {
-  // Access the global data + loading state from DataContext
-  const { data, loading, isLive, setIsLive } = useData();
+interface PeopleCountTemplateProps {
+  children?: React.ReactNode;
+}
 
-  // Local filter state
+export default function PeopleCountTemplate({ children }: PeopleCountTemplateProps) {
+  const { data, loading, isLive, setIsLive, refetch } = useData();
+
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
   const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
+  // We'll keep binSize in case you want to use it later for time-series filtering
   const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">("day");
 
-  // Date range (default: last month to today)
+  // Default date range: 1 week ago until today
   const today = new Date().toISOString().substring(0, 10);
-  const oneMonthAgo = new Date(new Date().setMonth(new Date().getMonth() - 1))
+  const oneWeekAgo = new Date(new Date().setDate(new Date().getDate() - 7))
     .toISOString()
     .substring(0, 10);
-  const [startDate, setStartDate] = useState<string>(oneMonthAgo);
+  const [startDate, setStartDate] = useState<string>(oneWeekAgo);
   const [endDate, setEndDate] = useState<string>(today);
 
-  // Handler for date range changes
   const handlePeriodChange = useCallback((start: string, end: string) => {
     setStartDate(start);
     setEndDate(end);
   }, []);
 
-  // Derive unique cameras + vehicle types from the data
   const derivedVehicleTypes = useMemo(() => {
     const types = new Set<string>();
     data.forEach((event) => types.add(event.vehicleType));
@@ -59,13 +64,11 @@ export default function TireAnalysisTemplate() {
     return Array.from(cams, ([id, name]) => ({ id, name }));
   }, [data]);
 
-  // Filter the data according to date range, camera, vehicle type, etc.
   const filteredData = useMemo(() => {
     return data.filter((event) => {
       const eventDate = event.creationTime.substring(0, 10);
       const withinDateRange = eventDate >= startDate && eventDate <= endDate;
-      const matchCamera =
-        selectedCamera === "all" || event.camera === selectedCamera;
+      const matchCamera = selectedCamera === "all" || event.camera === selectedCamera;
       const matchVehicle =
         selectedVehicleTypes.length === 0 ||
         selectedVehicleTypes.includes(event.vehicleType);
@@ -73,19 +76,45 @@ export default function TireAnalysisTemplate() {
     });
   }, [data, selectedCamera, selectedVehicleTypes, startDate, endDate]);
 
-  // For mobile: controlling the filter "drawer"
-  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  // Here, we map each event to include a passengerCount (defaulting to 0 if missing).
+  // We cast event to include an optional passengerCount so TypeScript allows us to access it.
+  const passengerData: PassengerEvent[] = filteredData.map((event) => {
+    const extendedEvent = event as DataContextBaseEvent & { passengerCount?: number };
+    return {
+      ...extendedEvent,
+      passengerCount: extendedEvent.passengerCount ?? 0,
+    };
+  });
 
-  // If still loading (and not in live mode), show a simple loading message
+  const filteredVehicleTypes = useMemo(() => {
+    const types = new Set<string>();
+    filteredData.forEach((event) => types.add(event.vehicleType));
+    return Array.from(types);
+  }, [filteredData]);
+
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < MOBILE_MAX_WIDTH);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   if (loading && !isLive) {
-    return <p className="text-gray-500">Loading tire data...</p>;
+    return <p className="text-gray-500">Loading data...</p>;
   }
 
   return (
-    <div className="px-4 py-6">
-      {/* Mobile Header with Title and Filter Button */}
+    <div className="px-2 md:px-4 py-2 md:py-4 w-full">
+      {/* TITLE + MOBILE FILTER BUTTON */}
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl md:text-3xl font-bold">Tire Analysis</h1>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4">
+          Person Counting Statistics
+        </h1>
         <div className="block lg:hidden">
           <Button variant="outline" onClick={() => setMobileFilterOpen(true)}>
             Open Filters
@@ -93,23 +122,14 @@ export default function TireAnalysisTemplate() {
         </div>
       </div>
 
-      {/* ========== Desktop: 3 Cards in a Row ========== */}
+      {/* PERIOD, EVENT SUMMARY, FILTER PANEL ROW */}
       <div className="flex flex-wrap items-start gap-4 mb-4">
-        {/* Date Range Card */}
         <Card className="p-3 max-w-sm w-full hidden lg:block">
-          <PeriodFilter
-            startDate={startDate}
-            endDate={endDate}
-            onChange={handlePeriodChange}
-          />
+          <PeriodFilter startDate={startDate} endDate={endDate} onChange={handlePeriodChange} />
         </Card>
-
-        {/* Passings Card */}
         <Card className="p-3 max-w-sm w-full hidden lg:block">
-          <EventCount count={filteredData.length} />
+          <EventSummary count={filteredData.length} />
         </Card>
-
-        {/* Filter Panel Card */}
         <Card className="p-3 hidden lg:block">
           <FilterPanel
             cameras={derivedCameras}
@@ -122,17 +142,17 @@ export default function TireAnalysisTemplate() {
             setBinSize={setBinSize}
             isLive={isLive}
             setIsLive={setIsLive}
-            showBinSize={true}
             showLiveButton={false}
+            onRefetch={refetch}
           />
         </Card>
       </div>
 
-      {/* ========== Mobile Filter Drawer ========== */}
+      {/* MOBILE FILTER SHEET */}
       <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
         <SheetContent side="right" className="w-[85%] sm:w-[360px] p-2 text-xs">
           <SheetHeader>
-            <SheetTitle>Tire Analysis Filters</SheetTitle>
+            <SheetTitle>VPC Filters</SheetTitle>
           </SheetHeader>
           <Card className="p-4 mt-4">
             <div className="flex flex-col gap-4 w-full">
@@ -148,13 +168,14 @@ export default function TireAnalysisTemplate() {
                 isLive={isLive}
                 setIsLive={setIsLive}
                 showLiveButton={false}
+                onRefetch={refetch}
               />
               <PeriodFilter
                 startDate={startDate}
                 endDate={endDate}
                 onChange={handlePeriodChange}
               />
-              <EventCount count={filteredData.length} />
+              <EventSummary count={filteredData.length} />
             </div>
           </Card>
           <div className="mt-4">
@@ -168,14 +189,34 @@ export default function TireAnalysisTemplate() {
         </SheetTrigger>
       </Sheet>
 
-      {/* ========== Charts ========== */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left: Tire Condition Bar Chart */}
-        <TireConditionChart data={filteredData} />
+      {/* SINGLE LEGEND */}
+      <UnifiedLegend vehicleTypes={filteredVehicleTypes} />
 
-        {/* Right: Tire Type Line Chart */}
-        <TireTypeChart data={filteredData} binSize={binSize} />
+      {/* CHARTS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
+        {/* Heatmap Chart */}
+        <div
+          className="relative w-full"
+          style={{ aspectRatio: isMobile ? "1 / 1" : "1.5 / 1" }}
+        >
+          <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
+            {/* Pass isMobile down to HeatmapChart */}
+            <HeatmapChart data={passengerData} isMobile={isMobile} />
+          </div>
+        </div>
+
+        {/* Average Passenger Count Chart */}
+        <div
+          className="relative w-full"
+          style={{ aspectRatio: isMobile ? "1 / 1" : "1.5 / 1" }}
+        >
+          <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
+            <PeopleCountChart data={passengerData} />
+          </div>
+        </div>
       </div>
+
+      {children && <div className="mt-4">{children}</div>}
     </div>
   );
 }

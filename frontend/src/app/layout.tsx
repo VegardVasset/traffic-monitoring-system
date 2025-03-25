@@ -1,8 +1,8 @@
 // app/layout.tsx
-import Header from "@/components/layout/header";
+import Header from "@/components/shared/layout/Header";
 import type { Metadata } from "next";
 import "./globals.css";
-import ClientProviders from "./clientProviders";
+import ClientProviders from "./ClientProviders";
 
 export const metadata: Metadata = {
   title: "Traffic Monitoring System",

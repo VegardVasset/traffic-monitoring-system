@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { DataProvider } from "@/context/DataContext";
-import SpeedAnalysisTemplate from "@/components/shared/pageTemplates/speedAnalysisTemplate";
+import SpeedAnalysisTemplate from "@/components/dts/pageTemplates/SpeedAnalysisTemplate";
 
 export default function SpeedAnalysisPage() {
   const { domain } = useParams() as { domain: string };

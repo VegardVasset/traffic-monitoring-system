@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useCallback, useMemo, useState, useEffect } from "react";
-import FilterPanel from "@/components/shared/filterPanel";
-import PeriodFilter from "@/components/shared/periodFilter";
-import EventSummary from "@/components/shared/eventCount";
+import FilterPanel from "@/components/shared/FilterPanel";
+import PeriodFilter from "@/components/shared/PeriodFilter";
+import EventSummary from "@/components/shared/EventCount";
 import { MOBILE_MAX_WIDTH } from "@/config/config";
-import TimeSeriesChart from "@/components/shared/charts/timeSeriesChart";
-import VehicleDistributionChart from "@/components/shared/charts/vehicleDistributionChart";
-import { UnifiedLegend } from "@/components/shared/unifiedLegend";
+import TimeSeriesChart from "@/components/shared/charts/timeSeriesChart/TimeSeriesChart";
+import VehicleDistributionChart from "@/components/shared/charts/VehicleDistributionChart";
+import { UnifiedLegend } from "@/components/shared/UnifiedLegend";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,8 +46,12 @@ export default function OverviewTemplate({
 
   // Local states and derived values remain unchanged…
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
-  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
-  const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">(defaultBinSize);
+  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>(
+    []
+  );
+  const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">(
+    defaultBinSize
+  );
 
   const today = new Date().toISOString().substring(0, 10);
   const oneWeekAgo = new Date(new Date().setDate(new Date().getDate() - 7))
@@ -74,9 +78,11 @@ export default function OverviewTemplate({
     return data.filter((event) => {
       const eventDate = event.creationTime.substring(0, 10);
       const withinDateRange = eventDate >= startDate && eventDate <= endDate;
-      const matchCamera = selectedCamera === "all" || event.camera === selectedCamera;
+      const matchCamera =
+        selectedCamera === "all" || event.camera === selectedCamera;
       const matchVehicle =
-        selectedVehicleTypes.length === 0 || selectedVehicleTypes.includes(event.vehicleType);
+        selectedVehicleTypes.length === 0 ||
+        selectedVehicleTypes.includes(event.vehicleType);
       return withinDateRange && matchCamera && matchVehicle;
     });
   }, [data, selectedCamera, selectedVehicleTypes, startDate, endDate]);
@@ -117,7 +123,9 @@ export default function OverviewTemplate({
     if (!drillDownBinKey) return [];
     if (binSize === "day") {
       const dayString = drillDownBinKey.substring(0, 10);
-      return filteredData.filter((evt) => evt.creationTime.substring(0, 10) === dayString);
+      return filteredData.filter(
+        (evt) => evt.creationTime.substring(0, 10) === dayString
+      );
     } else if (binSize === "week") {
       const startOfWeek = new Date(drillDownBinKey);
       const endOfWeek = new Date(startOfWeek);
@@ -127,7 +135,9 @@ export default function OverviewTemplate({
         return evtDate >= startOfWeek && evtDate <= endOfWeek;
       });
     } else if (binSize === "month") {
-      return filteredData.filter((evt) => evt.creationTime.startsWith(drillDownBinKey));
+      return filteredData.filter((evt) =>
+        evt.creationTime.startsWith(drillDownBinKey)
+      );
     }
     return [];
   }, [binSize, drillDownBinKey, filteredData]);
@@ -153,7 +163,10 @@ export default function OverviewTemplate({
               Overview
             </h1>
             <div className="block lg:hidden">
-              <Button variant="outline" onClick={() => setMobileFilterOpen(true)}>
+              <Button
+                variant="outline"
+                onClick={() => setMobileFilterOpen(true)}
+              >
                 Open Filters
               </Button>
             </div>
@@ -192,7 +205,10 @@ export default function OverviewTemplate({
           </div>
 
           <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
-            <SheetContent side="right" className="w-[85%] sm:w-[360px] p-2 text-xs">
+            <SheetContent
+              side="right"
+              className="w-[85%] sm:w-[360px] p-2 text-xs"
+            >
               <SheetHeader>
                 <SheetTitle>{domainTitle} Filters</SheetTitle>
               </SheetHeader>
@@ -237,7 +253,10 @@ export default function OverviewTemplate({
           <UnifiedLegend vehicleTypes={filteredVehicleTypes} />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
-            <div className="relative w-full" style={{ aspectRatio: isMobile ? "1 / 1" : "1.5 / 1" }}>
+            <div
+              className="relative w-full"
+              style={{ aspectRatio: isMobile ? "1 / 1" : "1.5 / 1" }}
+            >
               <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
                 <TimeSeriesChart
                   data={filteredData}
@@ -246,7 +265,10 @@ export default function OverviewTemplate({
                 />
               </div>
             </div>
-            <div className="relative w-full" style={{ aspectRatio: isMobile ? "1 / 1" : "1.5 / 1" }}>
+            <div
+              className="relative w-full"
+              style={{ aspectRatio: isMobile ? "1 / 1" : "1.5 / 1" }}
+            >
               <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
                 <VehicleDistributionChart data={filteredData} />
               </div>
@@ -279,7 +301,8 @@ export default function OverviewTemplate({
                 {drillDownBinKey ? (
                   <>
                     <p className="text-sm mb-2">
-                      Detailed breakdown for <b>{drillDownBinKey}</b> (bin size: {getDrillDownBinSize()})
+                      Detailed breakdown for <b>{drillDownBinKey}</b> (bin size:{" "}
+                      {getDrillDownBinSize()})
                     </p>
                     <div className="flex-1 bg-white shadow rounded-lg p-2">
                       <TimeSeriesChart
