@@ -89,7 +89,6 @@ export default function OverviewTemplate({
 
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < MOBILE_MAX_WIDTH);
@@ -171,11 +170,9 @@ export default function OverviewTemplate({
                 }}
               />
             </Card>
-
             <Card className="p-3 max-w-sm w-full hidden lg:block">
               <EventSummary count={filteredData.length} />
             </Card>
-
             <Card className="p-3 hidden lg:block">
               <FilterPanel
                 cameras={derivedCameras}
@@ -261,7 +258,19 @@ export default function OverviewTemplate({
           <Sheet open={drillDownOpen} onOpenChange={setDrillDownOpen}>
             <SheetContent
               side="right"
-              className="!max-w-none w-[85%] sm:w-[700px] md:w-[900px] lg:w-[1200px] text-xs h-screen flex flex-col overflow-hidden p-2"
+              className="
+      !max-w-none
+      w-[85%]            /* Overlay width on small screens */
+      sm:w-[700px]       /* Then 700px on sm+ */
+      md:w-[900px]       /* 900px on md+ */
+      lg:w-[1200px]      /* 1200px on lg+ */
+      text-xs
+      h-screen           /* Full screen height */
+      flex
+      flex-col
+      overflow-hidden    /* No scrolling: everything must fit */
+      p-2
+    "
             >
               <SheetHeader className="flex-none">
                 <SheetTitle>Detailed View</SheetTitle>
@@ -274,8 +283,9 @@ export default function OverviewTemplate({
                     </p>
                     <div className="flex-1 bg-white shadow rounded-lg p-2">
                       <TimeSeriesChart
-                        data={drillDownData}
+                        data={getDrillDownData()}
                         binSize={getDrillDownBinSize()}
+                        disableForecast={true}
                       />
                     </div>
                     <div className="mt-2 flex-none">

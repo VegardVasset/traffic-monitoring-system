@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import Image from "next/image"; // Import Next.js Image component
 import { ColumnDef } from "@tanstack/react-table";
 import { BaseEvent } from "@/context/DataContext";
 import { Button } from "@/components/ui/button";
@@ -15,8 +16,7 @@ export function usePassingsColumns({ domain, onEdit }: UsePassingsColumnsProps):
       {
         accessorKey: "creationTime",
         header: "Time",
-        cell: (info) =>
-          new Date(info.getValue() as string).toLocaleString(),
+        cell: (info) => new Date(info.getValue() as string).toLocaleString(),
       },
       { accessorKey: "vehicleType", header: "Vehicle Type" },
       { accessorKey: "camera", header: "Camera" },
@@ -32,10 +32,11 @@ export function usePassingsColumns({ domain, onEdit }: UsePassingsColumnsProps):
         accessorKey: "imageUrl",
         header: "Image",
         cell: (info) => (
-          <img
+          <Image
             src={info.getValue() as string}
             alt="Vehicle"
-            width="120"
+            width={120}
+            height={80} // Provide a height value for optimization
             style={{ objectFit: "cover" }}
           />
         ),
