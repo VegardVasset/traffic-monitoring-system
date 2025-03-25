@@ -1,13 +1,11 @@
-// hooks/useChartData.ts
 import { useMemo } from "react";
 import { AggregatedDataEntry } from "../TimeSeriesChart";
 import { getChartColor } from "@/lib/chartUtils";
-
-type BinSize = "hour" | "day" | "week" | "month";
+import { ChartDataset } from "chart.js";
 
 interface ChartData {
   labels: string[];
-  datasets: any[];
+  datasets: ChartDataset<"line">[];
 }
 
 export default function useChartData(
@@ -35,7 +33,7 @@ export default function useChartData(
       pointRadius: isMobile ? 4 : 5,
       pointHoverRadius: isMobile ? 5 : 6,
       spanGaps: true,
-    }));
+    })) as ChartDataset<"line">[];
   }, [aggregatedData, vehicleTypes, isMobile]);
 
   const forecastFillDataset = useMemo(() => {
@@ -65,11 +63,11 @@ export default function useChartData(
       borderWidth: 0,
       spanGaps: true,
       order: 1,
-    };
+    } as ChartDataset<"line">;
   }, [showForecast, forecastEntry, aggregatedData, vehicleTypes]);
 
   const forecastLineDatasets = useMemo(() => {
-    if (!showForecast || !forecastEntry) return [];
+    if (!showForecast || !forecastEntry) return [] as ChartDataset<"line">[];
     const lastIndex = aggregatedData.length - 1;
     return vehicleTypes.map((type, index) => {
       const lineData = new Array(aggregatedData.length + 1).fill(null);
@@ -89,12 +87,12 @@ export default function useChartData(
         pointHoverRadius: isMobile ? 5 : 6,
         spanGaps: true,
         order: 2,
-      };
+      } as ChartDataset<"line">;
     });
   }, [showForecast, forecastEntry, aggregatedData, vehicleTypes, isMobile]);
 
   const combinedDatasets = useMemo(() => {
-    const ds = [];
+    const ds: ChartDataset<"line">[] = [];
     if (forecastFillDataset) ds.push(forecastFillDataset);
     ds.push(...actualDatasets);
     ds.push(...forecastLineDatasets);
