@@ -1,4 +1,4 @@
-import DomainLayout from "@/components/layout/domainLayout";
+import DomainLayout from "@/components/shared/layout/DomainLayout";
 import { domainConfigs } from "@/config/domainConfig";
 
 // app/[monitoring]/layout.tsx

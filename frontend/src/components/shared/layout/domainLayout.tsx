@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, ReactNode } from "react";
-import Sidebar, { NavItem } from "@/components/layout/sidebar";
-import Header from "@/components/layout/header";
+import Sidebar, { NavItem } from "@/components/shared/layout/Sidebar";
+import Header from "@/components/shared/layout/Header";
 
 interface DomainLayoutProps {
   navItems: NavItem[];

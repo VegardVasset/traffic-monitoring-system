@@ -28,8 +28,8 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { useData, BaseEvent } from "@/context/DataContext";
-import { useAnalytics } from "@/context/analyticsContext";
-import EditDialog from "./editDialog";
+import { useAnalytics } from "@/context/AnalyticsContext";
+import EditDialog from "./EditDialog";
 
 // --- Custom hooks ---
 import { useFilteredData } from "./hooks/useFilteredData";

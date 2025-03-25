@@ -3,7 +3,7 @@
 import React from "react";
 import { useParams } from "next/navigation";
 import { DataProvider } from "@/context/DataContext";
-import PeopleCountTemplate from "@/components/shared/pageTemplates/peopleCountTemplate";
+import PeopleCountTemplate from "@/components/vpc/pageTemplates/PeopleCountTemplate";
 
 export default function PassengerCountPage() {
     const { domain } = useParams() as { domain: string };

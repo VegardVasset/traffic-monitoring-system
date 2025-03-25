@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import FilterPanel, { Camera } from "@/components/shared/filterPanel";
-import PassingsTable from "@/components/shared/table/passingsTable";
+import FilterPanel, { Camera } from "@/components/shared/FilterPanel";
+import PassingsTable from "@/components/shared/table/PassingsTable";
 import { useData, BaseEvent } from "@/context/DataContext";
 
 interface PassingsTemplateProps {

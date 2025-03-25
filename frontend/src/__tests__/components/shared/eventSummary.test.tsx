@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import EventSummary from "@/components/shared/eventCount";
+import EventSummary from "@/components/shared/EventCount";
 
 describe("EventSummary", () => {
   it("displays event count and date range", () => {

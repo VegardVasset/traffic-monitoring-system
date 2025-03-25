@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { DataProvider } from "@/context/DataContext";
-import TireAnalysisTemplate from "@/components/shared/pageTemplates/tireAnalysisTemplate";
+import TireAnalysisTemplate from "@/components/tires/pageTemplates/TireAnalysisTemplate";
 
 export default function TireAnalysisPage() {
   const { domain } = useParams() as { domain: string };

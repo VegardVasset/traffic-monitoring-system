@@ -10,48 +10,45 @@ interface DtsEvent extends BaseEvent {
 
 // Type guard: check if the event is a DtsEvent (has a numeric speed property)
 function isSpeedEvent(event: BaseEvent): event is DtsEvent {
-    return "speed" in event && typeof (event as { speed?: unknown }).speed === "number";
-  }
+  return "speed" in event && typeof (event as { speed?: unknown }).speed === "number";
+}
 
-const SpeedAnomalyAlert: React.FC = () => {
+export default function SpeedAnomalyAlert() {
   const { data } = useData();
   const [anomalies, setAnomalies] = useState<DtsEvent[]>([]);
-  // State to control whether the popup modal is shown
-  const [showPopup, setShowPopup] = useState<boolean>(true);
-  // State to hold the alert message
-  const [alertMessage, setAlertMessage] = useState<string>("");
-  // useRef to store previous anomaly count
-  const prevCountRef = useRef<number>(0);
+  const [showPopup, setShowPopup] = useState(true);
+  const [alertMessage, setAlertMessage] = useState("");
+  const prevCountRef = useRef(0);
 
-  // Define thresholds for abnormal speed based on the getRandomSpeed function
+  // Define thresholds for abnormal speed.
   const speedLowThreshold = 20;
   const speedHighThreshold = 120;
 
   useEffect(() => {
-    // Filter events from data that are DTS events with a speed property and check for anomalies
-    const detected = data
-      .filter(isSpeedEvent)
-      .filter(event => event.speed < speedLowThreshold || event.speed > speedHighThreshold);
+    // First filter out events that are DtsEvents.
+    const speedEvents = data.filter(isSpeedEvent);
+    // Now filter for events with abnormal speed.
+    const detected = speedEvents.filter(
+      (event) => event.speed < speedLowThreshold || event.speed > speedHighThreshold
+    );
 
-    // If new anomalies have been added, update the popup message and show the popup
+    // If new anomalies are detected, update the alert message and show the popup.
     if (detected.length > prevCountRef.current && detected.length > 0) {
-      // Use the first anomaly's speed for the message
       const latest = detected[0];
-      setAlertMessage(`Speed anomaly: Vehicle passed with an abnormal speed of ${latest.speed} km/h.`);
+      setAlertMessage(
+        `Speed anomaly: Vehicle passed with an abnormal speed of ${latest.speed} km/h.`
+      );
       setShowPopup(true);
     }
 
-    // Update previous count and anomalies state
     prevCountRef.current = detected.length;
     setAnomalies(detected);
   }, [data]);
 
-  // If no anomalies, render nothing
   if (anomalies.length === 0) return null;
 
   return (
     <>
-      {/* Popup modal alert - shown only when showPopup is true */}
       {showPopup && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
           <div className="absolute inset-0 bg-black opacity-50"></div>
@@ -70,14 +67,12 @@ const SpeedAnomalyAlert: React.FC = () => {
         </div>
       )}
 
-      {/* Inline alert displayed as before */}
       <div className="p-4 mb-4 bg-green-100 border border-green-400 rounded">
         <p className="text-green-700 font-semibold">
-          Speed Anomaly Detected: {anomalies.length} event{anomalies.length > 1 ? "s" : ""} with abnormal speed.
+          Speed Anomaly Detected: {anomalies.length} event
+          {anomalies.length > 1 ? "s" : ""} with abnormal speed.
         </p>
       </div>
     </>
   );
-};
-
-export default SpeedAnomalyAlert;
+}

@@ -11,7 +11,7 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
-import GeocodedMiniMap from "@/components/map/GeocodeMiniMap";
+import GeocodedMiniMap from "@/components/shared/map/GeocodeMiniMap";
 import "leaflet/dist/leaflet.css";
 
 // Dynamically import react-leaflet components with SSR disabled.
