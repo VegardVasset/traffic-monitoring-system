@@ -1,14 +1,7 @@
 "use client";
 
-import React, {
-  useMemo,
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-} from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import {
-  ColumnDef,
   ColumnFiltersState,
   VisibilityState,
   flexRender,
@@ -38,6 +31,11 @@ import { useData, BaseEvent } from "@/context/DataContext";
 import { useAnalytics } from "@/context/analyticsContext";
 import EditDialog from "./editDialog";
 
+// --- Custom hooks ---
+import { useFilteredData } from "./hooks/useFilteredData";
+import { useLiveLatencyLogger } from "./hooks/useLiveLatencyLogger";
+import { usePassingsColumns } from "./hooks/usePassingsColumns";
+
 interface PassingsTableProps {
   domain: string;
   selectedCamera: string;
@@ -49,151 +47,57 @@ export default function PassingsTable({
   selectedCamera,
   selectedVehicleTypes,
 }: PassingsTableProps) {
-  const { data, loading, error, lastUpdateArrivalTime, updateEvent } =
-    useData();
+  /**
+   * -------------------------------------------------------------------------
+   * Top-level hooks: must always be called in the same order, unconditionally.
+   * -------------------------------------------------------------------------
+   */
+  const { data, loading, error, lastUpdateArrivalTime, updateEvent } = useData();
   const { logEvent } = useAnalytics();
 
-  // Filter based on user selection using context data directly
-  const filteredData: BaseEvent[] = useMemo(() => {
-    let dataArr = data;
-    if (selectedCamera !== "all") {
-      dataArr = dataArr.filter((record) => record.camera === selectedCamera);
-    }
-    if (selectedVehicleTypes.length > 0) {
-      dataArr = dataArr.filter((record) =>
-        selectedVehicleTypes.includes(record.vehicleType)
-      );
-    }
-    return dataArr;
-  }, [data, selectedCamera, selectedVehicleTypes]);
+  // Filtered data via custom hook
+  const filteredData = useFilteredData({
+    data,
+    selectedCamera,
+    selectedVehicleTypes,
+  });
 
-  // Log live mode latency
-  const lastLoggedArrivalRef = useRef<number | null>(null);
-  useEffect(() => {
-    if (
-      lastUpdateArrivalTime &&
-      lastUpdateArrivalTime !== lastLoggedArrivalRef.current
-    ) {
-      const now = performance.now();
-      const latency = now - lastUpdateArrivalTime;
-      logEvent("Live mode latency", {
-        latency,
-        dataLength: filteredData.length,
-      });
-      console.log(`Live mode latency: ${latency.toFixed(2)} ms`);
-      lastLoggedArrivalRef.current = lastUpdateArrivalTime;
-    }
-  }, [filteredData, lastUpdateArrivalTime, logEvent]);
+  // Latency logger via custom hook
+  useLiveLatencyLogger({
+    lastUpdateArrivalTime,
+    filteredDataLength: filteredData.length,
+    logEvent,
+  });
 
-  // React Table state
+  // React Table states
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 
-  // Edit dialog state
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  // Edit dialog states
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<BaseEvent | null>(null);
 
-  // Callback to open edit dialog
+  // Edit handler
   const handleEdit = useCallback((event: BaseEvent) => {
     setSelectedEvent(event);
-    setEditDialogOpen(true);
+    setIsEditDialogOpen(true);
   }, []);
 
-  // Compute unique vehicle types from context data
-  const uniqueVehicleTypes = useMemo((): string[] => {
+  // Unique vehicle types for the EditDialog dropdown
+  const uniqueVehicleTypes = useMemo(() => {
     const types = new Set(data.map((e) => e.vehicleType));
     return Array.from(types);
   }, [data]);
 
-  // Define columns for the table
-  const getColumns = useCallback(
-    (domain: string): ColumnDef<BaseEvent>[] => {
-      const baseColumns: ColumnDef<BaseEvent>[] = [
-        { accessorKey: "id", header: "ID" },
-        {
-          accessorKey: "creationTime",
-          header: "Time",
-          cell: (info) =>
-            new Date(info.getValue() as string).toLocaleString(),
-        },
-        { accessorKey: "vehicleType", header: "Vehicle Type" },
-        { accessorKey: "camera", header: "Camera" },
-        {
-          accessorKey: "confidenceScore",
-          header: "Confidence",
-          cell: (info) => {
-            const value = info.getValue() as number;
-            return `${(value * 100).toFixed(2)}%`;
-          },
-        },
-        {
-          accessorKey: "imageUrl",
-          header: "Image",
-          cell: (info) => (
-            <img
-              src={info.getValue() as string}
-              alt="Vehicle"
-              width="120"
-              style={{ objectFit: "cover" }}
-            />
-          ),
-        },
-      ];
+  // Columns (custom hook)
+  // IMPORTANT: call it directly, do NOT wrap in useMemo again.
+  const columns = usePassingsColumns({
+    domain,
+    onEdit: handleEdit,
+  });
 
-      if (domain === "tires") {
-        baseColumns.push(
-          {
-            accessorKey: "tireType",
-            header: "Tire Type",
-            cell: (info) => info.getValue() || "N/A",
-          },
-          {
-            accessorKey: "tireCondition",
-            header: "Tire Condition (1-5)",
-            cell: (info) => info.getValue() || "N/A",
-          }
-        );
-      }
-
-      if (domain === "vpc") {
-        baseColumns.push({
-          accessorKey: "passengerCount",
-          header: "Passenger Count",
-          cell: (info) => info.getValue() || "N/A",
-        });
-      }
-
-      if (domain === "dts") {
-        baseColumns.push({
-          accessorKey: "speed",
-          header: "Speed (km/h)",
-          cell: (info) => info.getValue() || "N/A",
-        });
-
-      }
-
-      // Actions column for editing
-      baseColumns.push({
-        id: "actions",
-        header: "Actions",
-        cell: ({ row }) => {
-          const event = row.original;
-          return (
-            <Button variant="outline" size="sm" onClick={() => handleEdit(event)}>
-              Correct
-            </Button>
-          );
-        },
-      });
-
-      return baseColumns;
-    },
-    [handleEdit]
-  );
-
-  const columns = useMemo(() => getColumns(domain), [domain, getColumns]);
-
+  // Create the TanStack table instance
   const table = useReactTable({
     data: filteredData,
     columns,
@@ -211,13 +115,32 @@ export default function PassingsTable({
     enableRowSelection: true,
   });
 
+  /**
+   * -------------------------------------------------------------------------
+   * Conditional rendering (loading/error) after hooks are defined
+   * -------------------------------------------------------------------------
+   */
   if (loading) {
-    return <p className="text-gray-500">Loading events...</p>;
-  }
-  if (error) {
-    return <p className="text-red-500">Error: {error}</p>;
+    return (
+      <p className="text-gray-500" aria-live="polite">
+        Loading events...
+      </p>
+    );
   }
 
+  if (error) {
+    return (
+      <p className="text-red-500" role="alert">
+        Error: {error}
+      </p>
+    );
+  }
+
+  /**
+   * -------------------------------------------------------------------------
+   * Render the table
+   * -------------------------------------------------------------------------
+   */
   return (
     <>
       <div className="w-full bg-white shadow rounded-lg">
@@ -225,7 +148,11 @@ export default function PassingsTable({
         <div className="flex items-center py-1 sm:py-4 px-1 sm:px-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto text-xs px-2">
+              <Button
+                variant="outline"
+                className="ml-auto text-xs px-2"
+                aria-label="Toggle columns"
+              >
                 Columns <ChevronDown />
               </Button>
             </DropdownMenuTrigger>
@@ -235,9 +162,8 @@ export default function PassingsTable({
                   key={column.id}
                   className="capitalize"
                   checked={column.getIsVisible()}
-                  onCheckedChange={(value) =>
-                    column.toggleVisibility(!!value)
-                  }
+                  onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                  aria-label={`Toggle ${column.id} column`}
                 >
                   {column.id}
                 </DropdownMenuCheckboxItem>
@@ -248,12 +174,16 @@ export default function PassingsTable({
 
         {/* Table */}
         <div className="overflow-x-auto w-full">
-          <Table className="w-full table-auto border-collapse border border-gray-300">
-            <TableHeader>
+          <Table
+            className="w-full table-auto border-collapse border border-gray-300"
+            role="table"
+          >
+            <TableHeader role="rowgroup">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow
                   key={headerGroup.id}
                   className="bg-gray-100 border-b border-gray-300"
+                  role="row"
                 >
                   {headerGroup.headers.map((header) => {
                     const sorting = header.column.getIsSorted();
@@ -266,6 +196,24 @@ export default function PassingsTable({
                             ? header.column.getToggleSortingHandler()
                             : undefined
                         }
+                        tabIndex={header.column.getCanSort() ? 0 : undefined}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && header.column.getCanSort()) {
+                            const toggleHandler =
+                              header.column.getToggleSortingHandler();
+                            if (toggleHandler) {
+                              toggleHandler(e);
+                            }
+                          }
+                        }}
+                        aria-sort={
+                          sorting === "asc"
+                            ? "ascending"
+                            : sorting === "desc"
+                            ? "descending"
+                            : "none"
+                        }
+                        role="columnheader"
                       >
                         <div className="flex items-center">
                           {flexRender(
@@ -290,16 +238,19 @@ export default function PassingsTable({
                 </TableRow>
               ))}
             </TableHeader>
-            <TableBody>
+            <TableBody role="rowgroup">
               {table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
                   className="hover:bg-gray-200 text-xs sm:text-sm md:text-base border-b border-gray-300"
+                  role="row"
+                  tabIndex={0}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
                       className="p-1 sm:p-2 border-r last:border-r-0 border-gray-300"
+                      role="cell"
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
@@ -315,7 +266,7 @@ export default function PassingsTable({
 
         {/* Pagination */}
         <div className="flex items-center justify-between gap-2 sm:items-center p-2 sm:p-4 text-xs sm:text-sm">
-          <div className="text-muted-foreground">
+          <div className="text-muted-foreground" aria-live="polite">
             {filteredData.length} row(s).
           </div>
           <div className="flex space-x-1 sm:space-x-2">
@@ -325,6 +276,7 @@ export default function PassingsTable({
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
               className="h-6 px-2 sm:h-8 sm:px-3"
+              aria-label="Previous page"
             >
               Previous
             </Button>
@@ -334,6 +286,7 @@ export default function PassingsTable({
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
               className="h-6 px-2 sm:h-8 sm:px-3"
+              aria-label="Next page"
             >
               Next
             </Button>
@@ -342,11 +295,11 @@ export default function PassingsTable({
       </div>
 
       {/* Edit Dialog */}
-      {editDialogOpen && selectedEvent && (
+      {isEditDialogOpen && selectedEvent && (
         <EditDialog
           event={selectedEvent}
           uniqueVehicleTypes={uniqueVehicleTypes}
-          onClose={() => setEditDialogOpen(false)}
+          onClose={() => setIsEditDialogOpen(false)}
           onSave={async (newVehicleType: string) => {
             try {
               const updatedEvent: BaseEvent = {
@@ -354,9 +307,12 @@ export default function PassingsTable({
                 vehicleType: newVehicleType,
               };
               await updateEvent(updatedEvent);
-              setEditDialogOpen(false);
+              setIsEditDialogOpen(false);
             } catch (err) {
               console.error("Error updating event:", err);
+              alert(
+                "An error occurred while updating the event. Please try again."
+              );
             }
           }}
         />
