@@ -20,18 +20,15 @@ const camerasByDomain: Record<string, { name: string; weight: number }[]> = {
   ],
 };
 
-const FRONTEND_URL = "http://localhost:3000";
-
-
-// Array of vehicle images stored in backend/public/images
+// Updated: use relative paths for the images
 const vehicleImages = [
-  `${FRONTEND_URL}/images/vehicle1.png`,
-  `${FRONTEND_URL}/images/vehicle2.png`,
-  `${FRONTEND_URL}/images/vehicle3.png`,
-  `${FRONTEND_URL}/images/vehicle4.png`,
-  `${FRONTEND_URL}/images/vehicle5.png`,
-  `${FRONTEND_URL}/images/vehicle6.png`,
-  `${FRONTEND_URL}/images/vehicle7.png`,
+  "/images/vehicle1.png",
+  "/images/vehicle2.png",
+  "/images/vehicle3.png",
+  "/images/vehicle4.png",
+  "/images/vehicle5.png",
+  "/images/vehicle6.png",
+  "/images/vehicle7.png",
 ];
 
 function getRandomTireCondition(): number {
@@ -226,7 +223,7 @@ export function generateMockData(
       camera: getRandomCamera(entityType),
       laneId: `Lane_${faker.number.int({ min: 1, max: 5 })}`,
       edgeId: `Edge_${faker.number.int({ min: 1, max: 3 })}`,
-      // Use a random image from your local images array
+      // Use a random image from your local images array with a relative path
       imageUrl: vehicleImages[faker.number.int({ min: 0, max: vehicleImages.length - 1 })],
       confidenceScore: getRealisticConfidenceScore(),
       corrected: faker.datatype.boolean(),

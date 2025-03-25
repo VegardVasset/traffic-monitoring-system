@@ -1,3 +1,4 @@
+// Columns and UI configuration (frontend)
 import { useCallback } from "react";
 import Image from "next/image"; // Import Next.js Image component
 import { ColumnDef } from "@tanstack/react-table";
@@ -32,23 +33,18 @@ export function usePassingsColumns({ domain, onEdit }: UsePassingsColumnsProps):
         accessorKey: "imageUrl",
         header: "Image",
         cell: (info) => {
-          // Convert full URL to a relative path if it starts with "http://localhost:3000"
-          const fullUrl = info.getValue() as string;
-          const relativeUrl = fullUrl.startsWith("http://localhost:3000")
-            ? fullUrl.replace("http://localhost:3000", "")
-            : fullUrl;
+          const relativeUrl = info.getValue() as string;
           return (
             <Image
               src={relativeUrl}
               alt="Vehicle"
-              width={120} // Adjust as needed
-              height={120} // Adjust as needed
+              width={120} 
+              height={120} 
               style={{ objectFit: "cover" }}
             />
           );
         },
-      }
-      
+      },
     ];
 
     if (domain === "tires") {
