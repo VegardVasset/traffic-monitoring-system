@@ -1,11 +1,9 @@
-// eventTemplate.tsx
 "use client";
 
 import React, { useMemo, useState } from "react";
 import FilterPanel, { Camera } from "@/components/shared/filterPanel";
-import PassingsTable from "@/components/shared/passingsTable";
-import { useData } from "@/context/DataContext";
-import { BaseEvent } from "@/context/DataContext";
+import PassingsTable from "@/components/shared/table/passingsTable";
+import { useData, BaseEvent } from "@/context/DataContext";
 
 interface PassingsTemplateProps {
   domain: string;
@@ -35,12 +33,12 @@ export default function PassingsTemplate({ domain }: PassingsTemplateProps) {
   }, [data]);
 
   if (loading) {
-    return <p className="text-gray-500">Loading {domain} events...</p>;
+    return <p className="text-gray-500" aria-live="polite">Loading {domain} events...</p>;
   }
 
   return (
     <div className="max-w-full px-1 py-6 sm:px-6">
-      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4">
+      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4" tabIndex={0}>
         Passings
       </h1>
       <FilterPanel
