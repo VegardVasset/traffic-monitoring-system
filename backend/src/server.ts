@@ -2,22 +2,13 @@ import http from "http";
 import { Server } from "socket.io";
 import app from "./app";
 import { generateMockData, getReceptionTime } from "./data/generateData";
-import { MockRecord } from "./types";
+import { mockDatabase } from "./data/mockDatabase";
 
-// Create the HTTP server
 const server = http.createServer(app);
 
-// Attach Socket.IO
 const io = new Server(server, {
   cors: { origin: "*" },
 });
-
-// In-memory mock database
-const mockDatabase: Record<string, MockRecord[]> = {
-  vpc: [],
-  tires: [],
-  dts: [],
-};
 
 // Generate initial 10,000 records for each entity type
 function initializeMockDatabase() {
@@ -67,14 +58,13 @@ function continuouslyAddMockData() {
   }, 10000);
 }
 
-// Handle Socket.IO connections
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
   socket.on("requestData", (entityType: keyof typeof mockDatabase) => {
     console.log(`Client requested data for: ${entityType}`);
     if (mockDatabase[entityType]) {
-      socket.join(entityType); // subscribe this client to the relevant "room"
+      socket.join(entityType);
       socket.emit("initialData", mockDatabase[entityType]);
     } else {
       socket.emit("error", { message: "Invalid entity type requested" });
@@ -86,12 +76,9 @@ io.on("connection", (socket) => {
   });
 });
 
-// Start the server
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
   initializeMockDatabase();
   continuouslyAddMockData();
   console.log(`Server running on http://localhost:${PORT}`);
 });
-
-export { mockDatabase };

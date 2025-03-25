@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { mockDatabase } from "../server";
+import { mockDatabase } from "../data/mockDatabase";
 import { MockRecord } from "../types";
 
 const router = Router();
@@ -22,10 +22,8 @@ router.patch<{ id: string }, any, Partial<MockRecord>>(
       return;
     }
 
-    // Update the record in memory
     mockDatabase.vpc[index] = { ...mockDatabase.vpc[index], ...updateData };
 
-    // Send updated record
     res.json(mockDatabase.vpc[index]);
   }
 );
