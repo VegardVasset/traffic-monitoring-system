@@ -31,16 +31,24 @@ export function usePassingsColumns({ domain, onEdit }: UsePassingsColumnsProps):
       {
         accessorKey: "imageUrl",
         header: "Image",
-        cell: (info) => (
-          <Image
-            src={info.getValue() as string}
-            alt="Vehicle"
-            width={120}
-            height={80} // Provide a height value for optimization
-            style={{ objectFit: "cover" }}
-          />
-        ),
-      },
+        cell: (info) => {
+          // Convert full URL to a relative path if it starts with "http://localhost:3000"
+          const fullUrl = info.getValue() as string;
+          const relativeUrl = fullUrl.startsWith("http://localhost:3000")
+            ? fullUrl.replace("http://localhost:3000", "")
+            : fullUrl;
+          return (
+            <Image
+              src={relativeUrl}
+              alt="Vehicle"
+              width={120} // Adjust as needed
+              height={120} // Adjust as needed
+              style={{ objectFit: "cover" }}
+            />
+          );
+        },
+      }
+      
     ];
 
     if (domain === "tires") {
