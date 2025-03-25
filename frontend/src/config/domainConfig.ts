@@ -5,6 +5,7 @@ import { CameraIcon, ChartBarSquareIcon, TruckIcon } from "@heroicons/react/24/o
 
 import  {GiCarWheel} from "react-icons/gi";
 import { GrGroup } from "react-icons/gr";
+import {SlSpeedometer} from "react-icons/sl";
 
 import React from "react";
 
@@ -27,7 +28,7 @@ export const domainConfigs: Record<string, DomainConfig> = {
       {
         id: "passings",
         label: "Passings",
-        href: "/dts/events",
+        href: "/dts/passings",
         icon: React.createElement(TruckIcon, { className: "w-6 h-6" }),
       },
       {
@@ -35,6 +36,12 @@ export const domainConfigs: Record<string, DomainConfig> = {
         label: "Cameras",
         href: "/dts/cameras",
         icon: React.createElement(CameraIcon, { className: "w-6 h-6" }),
+      },
+      {
+        id: "speedanalysis",
+        label: "Speed Analysis",
+        href: "/dts/speedanalysis",
+        icon: React.createElement(SlSpeedometer, { className: "w-6 h-6" }),
       }
     ],
   },
@@ -50,7 +57,7 @@ export const domainConfigs: Record<string, DomainConfig> = {
       {
         id: "passings",
         label: "Passings",
-        href: "/vpc/events",
+        href: "/vpc/passings",
         icon: React.createElement(TruckIcon, { className: "w-6 h-6" }),
       },
       {
@@ -79,7 +86,7 @@ export const domainConfigs: Record<string, DomainConfig> = {
       {
         id: "passings",
         label: "Passings",
-        href: "/tires/events",
+        href: "/tires/passings",
         icon: React.createElement(TruckIcon, { className: "w-6 h-6" }),
       },
       {
@@ -89,9 +96,9 @@ export const domainConfigs: Record<string, DomainConfig> = {
         icon: React.createElement(CameraIcon, { className: "w-6 h-6" }),
       },
       {
-        id: "analysis",
+        id: "tireanalysis",
         label: "Tire Analysis",
-        href: "/tires/analysis",
+        href: "/tires/tireanalysis",
         icon: React.createElement(GiCarWheel, { className: "w-6 h-6" }),
       },
     ],

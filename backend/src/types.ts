@@ -24,4 +24,5 @@ export interface MockRecord {
   tireType?: "Sommerdekk" | "Vinterdekk";
   tireCondition?: number;
   passengerCount?: number;
+  speed?: number;
 }

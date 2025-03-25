@@ -4,8 +4,8 @@ import React, { useState, useMemo, useCallback } from "react";
 import FilterPanel from "@/components/shared/filterPanel";
 import PeriodFilter from "@/components/shared/periodFilter";
 import EventCount from "@/components/shared/eventCount";
-import TireConditionChart from "@/components/shared/charts/tires/tireConditionChart";
-import TireTypeChart from "@/components/shared/charts/tires/tireTypeChart";
+import SpeedHistogramChart from "@/components/shared/charts/dts/speedHistogramChart";
+import SpeedTimeOfDayChart from "@/components/shared/charts/dts/speedTimeOfDayChart";
 
 // ShadCN UI components
 import { Card } from "@/components/ui/card";
@@ -21,7 +21,7 @@ import {
 
 import { useData } from "@/context/DataContext";
 
-export default function TireAnalysisTemplate() {
+export default function SpeedAnalysisTemplate() {
   // Access the global data + loading state from DataContext
   const { data, loading, isLive, setIsLive } = useData();
 
@@ -64,11 +64,9 @@ export default function TireAnalysisTemplate() {
     return data.filter((event) => {
       const eventDate = event.creationTime.substring(0, 10);
       const withinDateRange = eventDate >= startDate && eventDate <= endDate;
-      const matchCamera =
-        selectedCamera === "all" || event.camera === selectedCamera;
+      const matchCamera = selectedCamera === "all" || event.camera === selectedCamera;
       const matchVehicle =
-        selectedVehicleTypes.length === 0 ||
-        selectedVehicleTypes.includes(event.vehicleType);
+        selectedVehicleTypes.length === 0 || selectedVehicleTypes.includes(event.vehicleType);
       return withinDateRange && matchCamera && matchVehicle;
     });
   }, [data, selectedCamera, selectedVehicleTypes, startDate, endDate]);
@@ -78,14 +76,14 @@ export default function TireAnalysisTemplate() {
 
   // If still loading (and not in live mode), show a simple loading message
   if (loading && !isLive) {
-    return <p className="text-gray-500">Loading tire data...</p>;
+    return <p className="text-gray-500">Loading speed data...</p>;
   }
 
   return (
     <div className="px-4 py-6">
       {/* Mobile Header with Title and Filter Button */}
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl md:text-3xl font-bold">Tire Analysis</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Speed Analysis</h1>
         <div className="block lg:hidden">
           <Button variant="outline" onClick={() => setMobileFilterOpen(true)}>
             Open Filters
@@ -132,7 +130,7 @@ export default function TireAnalysisTemplate() {
       <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
         <SheetContent side="right" className="w-[85%] sm:w-[360px] p-2 text-xs">
           <SheetHeader>
-            <SheetTitle>Tire Analysis Filters</SheetTitle>
+            <SheetTitle>Speed Analysis Filters</SheetTitle>
           </SheetHeader>
           <Card className="p-4 mt-4">
             <div className="flex flex-col gap-4 w-full">
@@ -170,11 +168,11 @@ export default function TireAnalysisTemplate() {
 
       {/* ========== Charts ========== */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left: Tire Condition Bar Chart */}
-        <TireConditionChart data={filteredData} />
+        {/* Left: Speed Histogram Chart */}
+        <SpeedHistogramChart data={filteredData} />
 
-        {/* Right: Tire Type Line Chart */}
-        <TireTypeChart data={filteredData} binSize={binSize} />
+        {/* Right: Speed Time-of-Day Chart */}
+        <SpeedTimeOfDayChart data={filteredData} />
       </div>
     </div>
   );
