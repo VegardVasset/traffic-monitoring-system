@@ -7,6 +7,7 @@ import React, {
   useRef,
   useCallback,
 } from "react";
+import Image from "next/image";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -38,17 +39,17 @@ import { useData, BaseEvent } from "@/context/DataContext";
 import { useAnalytics } from "@/context/analyticsContext";
 import EditDialog from "./editDialog";
 
-interface EventTableProps {
+interface PassingsTableProps {
   domain: string;
   selectedCamera: string;
   selectedVehicleTypes: string[];
 }
 
-export default function EventTable({
+export default function PassingsTable({
   domain,
   selectedCamera,
   selectedVehicleTypes,
-}: EventTableProps) {
+}: PassingsTableProps) {
   const { data, loading, error, lastUpdateArrivalTime, updateEvent } =
     useData();
   const { logEvent } = useAnalytics();
@@ -126,6 +127,20 @@ export default function EventTable({
             const value = info.getValue() as number;
             return `${(value * 100).toFixed(2)}%`;
           },
+        },
+        {
+          accessorKey: "imageUrl",
+          header: "Image",
+          cell: (info) => (
+            <div style={{ width: 120, height: 80, position: "relative" }}>
+              <Image
+                src={info.getValue() as string}
+                alt="Vehicle"
+                fill
+                style={{ objectFit: "cover" }}
+              />
+            </div>
+          ),
         },
       ];
 

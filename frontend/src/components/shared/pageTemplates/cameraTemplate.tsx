@@ -68,11 +68,9 @@ interface CameraRow {
   passings: number;
 }
 
-interface CameraTemplateProps {
-  domain: string;
-}
 
-export default function CameraTemplate({ domain }: CameraTemplateProps) {
+
+export default function CameraTemplate() {
   const { data, loading, error } = useData();
   const [selectedLocation, setSelectedLocation] =
     useState<{ lat: number; lng: number } | null>(null);
@@ -102,7 +100,7 @@ export default function CameraTemplate({ domain }: CameraTemplateProps) {
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">
-        {domain.toUpperCase()} Cameras
+        Cameras
       </h1>
       <div className="p-4 bg-white shadow rounded-lg overflow-x-auto">
         <Table>

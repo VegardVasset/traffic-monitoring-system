@@ -1,6 +1,5 @@
 import { faker } from "@faker-js/faker";
 import { MockRecord } from "../types";
-import { c } from "framer-motion/dist/types.d-6pKw1mTI";
 
 // Cameras for each domain
 const camerasByDomain: Record<string, { name: string; weight: number }[]> = {
@@ -21,6 +20,20 @@ const camerasByDomain: Record<string, { name: string; weight: number }[]> = {
   ],
 };
 
+const FRONTEND_URL = "http://localhost:3000";
+
+
+// Array of vehicle images stored in backend/public/images
+const vehicleImages = [
+  `${FRONTEND_URL}/images/vehicle1.png`,
+  `${FRONTEND_URL}/images/vehicle2.png`,
+  `${FRONTEND_URL}/images/vehicle3.png`,
+  `${FRONTEND_URL}/images/vehicle4.png`,
+  `${FRONTEND_URL}/images/vehicle5.png`,
+  `${FRONTEND_URL}/images/vehicle6.png`,
+  `${FRONTEND_URL}/images/vehicle7.png`,
+];
+
 function getRandomTireCondition(): number {
   const weightedValues: number[] = [];
   const distribution = [
@@ -39,8 +52,8 @@ function getRandomTireCondition(): number {
 
   return weightedValues[Math.floor(Math.random() * weightedValues.length)];
 }
+
 function getRandomSpeed(timestamp: string | number | Date) {
-  // Default normal range: 40-120 km/h.
   let normalMin = 40;
   let normalMax = 120;
 
@@ -48,43 +61,24 @@ function getRandomSpeed(timestamp: string | number | Date) {
     const date = new Date(timestamp);
     const hour = date.getHours();
 
-    // Adjust the normal speed range based on the hour of the day.
     if ((hour >= 8 && hour <= 10) || (hour >= 15 && hour <= 17)) {
-      // Rush hours: lower speeds due to heavy traffic.
       normalMin = 30;
       normalMax = 80;
     } else if (hour >= 21 || hour <= 5) {
-      // Nighttime: higher speeds as speeding is more common.
       normalMin = 60;
       normalMax = 130;
     }
-    // Otherwise, the default range is used.
   }
 
-  // 90% of values are within the adjusted normal range,
-  // 10% are anomalies (keeping the original anomaly logic)
   if (Math.random() < 0.9) {
     return faker.number.int({ min: normalMin, max: normalMax });
   } else {
     return Math.random() < 0.5
-      ? faker.number.int({ min: 5, max: 20 })   // Slow anomalies
-      : faker.number.int({ min: 120, max: 200 }); // Fast anomalies
+      ? faker.number.int({ min: 5, max: 20 })
+      : faker.number.int({ min: 120, max: 200 });
   }
 }
 
-/**
- * Generate a passenger count based on the vehicle type.
- * - "buss": 20-50 passengers
- * - "person transport": 1-5 passengers
- * - "motorsykkel": usually 1, sometimes 2
- * - "lastebil" (lukket, åpen, sylinder) & "lett industri": 1-2 passengers
- * - "tilhenger": 0 passengers
- * - "camping kjøretøy": 1-4 passengers
- * - "utrykningskjøretøy": 1-3 passengers
- * - "myke trafikanter": always 1
- * - "traktor": always 1
- * - Default: 1-5 passengers
- */
 function getRandomPassengerCount(vehicleType: MockRecord["vehicleType"]): number {
   switch (vehicleType) {
     case "buss":
@@ -116,43 +110,33 @@ function getRandomPassengerCount(vehicleType: MockRecord["vehicleType"]): number
 
 function getRandomTireType(timestamp: string): "Sommerdekk" | "Vinterdekk" {
   const date = new Date(timestamp);
-  const month = date.getMonth() + 1; // JavaScript months are 0-based
-
+  const month = date.getMonth() + 1;
   let winterProbability = 0;
 
   if (month >= 12 || month <= 2) {
-    // Winter months → ~100% winter tires
     winterProbability = 0.95;
   } else if (month >= 6 && month <= 8) {
-    // Summer months → ~100% summer tires
     winterProbability = 0.05;
   } else if (month >= 3 && month <= 5) {
-    // Transition Spring: Gradually decrease winter tires
-    winterProbability = 0.9 - (month - 3) * 0.3; // 90% → 60% → 30%
+    winterProbability = 0.9 - (month - 3) * 0.3;
   } else if (month >= 9 && month <= 11) {
-    // Transition Autumn: Gradually increase winter tires
-    winterProbability = 0.3 + (month - 9) * 0.3; // 30% → 60% → 90%
+    winterProbability = 0.3 + (month - 9) * 0.3;
   }
 
   return Math.random() < winterProbability ? "Vinterdekk" : "Sommerdekk";
 }
 
 function getWeightedHour(): number {
-  // 75% chance for a daytime hour, 25% for a nighttime hour
   if (Math.random() < 0.75) {
-    // Within daytime, decide if it's rush hour (50% chance of daytime)
     if (Math.random() < 0.5) {
-      // Choose randomly between morning rush (8-10) and afternoon rush (15-17)
       return Math.random() < 0.5
         ? faker.number.int({ min: 8, max: 10 })
         : faker.number.int({ min: 15, max: 17 });
     } else {
-      // Choose a non-rush daytime hour
       const nonRushHours = [6, 7, 11, 12, 13, 14, 18, 19, 20];
       return nonRushHours[faker.number.int({ min: 0, max: nonRushHours.length - 1 })];
     }
   } else {
-    // Nighttime hours: early morning or late night
     const nightHours = [0, 1, 2, 3, 4, 5, 21, 22, 23];
     return nightHours[faker.number.int({ min: 0, max: nightHours.length - 1 })];
   }
@@ -163,10 +147,7 @@ function getRandomTimestamp(): string {
   start.setFullYear(start.getFullYear() - 1);
   const end = new Date();
 
-  // Generate a random date between start and end
   let randomDate = faker.date.between({ from: start, to: end });
-
-  // Set the hour using the weighted distribution that favors rush hours
   randomDate.setHours(getWeightedHour());
   randomDate.setMinutes(faker.number.int({ min: 0, max: 59 }));
   randomDate.setSeconds(faker.number.int({ min: 0, max: 59 }));
@@ -245,7 +226,8 @@ export function generateMockData(
       camera: getRandomCamera(entityType),
       laneId: `Lane_${faker.number.int({ min: 1, max: 5 })}`,
       edgeId: `Edge_${faker.number.int({ min: 1, max: 3 })}`,
-      imageUrl: faker.image.url({ width: 640, height: 480 }),
+      // Use a random image from your local images array
+      imageUrl: vehicleImages[faker.number.int({ min: 0, max: vehicleImages.length - 1 })],
       confidenceScore: getRealisticConfidenceScore(),
       corrected: faker.datatype.boolean(),
     };
@@ -267,5 +249,3 @@ export function generateMockData(
   }
   return mockData;
 }
-
-
