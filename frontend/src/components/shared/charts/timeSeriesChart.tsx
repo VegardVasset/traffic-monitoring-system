@@ -31,6 +31,8 @@ export interface TimeSeriesChartProps {
   data: Event[];
   binSize: "hour" | "day" | "week" | "month";
   onDataPointClick?: (binKey: string) => void;
+  /** When true, forecast functionality is disabled (useful for drill-down charts) */
+  disableForecast?: boolean;
 }
 
 type BinnedCounts = Record<string, Record<string, number>>;
@@ -98,14 +100,11 @@ function incrementDate(date: Date, binSize: "hour" | "day" | "week" | "month"): 
 function getNextBinKey(lastBinKey: string, binSize: "hour" | "day" | "week" | "month"): string {
   let date: Date;
   if (binSize === "month") {
-    // e.g. "2025-03" => year=2025, month=2 (0-based)
     const [year, month] = lastBinKey.split("-");
     date = new Date(Number(year), Number(month) - 1, 1);
   } else if (binSize === "week" || binSize === "day") {
-    // e.g. "2025-03-10"
     date = new Date(lastBinKey.substring(0, 10));
   } else if (binSize === "hour") {
-    // e.g. "2025-03-10T14"
     const dayString = lastBinKey.substring(0, 10);
     const hourString = lastBinKey.substring(11);
     date = new Date(`${dayString}T${hourString}:00:00Z`);
@@ -113,7 +112,6 @@ function getNextBinKey(lastBinKey: string, binSize: "hour" | "day" | "week" | "m
     date = new Date(lastBinKey);
   }
   const nextDate = incrementDate(date, binSize);
-
   if (binSize === "hour") return nextDate.toISOString().substring(0, 13);
   if (binSize === "day" || binSize === "week") return nextDate.toISOString().substring(0, 10);
   if (binSize === "month") return nextDate.toISOString().substring(0, 7);
@@ -121,9 +119,7 @@ function getNextBinKey(lastBinKey: string, binSize: "hour" | "day" | "week" | "m
 }
 
 // ---------------------------------------------------------------------
-// Updated: For monthly bins, skip the entire current month if it's the same
-// year-month as now. For day/hour/week, skip if the bin is the same "YYYY-MM-DD"
-// as now. This avoids duplicating the current month in the forecast.
+// Exclude bins that are likely incomplete (current day or month).
 // ---------------------------------------------------------------------
 function isBinLikelyIncompleteForAveraging(
   binKey: string,
@@ -131,16 +127,12 @@ function isBinLikelyIncompleteForAveraging(
 ): boolean {
   const now = new Date();
   const binDate = parseBinKey(binKey, binSize);
-
   if (binSize === "month") {
-    // Skip if bin is the same month-year as now
     return (
       binDate.getFullYear() === now.getFullYear() &&
       binDate.getMonth() === now.getMonth()
     );
   }
-
-  // For day/week/hour, skip if binDate is the same day as now
   const binDay = binDate.toISOString().substring(0, 10);
   const nowDay = now.toISOString().substring(0, 10);
   return binDay === nowDay;
@@ -158,16 +150,73 @@ function parseBinKey(binKey: string, binSize: "hour" | "day" | "week" | "month")
     const hourString = binKey.substring(11);
     return new Date(`${dayString}T${hourString}:00:00Z`);
   }
-  // fallback
   return new Date(binKey);
 }
 
-export default function TimeSeriesChart({ data, binSize, onDataPointClick }: TimeSeriesChartProps) {
+// ---------------------------------------------------------------------
+// Holt's Linear Trend Forecasting Implementation
+// ---------------------------------------------------------------------
+/**
+ * Calculate forecast using Holt's Linear Trend method for each vehicle type.
+ * Only complete bins are used.
+ */
+function calculateHoltForecast(
+  aggregatedData: AggregatedDataEntry[],
+  binSize: "hour" | "day" | "week" | "month",
+  vehicleTypes: string[],
+  alpha = 0.5,
+  beta = 0.5
+): AggregatedDataEntry | null {
+  // Filter out bins that are incomplete.
+  const completeData = aggregatedData.filter((entry) =>
+    !isBinLikelyIncompleteForAveraging(entry.binKey, binSize)
+  );
+  if (completeData.length < 2) return null;
+
+  const forecast: Record<string, number> = {};
+  vehicleTypes.forEach((type) => {
+    const series = completeData.map((entry) => Number(entry[type]) || 0);
+    let level = series[0];
+    let trend = series.length > 1 ? series[1] - series[0] : 0;
+    for (let t = 1; t < series.length; t++) {
+      const value = series[t];
+      const lastLevel = level;
+      level = alpha * value + (1 - alpha) * (lastLevel + trend);
+      trend = beta * (level - lastLevel) + (1 - beta) * trend;
+    }
+    forecast[type] = Math.max(0, Math.round(level + trend));
+  });
+
+  // Get the last complete bin key.
+  const lastCompleteBinKey = completeData[completeData.length - 1].binKey;
+  let nextBinKey = getNextBinKey(lastCompleteBinKey, binSize);
+  // If the computed next bin key is incomplete (e.g. today's date), increment until a complete key is found.
+  while (isBinLikelyIncompleteForAveraging(nextBinKey, binSize)) {
+    nextBinKey = getNextBinKey(nextBinKey, binSize);
+  }
+
+  return {
+    binKey: nextBinKey,
+    date: formatTimeBin(nextBinKey, binSize),
+    ...forecast,
+  };
+}
+
+export default function TimeSeriesChart({
+  data,
+  binSize,
+  onDataPointClick,
+  disableForecast = false,
+}: TimeSeriesChartProps) {
   const isMobile = useIsMobile();
   const chartRef = useRef<ChartJS<"line"> | null>(null);
-
-  // Toggle to show/hide forecast
   const [showForecast, setShowForecast] = useState(false);
+
+  // -------------------- RESET FORECAST WHEN TIME INTERVAL CHANGES --------------------
+  useEffect(() => {
+    // When binSize changes, hide the forecast.
+    setShowForecast(false);
+  }, [binSize]);
 
   // -------------------- COLLECT VEHICLE TYPES --------------------
   const vehicleTypes = useMemo(() => {
@@ -176,7 +225,7 @@ export default function TimeSeriesChart({ data, binSize, onDataPointClick }: Tim
     return Array.from(types);
   }, [data]);
 
-  // Choose binKey function
+  // -------------------- SELECT BIN KEY FUNCTION --------------------
   const getBinKey = useMemo(() => {
     switch (binSize) {
       case "hour":
@@ -204,7 +253,8 @@ export default function TimeSeriesChart({ data, binSize, onDataPointClick }: Tim
           counts[binKey][type] = 0;
         });
       }
-      counts[binKey][event.vehicleType] = (counts[binKey][event.vehicleType] || 0) + 1;
+      counts[binKey][event.vehicleType] =
+        (counts[binKey][event.vehicleType] || 0) + 1;
     });
     return counts;
   }, [data, vehicleTypes, getBinKey]);
@@ -219,48 +269,11 @@ export default function TimeSeriesChart({ data, binSize, onDataPointClick }: Tim
     }));
   }, [sortedBinKeys, binnedCounts, binSize]);
 
-  // -------------------- FORECAST (3-POINT AVERAGE) --------------------
+  // -------------------- FORECAST (Holt's Linear Trend) --------------------
   const forecastEntry = useMemo((): AggregatedDataEntry | null => {
-    if (aggregatedData.length < 2) return null;
-
-    // Find the last "complete" bin for averaging
-    let lastIndex = aggregatedData.length - 1;
-    while (
-      lastIndex >= 0 &&
-      isBinLikelyIncompleteForAveraging(aggregatedData[lastIndex].binKey, binSize)
-    ) {
-      lastIndex--;
-    }
-    if (lastIndex < 1) return null; // need at least 2 bins for forecast
-
-    const lastEntry = aggregatedData[lastIndex];
-    const secondLastEntry = aggregatedData[lastIndex - 1];
-    // If only 2 bins total, replicate secondLastEntry as third
-    const thirdLastEntry = lastIndex > 1 ? aggregatedData[lastIndex - 2] : secondLastEntry;
-
-    // Next bin from the last complete bin
-    let nextBinKey = getNextBinKey(lastEntry.binKey, binSize);
-
-    // If that next bin is also incomplete, skip further
-    // (e.g., if the next bin is still the same month or same day)
-    while (isBinLikelyIncompleteForAveraging(nextBinKey, binSize)) {
-      nextBinKey = getNextBinKey(nextBinKey, binSize);
-    }
-
-    const forecast: AggregatedDataEntry = {
-      binKey: nextBinKey,
-      date: formatTimeBin(nextBinKey, binSize),
-    };
-
-    vehicleTypes.forEach((type) => {
-      const v1 = (lastEntry[type] as number) || 0;
-      const v2 = (secondLastEntry[type] as number) || 0;
-      const v3 = (thirdLastEntry[type] as number) || 0;
-      forecast[type] = Math.max(0, Math.round((v1 + v2 + v3) / 3));
-    });
-
-    return forecast;
-  }, [aggregatedData, vehicleTypes, binSize]);
+    if (disableForecast) return null;
+    return calculateHoltForecast(aggregatedData, binSize, vehicleTypes, 0.5, 0.5);
+  }, [aggregatedData, vehicleTypes, binSize, disableForecast]);
 
   // -------------------- COMBINED LABELS --------------------
   const combinedLabels = useMemo(() => {
@@ -280,21 +293,18 @@ export default function TimeSeriesChart({ data, binSize, onDataPointClick }: Tim
       backgroundColor: getChartColor(index, 0.5),
       fill: false,
       borderWidth: isMobile ? 1 : 2,
-      pointRadius: isMobile ? 3 : 4,
-      pointHoverRadius: isMobile ? 3 : 4,
+      pointRadius: isMobile ? 4 : 5,
+      pointHoverRadius: isMobile ? 5 : 6,
       spanGaps: true,
     }));
   }, [aggregatedData, vehicleTypes, isMobile]);
 
   // -------------------- FORECAST DATASETS --------------------
-  // 1) Forecast Fill
+  // 1) Forecast Fill with Gradient
   const forecastFillDataset = useMemo(() => {
     if (!showForecast || !forecastEntry) return null;
-
     const lastIndex = aggregatedData.length - 1;
     const fillData = new Array(aggregatedData.length + 1).fill(null);
-
-    // Find the max among the last actual bin and the forecast
     let maxLast = 0;
     let maxForecast = 0;
     vehicleTypes.forEach((type) => {
@@ -303,15 +313,20 @@ export default function TimeSeriesChart({ data, binSize, onDataPointClick }: Tim
       if (vLast > maxLast) maxLast = vLast;
       if (vFcast > maxForecast) maxForecast = vFcast;
     });
-
     const biggerVal = Math.max(maxLast, maxForecast);
     fillData[lastIndex] = 0;
     fillData[lastIndex + 1] = biggerVal;
-
+    let gradientFill: string | CanvasGradient = "rgba(150, 200, 255, 0.4)";
+    if (chartRef.current && chartRef.current.ctx) {
+      const ctx = chartRef.current.ctx;
+      gradientFill = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
+      gradientFill.addColorStop(0, "rgba(150, 200, 255, 0.6)");
+      gradientFill.addColorStop(1, "rgba(150, 200, 255, 0.1)");
+    }
     return {
       label: "Forecast Fill",
       data: fillData,
-      backgroundColor: "rgba(150, 200, 255, 0.4)",
+      backgroundColor: gradientFill,
       borderColor: "transparent",
       fill: true,
       tension: 0,
@@ -340,15 +355,15 @@ export default function TimeSeriesChart({ data, binSize, onDataPointClick }: Tim
         fill: false,
         borderDash: [5, 5],
         borderWidth: isMobile ? 1 : 2,
-        pointRadius: isMobile ? 3 : 4,
-        pointHoverRadius: isMobile ? 3 : 4,
+        pointRadius: isMobile ? 4 : 5,
+        pointHoverRadius: isMobile ? 5 : 6,
         spanGaps: true,
         order: 2,
       };
     });
   }, [showForecast, forecastEntry, aggregatedData, vehicleTypes, isMobile]);
 
-  // Combine everything
+  // -------------------- COMBINED DATASETS --------------------
   const combinedDatasets = useMemo(() => {
     const ds = [];
     if (forecastFillDataset) ds.push(forecastFillDataset);
@@ -370,12 +385,20 @@ export default function TimeSeriesChart({ data, binSize, onDataPointClick }: Tim
     () => ({
       responsive: true,
       maintainAspectRatio: false,
+      animation: {
+        duration: 1000,
+        easing: "easeOutQuart",
+      },
       scales: {
         x: {
           ticks: {
             font: { size: isMobile ? 10 : 12 },
             autoSkip: true,
             maxTicksLimit: isMobile ? 4 : 10,
+          },
+          grid: {
+            color: "rgba(200,200,200,0.2)",
+            borderDash: [2, 2],
           },
         },
         y: {
@@ -384,6 +407,10 @@ export default function TimeSeriesChart({ data, binSize, onDataPointClick }: Tim
             precision: 0,
             callback: (value) => Number(value).toFixed(0),
             font: { size: isMobile ? 10 : 12 },
+          },
+          grid: {
+            color: "rgba(200,200,200,0.2)",
+            borderDash: [2, 2],
           },
         },
       },
@@ -396,7 +423,16 @@ export default function TimeSeriesChart({ data, binSize, onDataPointClick }: Tim
             font: { size: isMobile ? 6 : 14 },
           },
         },
-        tooltip: { bodyFont: { size: isMobile ? 4 : 12 } },
+        tooltip: {
+          backgroundColor: "rgba(0,0,0,0.7)",
+          titleFont: { size: isMobile ? 10 : 14 },
+          bodyFont: { size: isMobile ? 8 : 12 },
+          borderColor: "rgba(255,255,255,0.8)",
+          borderWidth: 1,
+          callbacks: {
+            label: (tooltipItem) => ` ${tooltipItem.dataset.label}: ${tooltipItem.raw}`,
+          },
+        },
         datalabels: { display: false },
       },
     }),
@@ -430,9 +466,8 @@ export default function TimeSeriesChart({ data, binSize, onDataPointClick }: Tim
         <h2 className="text-xs md:text-xl font-semibold mb-4">
           Passings Over Time ({binSize})
         </h2>
-
-        {/* Hide the forecast button if binSize === 'hour' */}
-        {binSize !== "hour" && (
+        {/* Only show forecast toggle if not disabled and binSize isn't "hour" */}
+        {binSize !== "hour" && !disableForecast && (
           <Button
             variant="outline"
             size="sm"
@@ -443,7 +478,6 @@ export default function TimeSeriesChart({ data, binSize, onDataPointClick }: Tim
           </Button>
         )}
       </div>
-
       <div className="flex-1 relative h-full">
         <Line ref={chartRef} data={chartData} options={lineChartOptions} onClick={handleChartClick} />
       </div>

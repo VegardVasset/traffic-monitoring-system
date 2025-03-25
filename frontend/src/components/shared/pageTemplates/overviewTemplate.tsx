@@ -352,6 +352,7 @@ export default function OverviewTemplate({
                       <TimeSeriesChart
                         data={getDrillDownData()}
                         binSize={getDrillDownBinSize()}
+                        disableForecast={true}
                       />
                     </div>
                     <div className="mt-2 flex-none">
