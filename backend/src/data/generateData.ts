@@ -11,6 +11,9 @@ import {
   vehicleImages
 } from "../utils/randomHelpers";
 
+/**
+ * Generate an array of mock records for the given entityType.
+ */
 export function generateMockData(
   entityType: "vpc" | "tires" | "dts",
   count: number,

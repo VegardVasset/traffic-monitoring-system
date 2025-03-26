@@ -1,17 +1,15 @@
 import { faker } from "@faker-js/faker";
 import { MockRecord } from "../types";
 
-export const FRONTEND_URL = "http://localhost:3000";
-
 export const vehicleImages = [
-  `${FRONTEND_URL}/images/vehicle1.png`,
-  `${FRONTEND_URL}/images/vehicle2.png`,
-  `${FRONTEND_URL}/images/vehicle3.png`,
-  `${FRONTEND_URL}/images/vehicle4.png`,
-  `${FRONTEND_URL}/images/vehicle5.png`,
-  `${FRONTEND_URL}/images/vehicle6.png`,
-  `${FRONTEND_URL}/images/vehicle7.png`,
-];
+    "/images/vehicle1.png",
+    "/images/vehicle2.png",
+    "/images/vehicle3.png",
+    "/images/vehicle4.png",
+    "/images/vehicle5.png",
+    "/images/vehicle6.png",
+    "/images/vehicle7.png",
+  ];
 
 export const camerasByDomain: Record<string, { name: string; weight: number }[]> = {
   dts: [

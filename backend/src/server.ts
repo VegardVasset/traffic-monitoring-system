@@ -19,7 +19,6 @@ function initializeMockDatabase() {
   console.log("Initial mock data generated successfully!");
 }
 
-// Get the next ID
 function getNextId(entityType: keyof typeof mockDatabase): number {
   return (mockDatabase[entityType]?.length ?? 0) + 1;
 }
@@ -46,12 +45,10 @@ function continuouslyAddMockData() {
       },
     };
 
-    // Emit new data to relevant Socket.IO rooms
     (Object.keys(newData) as Array<keyof typeof newData>).forEach((entity) => {
       io.to(entity).emit("newData", newData[entity]);
     });
 
-    // Update in-memory database
     mockDatabase.vpc.push(newData.vpc);
     mockDatabase.tires.push(newData.tires);
     mockDatabase.dts.push(newData.dts);
