@@ -1,25 +1,14 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
-import FilterPanel from "@/components/shared/FilterPanel";
-import PeriodFilter from "@/components/shared/PeriodFilter";
-import EventCount from "@/components/shared/EventCount";
+import React, { useState, useMemo } from "react";
 import SpeedHistogramChart from "@/components/dts/charts/SpeedHistogramChart";
 import SpeedTimeOfDayChart from "@/components/dts/charts/SpeedTimeOfDayChart";
 import DesktopFilters from "@/components/shared/DesktopFilters";
 import MobileFiltersSheet from "@/components/shared/MobileFiltersSheet";
 
 // ShadCN UI components
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetTrigger,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetClose,
-} from "@/components/ui/sheet";
+
 
 import { useData } from "@/context/DataContext";
 
@@ -39,12 +28,6 @@ export default function SpeedAnalysisTemplate() {
       .substring(0, 10);
     const [startDate, setStartDate] = useState<string>(oneWeekAgo);
     const [endDate, setEndDate] = useState<string>(today);
-
-  // Handler for date range changes
-  const handlePeriodChange = useCallback((start: string, end: string) => {
-    setStartDate(start);
-    setEndDate(end);
-  }, []);
 
   // Derive unique cameras + vehicle types from the data
   const derivedVehicleTypes = useMemo(() => {

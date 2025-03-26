@@ -16,7 +16,6 @@ export default function useChartData(
   vehicleTypes: string[],
   isMobile: boolean,
   showForecast: boolean,
-  startDate: string
 ): { chartData: ChartData } {
   // We'll just rename aggregatedData -> filteredAggregatedData if you want:
   const filteredAggregatedData = aggregatedData;

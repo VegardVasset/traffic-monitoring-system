@@ -81,7 +81,7 @@ export default function TimeSeriesChart({
   const forecastEntry = useForecastEntry(filteredAggregatedData, binSize, vehicleTypes, disableForecast);
 
   // 4) Build final chartData
-  const { chartData } = useChartData(filteredAggregatedData, forecastEntry, vehicleTypes, isMobile, showForecast, startDate);
+  const { chartData } = useChartData(filteredAggregatedData, forecastEntry, vehicleTypes, isMobile, showForecast);
 
   // 5) On click, get the binKey from the data index
   const handleChartClick = (event: React.MouseEvent<HTMLCanvasElement>) => {

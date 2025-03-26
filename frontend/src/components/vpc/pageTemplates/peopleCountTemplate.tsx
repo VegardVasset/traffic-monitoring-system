@@ -1,22 +1,10 @@
 "use client";
 
-import React, { useCallback, useMemo, useState, useEffect } from "react";
-import FilterPanel from "@/components/shared/FilterPanel";
-import PeriodFilter from "@/components/shared/PeriodFilter";
-import EventSummary from "@/components/shared/EventCount";
+import React, { useMemo, useState, useEffect } from "react";
 import { MOBILE_MAX_WIDTH } from "@/config/config";
 import HeatmapChart from "@/components/vpc/charts/HeatmapChart";
 import { UnifiedLegend } from "@/components/shared/UnifiedLegend";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetTrigger,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetClose,
-} from "@/components/ui/sheet";
 import { useData, BaseEvent as DataContextBaseEvent } from "@/context/DataContext";
 import PeopleCountChart from "@/components/vpc/charts/PeopleCountChart";
 import DesktopFilters from "@/components/shared/DesktopFilters";
@@ -32,7 +20,7 @@ interface PeopleCountTemplateProps {
 }
 
 export default function PeopleCountTemplate({ children }: PeopleCountTemplateProps) {
-  const { data, loading, isLive, setIsLive, refetch } = useData();
+  const { data, loading, isLive, setIsLive } = useData();
 
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
   const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
@@ -46,11 +34,6 @@ export default function PeopleCountTemplate({ children }: PeopleCountTemplatePro
     .substring(0, 10);
   const [startDate, setStartDate] = useState<string>(oneWeekAgo);
   const [endDate, setEndDate] = useState<string>(today);
-
-  const handlePeriodChange = useCallback((start: string, end: string) => {
-    setStartDate(start);
-    setEndDate(end);
-  }, []);
 
   const derivedVehicleTypes = useMemo(() => {
     const types = new Set<string>();

@@ -10,7 +10,7 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import TimeSeriesChart from "@/components/shared/charts/timeSeriesChart/TimeSeriesChart";
+import TimeSeriesChart, { Event } from "@/components/shared/charts/timeSeriesChart/TimeSeriesChart";
 import { UnifiedLegend } from "@/components/shared/UnifiedLegend";
 
 export interface DrillDownSheetProps {
@@ -18,7 +18,7 @@ export interface DrillDownSheetProps {
   onOpenChange: (open: boolean) => void;
   drillDownBinKey: string | null;
   getDrillDownBinSize: () => "hour" | "day" | "week" | "month";
-  getDrillDownData: () => any[];
+  getDrillDownData: () => Event[];
   drillDownVehicleTypes: string[];
   startDate: string;
 }
