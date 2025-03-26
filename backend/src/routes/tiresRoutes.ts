@@ -1,6 +1,5 @@
-// tiresRoutes.ts
-import { Router, Request, Response, NextFunction} from "express";
-import { mockDatabase } from "../server";
+import { Router, Request, Response, NextFunction } from "express";
+import { mockDatabase } from "../data/mockDatabase";
 import { MockRecord } from "../types";
 
 const router = Router();
@@ -23,10 +22,8 @@ router.patch<{ id: string }, any, Partial<MockRecord>>(
       return;
     }
 
-    // Update the record in memory
     mockDatabase.tires[index] = { ...mockDatabase.tires[index], ...updateData };
 
-    // Call res.json without returning its value
     res.json(mockDatabase.tires[index]);
   }
 );

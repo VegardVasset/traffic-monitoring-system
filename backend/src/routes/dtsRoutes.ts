@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { mockDatabase } from "../server";
+import { mockDatabase } from "../data/mockDatabase";
 import { MockRecord } from "../types";
 
 const router = Router();
@@ -21,8 +21,7 @@ router.patch<{ id: string }, any, Partial<MockRecord>>(
       res.status(404).json({ message: "Record not found" });
       return;
     }
-
-    // Update the record in memory
+  
     mockDatabase.dts[index] = { ...mockDatabase.dts[index], ...updateData };
 
     res.json(mockDatabase.dts[index]);
