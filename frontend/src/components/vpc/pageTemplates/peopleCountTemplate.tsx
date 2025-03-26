@@ -1,24 +1,14 @@
 "use client";
 
-import React, { useCallback, useMemo, useState, useEffect } from "react";
-import FilterPanel from "@/components/shared/FilterPanel";
-import PeriodFilter from "@/components/shared/PeriodFilter";
-import EventSummary from "@/components/shared/EventCount";
+import React, { useMemo, useState, useEffect } from "react";
 import { MOBILE_MAX_WIDTH } from "@/config/config";
 import HeatmapChart from "@/components/vpc/charts/HeatmapChart";
 import { UnifiedLegend } from "@/components/shared/UnifiedLegend";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetTrigger,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetClose,
-} from "@/components/ui/sheet";
 import { useData, BaseEvent as DataContextBaseEvent } from "@/context/DataContext";
 import PeopleCountChart from "@/components/vpc/charts/PeopleCountChart";
+import DesktopFilters from "@/components/shared/DesktopFilters";
+import MobileFiltersSheet from "@/components/shared/MobileFiltersSheet";
 
 // Create a new type that extends the context's BaseEvent to include passengerCount.
 export interface PassengerEvent extends DataContextBaseEvent {
@@ -30,25 +20,20 @@ interface PeopleCountTemplateProps {
 }
 
 export default function PeopleCountTemplate({ children }: PeopleCountTemplateProps) {
-  const { data, loading, isLive, setIsLive, refetch } = useData();
+  const { data, loading, isLive, setIsLive } = useData();
 
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
   const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
   // We'll keep binSize in case you want to use it later for time-series filtering
   const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">("day");
 
-  // Default date range: 1 week ago until today
+  // Default date range
   const today = new Date().toISOString().substring(0, 10);
   const oneWeekAgo = new Date(new Date().setDate(new Date().getDate() - 7))
     .toISOString()
     .substring(0, 10);
   const [startDate, setStartDate] = useState<string>(oneWeekAgo);
   const [endDate, setEndDate] = useState<string>(today);
-
-  const handlePeriodChange = useCallback((start: string, end: string) => {
-    setStartDate(start);
-    setEndDate(end);
-  }, []);
 
   const derivedVehicleTypes = useMemo(() => {
     const types = new Set<string>();
@@ -122,72 +107,48 @@ export default function PeopleCountTemplate({ children }: PeopleCountTemplatePro
         </div>
       </div>
 
-      {/* PERIOD, EVENT SUMMARY, FILTER PANEL ROW */}
-      <div className="flex flex-wrap items-start gap-4 mb-4">
-        <Card className="p-3 max-w-sm w-full hidden lg:block">
-          <PeriodFilter startDate={startDate} endDate={endDate} onChange={handlePeriodChange} />
-        </Card>
-        <Card className="p-3 max-w-sm w-full hidden lg:block">
-          <EventSummary count={filteredData.length} />
-        </Card>
-        <Card className="p-3 hidden lg:block">
-          <FilterPanel
-            cameras={derivedCameras}
-            selectedCamera={selectedCamera}
-            setSelectedCamera={setSelectedCamera}
-            vehicleTypes={derivedVehicleTypes}
-            selectedVehicleTypes={selectedVehicleTypes}
-            setSelectedVehicleTypes={setSelectedVehicleTypes}
-            binSize={binSize}
-            setBinSize={setBinSize}
-            isLive={isLive}
-            setIsLive={setIsLive}
-            showLiveButton={false}
-            onRefetch={refetch}
-          />
-        </Card>
-      </div>
-
-      {/* MOBILE FILTER SHEET */}
-      <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
-        <SheetContent side="right" className="w-[85%] sm:w-[360px] p-2 text-xs">
-          <SheetHeader>
-            <SheetTitle>VPC Filters</SheetTitle>
-          </SheetHeader>
-          <Card className="p-4 mt-4">
-            <div className="flex flex-col gap-4 w-full">
-              <FilterPanel
-                cameras={derivedCameras}
-                selectedCamera={selectedCamera}
-                setSelectedCamera={setSelectedCamera}
-                vehicleTypes={derivedVehicleTypes}
-                selectedVehicleTypes={selectedVehicleTypes}
-                setSelectedVehicleTypes={setSelectedVehicleTypes}
-                binSize={binSize}
-                setBinSize={setBinSize}
-                isLive={isLive}
-                setIsLive={setIsLive}
-                showLiveButton={false}
-                onRefetch={refetch}
-              />
-              <PeriodFilter
-                startDate={startDate}
-                endDate={endDate}
-                onChange={handlePeriodChange}
-              />
-              <EventSummary count={filteredData.length} />
-            </div>
-          </Card>
-          <div className="mt-4">
-            <SheetClose asChild>
-              <Button variant="outline">Close</Button>
-            </SheetClose>
-          </div>
-        </SheetContent>
-        <SheetTrigger asChild>
-          <div />
-        </SheetTrigger>
-      </Sheet>
+      {/* ========== Desktop Filters using Extracted Component ========== */}
+            <DesktopFilters
+              startDate={startDate}
+              endDate={endDate}
+              setStartDate={setStartDate}
+              setEndDate={setEndDate}
+              filteredDataCount={filteredData.length}
+              derivedCameras={derivedCameras}
+              selectedCamera={selectedCamera}
+              setSelectedCamera={setSelectedCamera}
+              derivedVehicleTypes={derivedVehicleTypes}
+              selectedVehicleTypes={selectedVehicleTypes}
+              setSelectedVehicleTypes={setSelectedVehicleTypes}
+              binSize={binSize}
+              setBinSize={setBinSize}
+              isLive={isLive}
+              setIsLive={setIsLive}
+              showBinSize={false}
+            />
+      
+            {/* ========== Mobile Filter Drawer using Extracted Component ========== */}
+            <MobileFiltersSheet
+              domainTitle="VPC"
+              mobileFilterOpen={mobileFilterOpen}
+              setMobileFilterOpen={setMobileFilterOpen}
+              startDate={startDate}
+              endDate={endDate}
+              setStartDate={setStartDate}
+              setEndDate={setEndDate}
+              filteredDataCount={filteredData.length}
+              derivedCameras={derivedCameras}
+              selectedCamera={selectedCamera}
+              setSelectedCamera={setSelectedCamera}
+              derivedVehicleTypes={derivedVehicleTypes}
+              selectedVehicleTypes={selectedVehicleTypes}
+              setSelectedVehicleTypes={setSelectedVehicleTypes}
+              binSize={binSize}
+              setBinSize={setBinSize}
+              isLive={isLive}
+              setIsLive={setIsLive}
+              showBinSize={false}
+            />
 
       {/* SINGLE LEGEND */}
       <UnifiedLegend vehicleTypes={filteredVehicleTypes} />

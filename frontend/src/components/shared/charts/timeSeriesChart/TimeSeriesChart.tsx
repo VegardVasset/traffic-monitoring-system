@@ -22,49 +22,86 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-
 export interface Event {
   id: number;
-  creationTime: string;
+  creationTime: string; // e.g. "2025-01-01T12:34:56Z"
   vehicleType: string;
 }
 
 export interface AggregatedDataEntry {
-  binKey: string;
-  date: string;
+  binKey: string; // e.g. "2024-12-30"
+  date: string;   // e.g. "Week 1, 2025"
   [vehicleType: string]: number | string;
 }
 
 export interface TimeSeriesChartProps {
   data: Event[];
   binSize: "hour" | "day" | "week" | "month";
+  startDate: string;  // e.g. "2025-01-01"
   onDataPointClick?: (binKey: string) => void;
   disableForecast?: boolean;
+  /**
+   * If true (default), filter out bins before `startDate`.
+   * In a drilldown, you might pass false if you want to see partial bins, etc.
+   */
+  applyDateFilter?: boolean;
 }
 
 export default function TimeSeriesChart({
   data,
   binSize,
+  startDate,
   onDataPointClick,
   disableForecast = false,
+  applyDateFilter = true,
 }: TimeSeriesChartProps) {
   const isMobile = useIsMobile();
   const chartRef = useRef<ChartJS<"line"> | null>(null);
   const [showForecast, setShowForecast] = useState(false);
 
-  // Hide forecast whenever binSize changes.
+  // Reset forecast toggle whenever binSize changes
   useEffect(() => {
     setShowForecast(false);
   }, [binSize]);
 
-  // Aggregation & Forecast hooks.
+  // 1) Aggregate the raw data by bin
   const { aggregatedData, vehicleTypes } = useAggregatedData(data, binSize);
-  const forecastEntry = useForecastEntry(aggregatedData, binSize, vehicleTypes, disableForecast);
 
-  // Build chart data from aggregated data and forecast.
-  const { chartData } = useChartData(aggregatedData, forecastEntry, vehicleTypes, isMobile, showForecast);
+  // 2) Optionally filter out bins that are before the startDate
+  const filteredAggregatedData = useMemo(() => {
+    if (!applyDateFilter) {
+      return aggregatedData;
+    }
+    return aggregatedData.filter(
+      (entry) => new Date(entry.binKey) >= new Date(startDate)
+    );
+  }, [aggregatedData, startDate, applyDateFilter]);
 
-  // Chart options.
+  // 3) Possibly compute a forecast entry
+  const forecastEntry = useForecastEntry(filteredAggregatedData, binSize, vehicleTypes, disableForecast);
+
+  // 4) Build final chartData
+  const { chartData } = useChartData(filteredAggregatedData, forecastEntry, vehicleTypes, isMobile, showForecast);
+
+  // 5) On click, get the binKey from the data index
+  const handleChartClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!chartRef.current) return;
+    const elements = chartRef.current.getElementsAtEventForMode(
+      event.nativeEvent,
+      "nearest",
+      { intersect: true },
+      false
+    );
+    if (elements.length > 0) {
+      const index = elements[0].index;
+      const clickedBinKey = filteredAggregatedData[index]?.binKey;
+      if (clickedBinKey && onDataPointClick) {
+        onDataPointClick(clickedBinKey);
+      }
+    }
+  };
+
+  // 6) Chart options
   const lineChartOptions: ChartOptions<"line"> = useMemo(
     () => ({
       responsive: true,
@@ -103,30 +140,12 @@ export default function TimeSeriesChart({
     [isMobile]
   );
 
-  // Chart click handler: passes clicked bin key to parent callback.
-  const handleChartClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!chartRef.current) return;
-    const elements = chartRef.current.getElementsAtEventForMode(
-      event.nativeEvent,
-      "nearest",
-      { intersect: true },
-      false
-    );
-    if (elements.length > 0) {
-      const index = elements[0].index;
-      const clickedBinKey = aggregatedData[index]?.binKey;
-      if (clickedBinKey && onDataPointClick) {
-        onDataPointClick(clickedBinKey);
-      }
-    }
-  };
-
   return (
     <div className="flex flex-col w-full h-full">
       <TimeSeriesChartHeader
         binSize={binSize}
         disableForecast={disableForecast}
-        aggregatedDataLength={aggregatedData.length}
+        aggregatedDataLength={filteredAggregatedData.length}
         showForecast={showForecast}
         onToggleForecast={() => setShowForecast(!showForecast)}
       />

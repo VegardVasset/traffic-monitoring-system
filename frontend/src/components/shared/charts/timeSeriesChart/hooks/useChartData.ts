@@ -1,3 +1,5 @@
+"use client";
+
 import { useMemo } from "react";
 import { AggregatedDataEntry } from "../TimeSeriesChart";
 import { getChartColor } from "@/lib/chartUtils";
@@ -13,19 +15,22 @@ export default function useChartData(
   forecastEntry: AggregatedDataEntry | null,
   vehicleTypes: string[],
   isMobile: boolean,
-  showForecast: boolean
+  showForecast: boolean,
 ): { chartData: ChartData } {
+  // We'll just rename aggregatedData -> filteredAggregatedData if you want:
+  const filteredAggregatedData = aggregatedData;
+
   const combinedLabels = useMemo(() => {
-    const actualLabels = aggregatedData.map((entry) => entry.date);
+    const actualLabels = filteredAggregatedData.map((entry) => entry.date);
     return showForecast && forecastEntry
       ? [...actualLabels, forecastEntry.date]
       : actualLabels;
-  }, [aggregatedData, forecastEntry, showForecast]);
+  }, [filteredAggregatedData, forecastEntry, showForecast]);
 
   const actualDatasets = useMemo(() => {
     return vehicleTypes.map((type, index) => ({
       label: type,
-      data: aggregatedData.map((row) => Number(row[type]) || 0),
+      data: filteredAggregatedData.map((row) => Number(row[type]) || 0),
       borderColor: getChartColor(index),
       backgroundColor: getChartColor(index, 0.5),
       fill: false,
@@ -34,16 +39,17 @@ export default function useChartData(
       pointHoverRadius: isMobile ? 5 : 6,
       spanGaps: true,
     })) as ChartDataset<"line">[];
-  }, [aggregatedData, vehicleTypes, isMobile]);
+  }, [filteredAggregatedData, vehicleTypes, isMobile]);
 
+  // If you have forecast logic, keep it here. Otherwise, remove
   const forecastFillDataset = useMemo(() => {
     if (!showForecast || !forecastEntry) return null;
-    const lastIndex = aggregatedData.length - 1;
-    const fillData = new Array(aggregatedData.length + 1).fill(null);
+    const lastIndex = filteredAggregatedData.length - 1;
+    const fillData = new Array(filteredAggregatedData.length + 1).fill(null);
     let maxLast = 0;
     let maxForecast = 0;
     vehicleTypes.forEach((type) => {
-      const vLast = Number(aggregatedData[lastIndex][type]) || 0;
+      const vLast = Number(filteredAggregatedData[lastIndex][type]) || 0;
       const vFcast = Number(forecastEntry[type]) || 0;
       maxLast = Math.max(maxLast, vLast);
       maxForecast = Math.max(maxForecast, vFcast);
@@ -64,14 +70,14 @@ export default function useChartData(
       spanGaps: true,
       order: 1,
     } as ChartDataset<"line">;
-  }, [showForecast, forecastEntry, aggregatedData, vehicleTypes]);
+  }, [showForecast, forecastEntry, filteredAggregatedData, vehicleTypes]);
 
   const forecastLineDatasets = useMemo(() => {
     if (!showForecast || !forecastEntry) return [] as ChartDataset<"line">[];
-    const lastIndex = aggregatedData.length - 1;
+    const lastIndex = filteredAggregatedData.length - 1;
     return vehicleTypes.map((type, index) => {
-      const lineData = new Array(aggregatedData.length + 1).fill(null);
-      const lastVal = Number(aggregatedData[lastIndex][type]) || 0;
+      const lineData = new Array(filteredAggregatedData.length + 1).fill(null);
+      const lastVal = Number(filteredAggregatedData[lastIndex][type]) || 0;
       const fVal = Number(forecastEntry[type]) || 0;
       lineData[lastIndex] = lastVal;
       lineData[lastIndex + 1] = fVal;
@@ -89,7 +95,7 @@ export default function useChartData(
         order: 2,
       } as ChartDataset<"line">;
     });
-  }, [showForecast, forecastEntry, aggregatedData, vehicleTypes, isMobile]);
+  }, [showForecast, forecastEntry, filteredAggregatedData, vehicleTypes, isMobile]);
 
   const combinedDatasets = useMemo(() => {
     const ds: ChartDataset<"line">[] = [];

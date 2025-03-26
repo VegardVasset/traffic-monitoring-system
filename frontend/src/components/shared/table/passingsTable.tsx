@@ -34,7 +34,7 @@ import EditDialog from "./EditDialog";
 // --- Custom hooks ---
 import { useFilteredData } from "./hooks/useFilteredData";
 import { useLiveLatencyLogger } from "./hooks/useLiveLatencyLogger";
-import { usePassingsColumns } from "./hooks/usePassingsColumns";
+import { UsePassingsColumns } from "./hooks/UsePassingsColumns";
 
 interface PassingsTableProps {
   domain: string;
@@ -92,7 +92,7 @@ export default function PassingsTable({
 
   // Columns (custom hook)
   // IMPORTANT: call it directly, do NOT wrap in useMemo again.
-  const columns = usePassingsColumns({
+  const columns = UsePassingsColumns({
     domain,
     onEdit: handleEdit,
   });

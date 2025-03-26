@@ -58,7 +58,7 @@ export default function FilterPanel({
   setBinSize,
   isLive,
   setIsLive,
-  showBinSize = true,
+  showBinSize,
   showLiveButton = true,
   useCardWrapper = false,
 }: FilterPanelProps) {

@@ -65,9 +65,7 @@ thorough inspections.
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <div className="min-h-screen bg-gradient-to-b from-white via-blue-50 to-blue-100 p-6">
-        {/* HERO SECTION */}
         <header className="max-w-4xl mx-auto pt-24 pb-10 flex flex-col items-center text-center">
-          {/* Logo (fade in) */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -85,7 +83,6 @@ thorough inspections.
             />
           </motion.div>
 
-          {/* Subheading */}
           <motion.h2
             className="text-2xl text-gray-700 mt-4"
             initial={{ opacity: 0, y: -10 }}
@@ -99,7 +96,6 @@ thorough inspections.
             Traffic Monitoring Solutions
           </motion.h2>
 
-          {/* Brief description */}
           <motion.p
             className="text-lg text-gray-600 mt-2"
             initial={{ opacity: 0, y: 10 }}
@@ -115,7 +111,6 @@ thorough inspections.
           </motion.p>
         </header>
 
-        {/* CARD GRID OR EXPANDED VIEW */}
         <AnimatePresence mode="wait">
           {expandedCard === null ? (
             // --- GRID VIEW ---
@@ -152,7 +147,6 @@ thorough inspections.
               ))}
             </motion.div>
           ) : (
-            // --- EXPANDED VIEW ---
             <motion.div
               key="expanded"
               initial={{ opacity: 0 }}
