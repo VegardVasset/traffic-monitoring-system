@@ -7,7 +7,6 @@ import SpeedAnalysisTemplate from "@/components/dts/pageTemplates/SpeedAnalysisT
 export default function SpeedAnalysisPage() {
   const { domain } = useParams() as { domain: string };
 
-  // If you ONLY want to allow `/tires/analysis`:
   if (domain !== "dts") {
     return <p>Analysis is not available for domain &quot;{domain}&quot;.</p>;
   }

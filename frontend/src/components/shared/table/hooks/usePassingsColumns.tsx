@@ -10,7 +10,7 @@ interface UsePassingsColumnsProps {
   onEdit: (event: BaseEvent) => void;
 }
 
-export function usePassingsColumns({ domain, onEdit }: UsePassingsColumnsProps): ColumnDef<BaseEvent>[] {
+export function UsePassingsColumns({ domain, onEdit }: UsePassingsColumnsProps): ColumnDef<BaseEvent>[] {
   const getColumns = useCallback((): ColumnDef<BaseEvent>[] => {
     const baseColumns: ColumnDef<BaseEvent>[] = [
       { accessorKey: "id", header: "ID" },

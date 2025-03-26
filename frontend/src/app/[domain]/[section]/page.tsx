@@ -9,7 +9,6 @@ import OverviewTemplate from "@/components/shared/pageTemplates/OverviewTemplate
 import AnomalyAlert from "@/components/tires/alerts/TireAnomalyAlert";
 import SpeedAnomalyAlert from "@/components/dts/alerts/SpeedAnomalyAlert";
 
-// Create a wrapper for passings that conditionally shows AnomalyAlerts
 const PassingsWrapper: React.FC<{ domain: string }> = ({ domain }) => {
     return (
       <>
@@ -20,7 +19,7 @@ const PassingsWrapper: React.FC<{ domain: string }> = ({ domain }) => {
     );
   };
 
-// Map sections to their respective components.
+// Mapping sections to their respective components.
 const SECTION_COMPONENTS: Record<string, React.FC<{ domain: string }>> = {
   overview: OverviewTemplate,
   passings: PassingsWrapper,
