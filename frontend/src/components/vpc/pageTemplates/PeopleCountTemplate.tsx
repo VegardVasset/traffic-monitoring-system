@@ -27,9 +27,7 @@ export default function PeopleCountTemplate({
   const { data, loading, isLive, setIsLive } = useData();
 
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
-  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>(
-    []
-  );
+  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
   const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">(
     "day"
   );
