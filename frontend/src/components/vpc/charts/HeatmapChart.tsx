@@ -16,7 +16,7 @@ ChartJS.register(LinearScale, Tooltip, Legend, MatrixController, MatrixElement);
 
 export interface PassengerEvent {
   id: number;
-  creationTime: string; 
+  creationTime: string;
   vehicleType: string;
   passengerCount: number;
 }
@@ -25,7 +25,6 @@ interface HeatmapChartProps {
   data: PassengerEvent[];
   isMobile?: boolean;
 }
-
 
 function mapDayIndex(originalDay: number): number {
   const reorderMap = [6, 0, 1, 2, 3, 4, 5];
@@ -40,9 +39,16 @@ interface MatrixDataPoint {
 
 const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const xLabels = Array.from({ length: 24 }, (_, i) => i.toString());
-const quantColors = ["#fef0d9", "#fdd49e", "#fdbb84", "#fc8d59", "#ef6548", "#d7301f", "#b30000"];
+const quantColors = [
+  "#fef0d9",
+  "#fdd49e",
+  "#fdbb84",
+  "#fc8d59",
+  "#ef6548",
+  "#d7301f",
+  "#b30000",
+];
 const nBuckets = quantColors.length;
-
 
 function createDiscreteColorFunc(minValue: number, maxValue: number) {
   let thresholds: number[] = [];
@@ -62,7 +68,7 @@ function createDiscreteColorFunc(minValue: number, maxValue: number) {
         return quantColors[i];
       }
     }
-    return quantColors[nBuckets - 1]; 
+    return quantColors[nBuckets - 1];
   };
 }
 
@@ -81,7 +87,10 @@ export default function HeatmapChart({ data, isMobile = false }: HeatmapChartPro
   const flatValues = matrixArr.flat();
   const minValue = Math.min(...flatValues);
   const maxValue = Math.max(...flatValues);
-  const getColorForValue = useMemo(() => createDiscreteColorFunc(minValue, maxValue), [minValue, maxValue]);
+  const getColorForValue = useMemo(
+    () => createDiscreteColorFunc(minValue, maxValue),
+    [minValue, maxValue]
+  );
 
   const matrixData = useMemo<MatrixDataPoint[]>(() => {
     const points: MatrixDataPoint[] = [];
@@ -105,7 +114,7 @@ export default function HeatmapChart({ data, isMobile = false }: HeatmapChartPro
           label: "Passenger Count Heatmap",
           data: matrixData,
           width: ({ chart }: { chart: ChartJS }) =>
-            chart.chartArea ? chart.chartArea.width / 24 : 20, 
+            chart.chartArea ? chart.chartArea.width / 24 : 20,
           height: ({ chart }: { chart: ChartJS }) =>
             chart.chartArea ? chart.chartArea.height / 7 : 20,
           backgroundColor: (ctx: ScriptableContext<"matrix">) => {
@@ -124,7 +133,12 @@ export default function HeatmapChart({ data, isMobile = false }: HeatmapChartPro
   const options = useMemo(
     () => ({
       responsive: true,
-      maintainAspectRatio: false,
+      maintainAspectRatio: false, 
+      layout: {
+        padding: {
+          bottom: 30, 
+        },
+      },
       plugins: {
         datalabels: { display: false },
         tooltip: {
@@ -146,7 +160,11 @@ export default function HeatmapChart({ data, isMobile = false }: HeatmapChartPro
         x: {
           type: "category" as const,
           labels: xLabels,
-          title: { display: true, text: "Hour", font: { size: isMobile ? 10 : 14 } },
+          title: {
+            display: true,
+            text: "Hour",
+            font: { size: isMobile ? 10 : 14 },
+          },
           ticks: { font: { size: isMobile ? 8 : 12 } },
           grid: { display: false },
           offset: true,
@@ -154,7 +172,11 @@ export default function HeatmapChart({ data, isMobile = false }: HeatmapChartPro
         y: {
           type: "category" as const,
           labels: daysOfWeek,
-          title: { display: true, text: "Day", font: { size: isMobile ? 10 : 14 } },
+          title: {
+            display: true,
+            text: "Day",
+            font: { size: isMobile ? 10 : 14 },
+          },
           ticks: { font: { size: isMobile ? 8 : 12 } },
           grid: { display: false },
           offset: true,
@@ -165,11 +187,12 @@ export default function HeatmapChart({ data, isMobile = false }: HeatmapChartPro
   );
 
   const legendItems = useMemo(() => {
-    const thresholds = maxValue === minValue
-      ? Array.from({ length: nBuckets + 1 }, (_, i) => minValue + i)
-      : Array.from({ length: nBuckets + 1 }, (_, i) =>
-          Math.round(minValue + i * ((maxValue - minValue) / nBuckets))
-        );
+    const thresholds =
+      maxValue === minValue
+        ? Array.from({ length: nBuckets + 1 }, (_, i) => minValue + i)
+        : Array.from({ length: nBuckets + 1 }, (_, i) =>
+            Math.round(minValue + i * ((maxValue - minValue) / nBuckets))
+          );
 
     return quantColors.map((color, i) => ({
       color,
@@ -182,14 +205,23 @@ export default function HeatmapChart({ data, isMobile = false }: HeatmapChartPro
       <h2 className="ml-4 text-xs md:text-xl font-semibold mb-4">
         Weekly Heatmap of Passenger Counts
       </h2>
-      <div style={{ minHeight: isMobile ? 200 : 400 }}>
+      <div className="relative w-full h-full">
         <Chart type="matrix" data={chartData} options={options} />
       </div>
       <div className="flex flex-row flex-wrap items-center justify-center mt-2">
         {legendItems.map((item, i) => (
           <div key={i} className="flex items-center mr-4 mb-2">
-            <div style={{ backgroundColor: item.color, width: isMobile ? 12 : 20, height: isMobile ? 12 : 20, marginRight: 5 }} />
-            <span style={{ fontSize: isMobile ? 10 : 12 }}>{item.rangeLabel}</span>
+            <div
+              style={{
+                backgroundColor: item.color,
+                width: isMobile ? 12 : 20,
+                height: isMobile ? 12 : 20,
+                marginRight: 5,
+              }}
+            />
+            <span style={{ fontSize: isMobile ? 10 : 12 }}>
+              {item.rangeLabel}
+            </span>
           </div>
         ))}
       </div>
