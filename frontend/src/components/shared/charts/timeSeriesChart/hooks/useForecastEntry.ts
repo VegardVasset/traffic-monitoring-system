@@ -1,4 +1,3 @@
-// hooks/useForecastEntry.ts
 import { useMemo } from "react";
 import { AggregatedDataEntry } from "../TimeSeriesChart";
 import { calculateHoltForecast } from "../utils";

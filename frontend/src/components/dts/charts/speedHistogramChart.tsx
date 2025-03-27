@@ -26,7 +26,6 @@ import { Bar } from "react-chartjs-2";
 import type { ChartOptions } from "chart.js";
 import { BaseEvent } from "@/context/DataContext";
 
-// Extend BaseEvent to include speed for the DTS domain
 interface SpeedEvent extends BaseEvent {
   speed?: number;
 }
@@ -36,11 +35,9 @@ interface SpeedHistogramChartProps {
 }
 
 export default function SpeedHistogramChart({ data }: SpeedHistogramChartProps) {
-  // Example bin edges: 0-20, 20-40, 40-60, etc.
-  // Adjust these ranges to fit your real data distribution
+
   const binEdges = useMemo(() => [0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200], []);
 
-  // Tally up speeds into these bins
   const binCounts = useMemo(() => {
     const counts = new Array(binEdges.length - 1).fill(0);
 
@@ -58,7 +55,6 @@ export default function SpeedHistogramChart({ data }: SpeedHistogramChartProps) 
     return counts;
   }, [data, binEdges]);
 
-  // Prepare the chart data
   const chartData = useMemo(() => {
     const labels = [];
     for (let i = 0; i < binEdges.length - 1; i++) {
@@ -71,7 +67,7 @@ export default function SpeedHistogramChart({ data }: SpeedHistogramChartProps) 
         {
           label: "Speed Distribution",
           data: binCounts,
-          backgroundColor: "rgba(53, 162, 235, 0.5)",  // Blue-ish
+          backgroundColor: "rgba(53, 162, 235, 0.5)",  
           borderColor: "rgba(53, 162, 235, 1)",
           borderWidth: 1,
         },
@@ -79,7 +75,6 @@ export default function SpeedHistogramChart({ data }: SpeedHistogramChartProps) 
     };
   }, [binCounts, binEdges]);
 
-  // Basic chart options
   const chartOptions: ChartOptions<"bar"> = {
     responsive: true,
     maintainAspectRatio: false,

@@ -17,7 +17,6 @@ export default function useChartData(
   isMobile: boolean,
   showForecast: boolean,
 ): { chartData: ChartData } {
-  // We'll just rename aggregatedData -> filteredAggregatedData if you want:
   const filteredAggregatedData = aggregatedData;
 
   const combinedLabels = useMemo(() => {
@@ -41,7 +40,6 @@ export default function useChartData(
     })) as ChartDataset<"line">[];
   }, [filteredAggregatedData, vehicleTypes, isMobile]);
 
-  // If you have forecast logic, keep it here. Otherwise, remove
   const forecastFillDataset = useMemo(() => {
     if (!showForecast || !forecastEntry) return null;
     const lastIndex = filteredAggregatedData.length - 1;

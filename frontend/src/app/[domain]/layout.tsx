@@ -1,7 +1,6 @@
 import DomainLayout from "@/components/shared/layout/DomainLayout";
 import { domainConfigs } from "@/config/domainConfig";
 
-// app/[monitoring]/layout.tsx
 export default async function Layout({
   children,
   params,

@@ -1,6 +1,5 @@
-// Columns and UI configuration (frontend)
 import { useCallback } from "react";
-import Image from "next/image"; // Import Next.js Image component
+import Image from "next/image"; 
 import { ColumnDef } from "@tanstack/react-table";
 import { BaseEvent } from "@/context/DataContext";
 import { Button } from "@/components/ui/button";
@@ -78,7 +77,6 @@ export function UsePassingsColumns({ domain, onEdit }: UsePassingsColumnsProps):
       });
     }
 
-    // Actions column for editing
     baseColumns.push({
       id: "actions",
       header: "Actions",

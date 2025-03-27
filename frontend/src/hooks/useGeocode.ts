@@ -15,7 +15,6 @@ const useGeocode = (placeName: string) => {
   useEffect(() => {
     if (!placeName) return;
     setLoading(true);
-    // Nominatim API call (be sure to follow its usage policy)
     fetch(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
         placeName

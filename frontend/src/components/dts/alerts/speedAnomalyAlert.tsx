@@ -3,12 +3,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useData, BaseEvent } from "@/context/DataContext";
 
-// Extend BaseEvent with a speed property for DTS events
 interface DtsEvent extends BaseEvent {
   speed: number;
 }
 
-// Type guard: check if the event is a DtsEvent (has a numeric speed property)
 function isSpeedEvent(event: BaseEvent): event is DtsEvent {
   return "speed" in event && typeof (event as { speed?: unknown }).speed === "number";
 }
@@ -20,19 +18,16 @@ export default function SpeedAnomalyAlert() {
   const [alertMessage, setAlertMessage] = useState("");
   const prevCountRef = useRef(0);
 
-  // Define thresholds for abnormal speed.
+  // Thresholds for abnormal speed. Should depend on speed limit in the future. 
   const speedLowThreshold = 20;
   const speedHighThreshold = 120;
 
   useEffect(() => {
-    // First filter out events that are DtsEvents.
     const speedEvents = data.filter(isSpeedEvent);
-    // Now filter for events with abnormal speed.
     const detected = speedEvents.filter(
       (event) => event.speed < speedLowThreshold || event.speed > speedHighThreshold
     );
 
-    // If new anomalies are detected, update the alert message and show the popup.
     if (detected.length > prevCountRef.current && detected.length > 0) {
       const latest = detected[0];
       setAlertMessage(

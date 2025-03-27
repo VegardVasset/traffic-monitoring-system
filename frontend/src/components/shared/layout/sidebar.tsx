@@ -16,15 +16,15 @@ export interface NavItem {
 
 interface SidebarProps {
   navItems: NavItem[];
-  open: boolean;       // whether the overlay sidebar is open
-  onClose: () => void; // function to close the overlay
-  onToggle: () => void; // function to open the overlay
+  open: boolean;      
+  onClose: () => void; 
+  onToggle: () => void; 
 }
 
 export default function Sidebar({ navItems, open, onClose, onToggle }: SidebarProps) {
   const pathname = usePathname();
 
-  // Mini sidebar (desktop only, shown when overlay is closed)
+
   function MiniSidebar() {
     if (open) return null;
 
@@ -76,7 +76,6 @@ export default function Sidebar({ navItems, open, onClose, onToggle }: SidebarPr
     );
   }
 
-  // Overlay sidebar (for mobile or expanded desktop view)
   function OverlaySidebar() {
     return (
       <AnimatePresence>
@@ -89,7 +88,6 @@ export default function Sidebar({ navItems, open, onClose, onToggle }: SidebarPr
             transition={{ duration: 0.2 }}
             onClick={onClose}
           >
-            {/* Dark backdrop */}
             <div className="absolute inset-0 bg-black bg-opacity-50" />
 
             <motion.div
@@ -98,9 +96,8 @@ export default function Sidebar({ navItems, open, onClose, onToggle }: SidebarPr
               animate={{ width: "16rem" }}
               exit={{ width: "4rem" }}
               transition={{ duration: 0.2, ease: "easeInOut" }}
-              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+              onClick={(e) => e.stopPropagation()} 
             >
-              {/* Brand header */}
               <div className="flex items-center justify-between mb-6">
                 <Link href="/" onClick={onClose} className="flex items-center gap-2 group">
                   <Image
@@ -137,7 +134,6 @@ export default function Sidebar({ navItems, open, onClose, onToggle }: SidebarPr
                 </button>
               </div>
 
-              {/* Full navigation items */}
               <nav className="flex flex-col space-y-2">
                 {navItems.map((item) => {
                   const active = pathname === item.href;

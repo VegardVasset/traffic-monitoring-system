@@ -24,26 +24,23 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 
 export interface Event {
   id: number;
-  creationTime: string; // e.g. "2025-01-01T12:34:56Z"
+  creationTime: string; 
   vehicleType: string;
 }
 
 export interface AggregatedDataEntry {
-  binKey: string; // e.g. "2024-12-30"
-  date: string;   // e.g. "Week 1, 2025"
+  binKey: string; 
+  date: string;   
   [vehicleType: string]: number | string;
 }
 
 export interface TimeSeriesChartProps {
   data: Event[];
   binSize: "hour" | "day" | "week" | "month";
-  startDate: string;  // e.g. "2025-01-01"
+  startDate: string;  
   onDataPointClick?: (binKey: string) => void;
   disableForecast?: boolean;
-  /**
-   * If true (default), filter out bins before `startDate`.
-   * In a drilldown, you might pass false if you want to see partial bins, etc.
-   */
+
   applyDateFilter?: boolean;
 }
 
@@ -59,15 +56,12 @@ export default function TimeSeriesChart({
   const chartRef = useRef<ChartJS<"line"> | null>(null);
   const [showForecast, setShowForecast] = useState(false);
 
-  // Reset forecast toggle whenever binSize changes
   useEffect(() => {
     setShowForecast(false);
   }, [binSize]);
 
-  // 1) Aggregate the raw data by bin
   const { aggregatedData, vehicleTypes } = useAggregatedData(data, binSize);
 
-  // 2) Optionally filter out bins that are before the startDate
   const filteredAggregatedData = useMemo(() => {
     if (!applyDateFilter) {
       return aggregatedData;
@@ -77,13 +71,10 @@ export default function TimeSeriesChart({
     );
   }, [aggregatedData, startDate, applyDateFilter]);
 
-  // 3) Possibly compute a forecast entry
   const forecastEntry = useForecastEntry(filteredAggregatedData, binSize, vehicleTypes, disableForecast);
 
-  // 4) Build final chartData
   const { chartData } = useChartData(filteredAggregatedData, forecastEntry, vehicleTypes, isMobile, showForecast);
 
-  // 5) On click, get the binKey from the data index
   const handleChartClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
     if (!chartRef.current) return;
     const elements = chartRef.current.getElementsAtEventForMode(
@@ -101,7 +92,6 @@ export default function TimeSeriesChart({
     }
   };
 
-  // 6) Chart options
   const lineChartOptions: ChartOptions<"line"> = useMemo(
     () => ({
       responsive: true,

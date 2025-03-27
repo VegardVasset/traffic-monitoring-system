@@ -16,7 +16,6 @@ export default function PassingsTemplate({ domain }: PassingsTemplateProps) {
 
   const { data, loading, isLive, setIsLive } = useData();
 
-  // Derive unique cameras
   const derivedCameras: Camera[] = useMemo(() => {
     const camMap = new Map<string, string>();
     data.forEach((event: BaseEvent) => {
@@ -25,7 +24,6 @@ export default function PassingsTemplate({ domain }: PassingsTemplateProps) {
     return Array.from(camMap, ([id, name]) => ({ id, name }));
   }, [data]);
 
-  // Derive unique vehicle types
   const derivedVehicleTypes: string[] = useMemo(() => {
     const types = new Set<string>();
     data.forEach((event: BaseEvent) => types.add(event.vehicleType));

@@ -65,7 +65,6 @@ export default function FilterPanel({
   const [vehiclePopoverOpen, setVehiclePopoverOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  // Filter vehicle types based on search query
   const filteredVehicleTypes = useMemo(() => {
     if (!search) return vehicleTypes;
     return vehicleTypes.filter((type) =>

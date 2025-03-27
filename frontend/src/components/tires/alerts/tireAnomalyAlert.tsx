@@ -3,7 +3,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useData } from "@/context/DataContext";
 
-// Extend the tire event type based on your MockRecord interface
 interface TireEvent {
   id: number;
   creationTime: string;
@@ -46,12 +45,10 @@ export default function AnomalyAlert() {
   const prevCountRef = useRef(0);
 
   useEffect(() => {
-    // Filter tire events to detect anomalies where tireCondition is 1 or 2.
     const detected = data
       .filter(isTireEvent)
       .filter((event) => event.tireCondition === 1 || event.tireCondition === 2);
 
-    // If new anomalies have been added, update the popup.
     if (detected.length > prevCountRef.current && detected.length > 0) {
       setAlertMessage("Vehicle just passed with poor tires...");
       setShowPopup(true);
@@ -61,7 +58,6 @@ export default function AnomalyAlert() {
     setAnomalies(detected);
   }, [data]);
 
-  // If no anomalies, render nothing.
   if (anomalies.length === 0) return null;
 
   return (

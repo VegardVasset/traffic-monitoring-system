@@ -30,8 +30,6 @@ import {
 import { useData, BaseEvent } from "@/context/DataContext";
 import { useAnalytics } from "@/context/AnalyticsContext";
 import EditDialog from "./EditDialog";
-
-// --- Custom hooks ---
 import { useFilteredData } from "./hooks/useFilteredData";
 import { useLiveLatencyLogger } from "./hooks/useLiveLatencyLogger";
 import { UsePassingsColumns } from "./hooks/UsePassingsColumns";
@@ -47,57 +45,45 @@ export default function PassingsTable({
   selectedCamera,
   selectedVehicleTypes,
 }: PassingsTableProps) {
-  /**
-   * -------------------------------------------------------------------------
-   * Top-level hooks: must always be called in the same order, unconditionally.
-   * -------------------------------------------------------------------------
-   */
+
   const { data, loading, error, lastUpdateArrivalTime, updateEvent } = useData();
   const { logEvent } = useAnalytics();
 
-  // Filtered data via custom hook
   const filteredData = useFilteredData({
     data,
     selectedCamera,
     selectedVehicleTypes,
   });
 
-  // Latency logger via custom hook
   useLiveLatencyLogger({
     lastUpdateArrivalTime,
     filteredDataLength: filteredData.length,
     logEvent,
   });
 
-  // React Table states
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 
-  // Edit dialog states
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<BaseEvent | null>(null);
 
-  // Edit handler
   const handleEdit = useCallback((event: BaseEvent) => {
     setSelectedEvent(event);
     setIsEditDialogOpen(true);
   }, []);
 
-  // Unique vehicle types for the EditDialog dropdown
   const uniqueVehicleTypes = useMemo(() => {
     const types = new Set(data.map((e) => e.vehicleType));
     return Array.from(types);
   }, [data]);
 
-  // Columns (custom hook)
-  // IMPORTANT: call it directly, do NOT wrap in useMemo again.
+
   const columns = UsePassingsColumns({
     domain,
     onEdit: handleEdit,
   });
 
-  // Create the TanStack table instance
   const table = useReactTable({
     data: filteredData,
     columns,
@@ -115,11 +101,7 @@ export default function PassingsTable({
     enableRowSelection: true,
   });
 
-  /**
-   * -------------------------------------------------------------------------
-   * Conditional rendering (loading/error) after hooks are defined
-   * -------------------------------------------------------------------------
-   */
+
   if (loading) {
     return (
       <p className="text-gray-500" aria-live="polite">
@@ -136,15 +118,9 @@ export default function PassingsTable({
     );
   }
 
-  /**
-   * -------------------------------------------------------------------------
-   * Render the table
-   * -------------------------------------------------------------------------
-   */
   return (
     <>
       <div className="w-full bg-white shadow rounded-lg">
-        {/* Table header with column visibility options */}
         <div className="flex items-center py-1 sm:py-4 px-1 sm:px-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -172,7 +148,6 @@ export default function PassingsTable({
           </DropdownMenu>
         </div>
 
-        {/* Table */}
         <div className="overflow-x-auto w-full">
           <Table
             className="w-full table-auto border-collapse border border-gray-300"
@@ -264,7 +239,6 @@ export default function PassingsTable({
           </Table>
         </div>
 
-        {/* Pagination */}
         <div className="flex items-center justify-between gap-2 sm:items-center p-2 sm:p-4 text-xs sm:text-sm">
           <div className="text-muted-foreground" aria-live="polite">
             {filteredData.length} row(s).
@@ -294,7 +268,6 @@ export default function PassingsTable({
         </div>
       </div>
 
-      {/* Edit Dialog */}
       {isEditDialogOpen && selectedEvent && (
         <EditDialog
           event={selectedEvent}

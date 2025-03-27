@@ -31,7 +31,6 @@ export default function OverviewTemplate({
   const domainTitle = OVERVIEW_TITLES[domain] || "Overview";
   const { data, loading, isLive, setIsLive, refetch } = useData();
 
-  // Local states and derived values
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
   const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
   const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">(defaultBinSize);
@@ -84,7 +83,6 @@ export default function OverviewTemplate({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Drill down state and callbacks for detailed view
   const [drillDownOpen, setDrillDownOpen] = useState(false);
   const [drillDownBinKey, setDrillDownBinKey] = useState<string | null>(null);
 
@@ -100,9 +98,7 @@ export default function OverviewTemplate({
     return "hour";
   }, [binSize]);
 
-  // Updated drilldown data callback for weekly bins.
-  // For a weekly drilldown, the drillDownBinKey is the ISO Monday.
-  // We now simply return events from that Monday to the following Sunday.
+
   const getDrillDownData = useCallback(() => {
     if (!drillDownBinKey) return [];
     if (binSize === "day") {
@@ -111,7 +107,7 @@ export default function OverviewTemplate({
         (evt) => evt.creationTime.substring(0, 10) === dayString
       );
     } else if (binSize === "week") {
-      const startOfWeek = new Date(drillDownBinKey); // This is the ISO Monday
+      const startOfWeek = new Date(drillDownBinKey); 
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(endOfWeek.getDate() + 6);
       return filteredData.filter((evt) => {
@@ -126,10 +122,8 @@ export default function OverviewTemplate({
     return [];
   }, [binSize, drillDownBinKey, filteredData]);
 
-  // Compute drillDownData first
   const drillDownData = getDrillDownData();
 
-  // Then compute drillDownVehicleTypes using that data
   const drillDownVehicleTypes = useMemo(() => {
     const types = new Set<string>();
     drillDownData.forEach((evt) => types.add(evt.vehicleType));

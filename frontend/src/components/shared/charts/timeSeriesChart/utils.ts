@@ -1,54 +1,36 @@
 "use client";
 
-// utils.ts
-import { AggregatedDataEntry } from "./TimeSeriesChart"; // Adjust if needed
+import { AggregatedDataEntry } from "./TimeSeriesChart"; 
 import { formatTimeBin } from "@/lib/timeFormattingUtils";
 
-/**
- * Returns a bin key up to the hour, e.g. "2025-03-26T11"
- */
+
 export function getHourBinKey(date: Date): string {
   return date.toISOString().substring(0, 13);
 }
 
-/**
- * Returns a bin key up to the day, e.g. "2025-03-26"
- */
 export function getDayBinKey(date: Date): string {
   return date.toISOString().substring(0, 10);
 }
 
-/**
- * Returns the MONDAY of the ISO week in "YYYY-MM-DD" format.
- * For example, Jan 1, 2025 => "2024-12-30" (which is Week 1, 2025 in ISO).
- */
-export function getWeekBinKey(date: Date): string {
-  // Convert to UTC midnight to avoid time-zone edge cases
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
 
-  // ISO 8601: dayOfWeek = 1..7 (Mon..Sun). getUTCDay() is 0..6 (Sun..Sat).
+export function getWeekBinKey(date: Date): string {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   let dayOfWeek = d.getUTCDay();
   if (dayOfWeek === 0) {
-    dayOfWeek = 7; // Sunday => 7
+    dayOfWeek = 7; 
   }
 
-  // Move `d` to the Thursday of this ISO week
   d.setUTCDate(d.getUTCDate() + (4 - dayOfWeek));
-  // Now shift back 3 days to get Monday
   d.setUTCDate(d.getUTCDate() - 3);
 
-  // d is now the Monday of that ISO week in UTC
   return d.toISOString().substring(0, 10);
 }
 
-/**
- * Returns a bin key up to the month, e.g. "2025-03"
- */
+
 export function getMonthBinKey(date: Date): string {
   return date.toISOString().substring(0, 7);
 }
 
-// --- The rest of your helpers, unchanged ---
 export function incrementDate(date: Date, binSize: "hour" | "day" | "week" | "month"): Date {
   const newDate = new Date(date);
   switch (binSize) {
@@ -92,7 +74,6 @@ export function getNextBinKey(
   return nextDate.toISOString();
 }
 
-// Check if the current bin is incomplete (for forecasting logic)
 export function isBinLikelyIncompleteForAveraging(
   binKey: string,
   binSize: "hour" | "day" | "week" | "month"
@@ -110,7 +91,6 @@ export function isBinLikelyIncompleteForAveraging(
   return binDay === nowDay;
 }
 
-// Convert binKey -> actual Date
 export function parseBinKey(binKey: string, binSize: "hour" | "day" | "week" | "month"): Date {
   if (binSize === "month") {
     const [year, month] = binKey.split("-");
@@ -125,7 +105,6 @@ export function parseBinKey(binKey: string, binSize: "hour" | "day" | "week" | "
   return new Date(binKey);
 }
 
-// (Your Holt forecast code, if any, can stay here as well)
 
 
 // --- HOLT'S LINEAR TREND FORECAST ---

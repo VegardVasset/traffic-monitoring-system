@@ -5,12 +5,14 @@ import { MOBILE_MAX_WIDTH } from "@/config/config";
 import HeatmapChart from "@/components/vpc/charts/HeatmapChart";
 import { UnifiedLegend } from "@/components/shared/UnifiedLegend";
 import { Button } from "@/components/ui/button";
-import { useData, BaseEvent as DataContextBaseEvent } from "@/context/DataContext";
+import {
+  useData,
+  BaseEvent as DataContextBaseEvent,
+} from "@/context/DataContext";
 import PeopleCountChart from "@/components/vpc/charts/PeopleCountChart";
 import DesktopFilters from "@/components/shared/DesktopFilters";
 import MobileFiltersSheet from "@/components/shared/MobileFiltersSheet";
 
-// Create a new type that extends the context's BaseEvent to include passengerCount.
 export interface PassengerEvent extends DataContextBaseEvent {
   passengerCount: number;
 }
@@ -19,15 +21,19 @@ interface PeopleCountTemplateProps {
   children?: React.ReactNode;
 }
 
-export default function PeopleCountTemplate({ children }: PeopleCountTemplateProps) {
+export default function PeopleCountTemplate({
+  children,
+}: PeopleCountTemplateProps) {
   const { data, loading, isLive, setIsLive } = useData();
 
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
-  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
-  // We'll keep binSize in case you want to use it later for time-series filtering
-  const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">("day");
+  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>(
+    []
+  );
+  const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">(
+    "day"
+  );
 
-  // Default date range
   const today = new Date().toISOString().substring(0, 10);
   const oneWeekAgo = new Date(new Date().setDate(new Date().getDate() - 7))
     .toISOString()
@@ -53,7 +59,8 @@ export default function PeopleCountTemplate({ children }: PeopleCountTemplatePro
     return data.filter((event) => {
       const eventDate = event.creationTime.substring(0, 10);
       const withinDateRange = eventDate >= startDate && eventDate <= endDate;
-      const matchCamera = selectedCamera === "all" || event.camera === selectedCamera;
+      const matchCamera =
+        selectedCamera === "all" || event.camera === selectedCamera;
       const matchVehicle =
         selectedVehicleTypes.length === 0 ||
         selectedVehicleTypes.includes(event.vehicleType);
@@ -61,10 +68,10 @@ export default function PeopleCountTemplate({ children }: PeopleCountTemplatePro
     });
   }, [data, selectedCamera, selectedVehicleTypes, startDate, endDate]);
 
-  // Here, we map each event to include a passengerCount (defaulting to 0 if missing).
-  // We cast event to include an optional passengerCount so TypeScript allows us to access it.
   const passengerData: PassengerEvent[] = filteredData.map((event) => {
-    const extendedEvent = event as DataContextBaseEvent & { passengerCount?: number };
+    const extendedEvent = event as DataContextBaseEvent & {
+      passengerCount?: number;
+    };
     return {
       ...extendedEvent,
       passengerCount: extendedEvent.passengerCount ?? 0,
@@ -95,7 +102,6 @@ export default function PeopleCountTemplate({ children }: PeopleCountTemplatePro
 
   return (
     <div className="px-2 md:px-4 py-2 md:py-4 w-full">
-      {/* TITLE + MOBILE FILTER BUTTON */}
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4">
           Person Counting Statistics
@@ -107,66 +113,59 @@ export default function PeopleCountTemplate({ children }: PeopleCountTemplatePro
         </div>
       </div>
 
-      {/* ========== Desktop Filters using Extracted Component ========== */}
-            <DesktopFilters
-              startDate={startDate}
-              endDate={endDate}
-              setStartDate={setStartDate}
-              setEndDate={setEndDate}
-              filteredDataCount={filteredData.length}
-              derivedCameras={derivedCameras}
-              selectedCamera={selectedCamera}
-              setSelectedCamera={setSelectedCamera}
-              derivedVehicleTypes={derivedVehicleTypes}
-              selectedVehicleTypes={selectedVehicleTypes}
-              setSelectedVehicleTypes={setSelectedVehicleTypes}
-              binSize={binSize}
-              setBinSize={setBinSize}
-              isLive={isLive}
-              setIsLive={setIsLive}
-              showBinSize={false}
-            />
-      
-            {/* ========== Mobile Filter Drawer using Extracted Component ========== */}
-            <MobileFiltersSheet
-              domainTitle="VPC"
-              mobileFilterOpen={mobileFilterOpen}
-              setMobileFilterOpen={setMobileFilterOpen}
-              startDate={startDate}
-              endDate={endDate}
-              setStartDate={setStartDate}
-              setEndDate={setEndDate}
-              filteredDataCount={filteredData.length}
-              derivedCameras={derivedCameras}
-              selectedCamera={selectedCamera}
-              setSelectedCamera={setSelectedCamera}
-              derivedVehicleTypes={derivedVehicleTypes}
-              selectedVehicleTypes={selectedVehicleTypes}
-              setSelectedVehicleTypes={setSelectedVehicleTypes}
-              binSize={binSize}
-              setBinSize={setBinSize}
-              isLive={isLive}
-              setIsLive={setIsLive}
-              showBinSize={false}
-            />
+      <DesktopFilters
+        startDate={startDate}
+        endDate={endDate}
+        setStartDate={setStartDate}
+        setEndDate={setEndDate}
+        filteredDataCount={filteredData.length}
+        derivedCameras={derivedCameras}
+        selectedCamera={selectedCamera}
+        setSelectedCamera={setSelectedCamera}
+        derivedVehicleTypes={derivedVehicleTypes}
+        selectedVehicleTypes={selectedVehicleTypes}
+        setSelectedVehicleTypes={setSelectedVehicleTypes}
+        binSize={binSize}
+        setBinSize={setBinSize}
+        isLive={isLive}
+        setIsLive={setIsLive}
+        showBinSize={false}
+      />
 
-      {/* SINGLE LEGEND */}
+      <MobileFiltersSheet
+        domainTitle="VPC"
+        mobileFilterOpen={mobileFilterOpen}
+        setMobileFilterOpen={setMobileFilterOpen}
+        startDate={startDate}
+        endDate={endDate}
+        setStartDate={setStartDate}
+        setEndDate={setEndDate}
+        filteredDataCount={filteredData.length}
+        derivedCameras={derivedCameras}
+        selectedCamera={selectedCamera}
+        setSelectedCamera={setSelectedCamera}
+        derivedVehicleTypes={derivedVehicleTypes}
+        selectedVehicleTypes={selectedVehicleTypes}
+        setSelectedVehicleTypes={setSelectedVehicleTypes}
+        binSize={binSize}
+        setBinSize={setBinSize}
+        isLive={isLive}
+        setIsLive={setIsLive}
+        showBinSize={false}
+      />
+
       <UnifiedLegend vehicleTypes={filteredVehicleTypes} />
 
-      {/* CHARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
-        {/* Heatmap Chart */}
         <div
           className="relative w-full"
           style={{ aspectRatio: isMobile ? "1 / 1" : "1.5 / 1" }}
         >
           <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
-            {/* Pass isMobile down to HeatmapChart */}
             <HeatmapChart data={passengerData} isMobile={isMobile} />
           </div>
         </div>
 
-        {/* Average Passenger Count Chart */}
         <div
           className="relative w-full"
           style={{ aspectRatio: isMobile ? "1 / 1" : "1.5 / 1" }}

@@ -12,9 +12,7 @@ import { formatTimeBin } from "@/lib/timeFormattingUtils";
 
 type BinSize = "hour" | "day" | "week" | "month";
 
-/**
- * Bins your raw events by the chosen binSize and returns an array of AggregatedDataEntry.
- */
+
 export default function useAggregatedData(data: Event[], binSize: BinSize) {
   const vehicleTypes = useMemo(() => {
     const types = new Set<string>();
@@ -29,7 +27,7 @@ export default function useAggregatedData(data: Event[], binSize: BinSize) {
       case "day":
         return getDayBinKey;
       case "week":
-        return getWeekBinKey; // <-- ISO aggregator
+        return getWeekBinKey; 
       case "month":
         return getMonthBinKey;
       default:
@@ -54,17 +52,15 @@ export default function useAggregatedData(data: Event[], binSize: BinSize) {
     return counts;
   }, [data, vehicleTypes, getBinKey]);
 
-  // Sort the bin keys
   const sortedBinKeys = useMemo(
     () => Object.keys(binnedCounts).sort(),
     [binnedCounts]
   );
 
-  // Convert to AggregatedDataEntry array
   const aggregatedData: AggregatedDataEntry[] = useMemo(() => {
     return sortedBinKeys.map((binKey) => ({
       binKey,
-      date: formatTimeBin(binKey, binSize), // e.g. "Week 1, 2025"
+      date: formatTimeBin(binKey, binSize), 
       ...binnedCounts[binKey],
     }));
   }, [sortedBinKeys, binnedCounts, binSize]);

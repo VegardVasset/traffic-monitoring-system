@@ -13,7 +13,6 @@ import { Bar } from "react-chartjs-2";
 import { MOBILE_MAX_WIDTH } from "@/config/config";
 import { getChartColor } from "@/lib/chartUtils";
 
-// Register the Bar chart
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
 export interface PassengerEvent {
@@ -40,7 +39,6 @@ export default function PeopleCountChart({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // 1) Compute average passenger count per vehicle type
   const { labels, averages } = useMemo(() => {
     const sums: Record<string, number> = {};
     const counts: Record<string, number> = {};
@@ -65,7 +63,6 @@ export default function PeopleCountChart({
     };
   }, [data]);
 
-  // 2) Prepare chart data
   const chartData = {
     labels,
     datasets: [
@@ -77,7 +74,6 @@ export default function PeopleCountChart({
     ],
   };
 
-  // 3) Bar chart options
   const barChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
