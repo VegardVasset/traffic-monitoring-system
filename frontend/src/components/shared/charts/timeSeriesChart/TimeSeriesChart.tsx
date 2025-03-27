@@ -40,7 +40,6 @@ export interface TimeSeriesChartProps {
   startDate: string;  
   onDataPointClick?: (binKey: string) => void;
   disableForecast?: boolean;
-
   applyDateFilter?: boolean;
 }
 
@@ -66,10 +65,13 @@ export default function TimeSeriesChart({
     if (!applyDateFilter) {
       return aggregatedData;
     }
-    return aggregatedData.filter(
-      (entry) => new Date(entry.binKey) >= new Date(startDate)
-    );
-  }, [aggregatedData, startDate, applyDateFilter]);
+    return aggregatedData.filter((entry) => {
+      // For hourly binning, append ":00:00Z" so that the Date constructor gets a full ISO string.
+      const key =
+        binSize === "hour" ? entry.binKey + ":00:00Z" : entry.binKey;
+      return new Date(key) >= new Date(startDate);
+    });
+  }, [aggregatedData, startDate, applyDateFilter, binSize]);
 
   const forecastEntry = useForecastEntry(filteredAggregatedData, binSize, vehicleTypes, disableForecast);
 
