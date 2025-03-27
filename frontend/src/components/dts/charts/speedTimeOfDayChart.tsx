@@ -36,11 +36,6 @@ interface SpeedTimeOfDayChartProps {
 }
 
 export default function SpeedTimeOfDayChart({ data }: SpeedTimeOfDayChartProps) {
-  /**
-   * We'll group events by hour of the day (0-23),
-   * then calculate the average speed for each hour,
-   * rounding to the nearest integer.
-   */
   const hourlyAverages = useMemo(() => {
     const sums = new Array(24).fill(0);
     const counts = new Array(24).fill(0);
@@ -53,30 +48,24 @@ export default function SpeedTimeOfDayChart({ data }: SpeedTimeOfDayChartProps) 
       }
     });
 
-    // Compute the average per hour and round
     return sums.map((sum, i) => (counts[i] ? Math.round(sum / counts[i]) : 0));
   }, [data]);
 
-  // Build Chart.js data
   const labels = useMemo(
     () => Array.from({ length: 24 }, (_, i) => i.toString()),
     []
   );
 
-  // Compute dynamic min/max for the Y-axis
   const [minSpeed, maxSpeed] = useMemo(() => {
-    // Filter out invalid/NaN values
     const validSpeeds = hourlyAverages.filter(
       (val) => typeof val === "number" && !isNaN(val)
     );
     if (!validSpeeds.length) {
-      // No valid data: fallback to some safe range
       return [0, 100];
     }
     const localMin = Math.min(...validSpeeds);
     const localMax = Math.max(...validSpeeds);
 
-    // Provide a small margin so data doesn't hug the chart edges
     const margin = 5;
     const safeMin = localMin - margin < 0 ? 0 : localMin - margin;
     const safeMax = localMax + margin;
@@ -93,14 +82,13 @@ export default function SpeedTimeOfDayChart({ data }: SpeedTimeOfDayChartProps) 
           borderColor: "rgba(75,192,192,1)",
           backgroundColor: "rgba(75,192,192,0.2)",
           fill: true,
-          tension: 0.3, // curve the line slightly
+          tension: 0.3, 
         },
       ],
     }),
     [labels, hourlyAverages]
   );
 
-  // Basic chart options with dynamic min/max
   const chartOptions = useMemo(
     () => ({
       responsive: true,
@@ -121,7 +109,6 @@ export default function SpeedTimeOfDayChart({ data }: SpeedTimeOfDayChartProps) 
             text: "Avg Speed (km/h)",
           },
           ticks: {
-            // Show whole numbers on the y-axis
             callback: (value: number | string) => Number(value).toFixed(0),
           },
         },

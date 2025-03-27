@@ -8,7 +8,6 @@ export default function DomainIndex() {
   const { domain } = useParams() as { domain: string };
 
   useEffect(() => {
-    // Redirect to the overview page
     router.push(`/${domain}/overview`);
   }, [router, domain]);
 

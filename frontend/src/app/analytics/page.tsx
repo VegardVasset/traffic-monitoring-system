@@ -6,7 +6,6 @@ import { useAnalytics } from "@/context/AnalyticsContext";
 export default function AnalyticsPage() {
   const { events } = useAnalytics();
 
-  // Aggregate metrics for REST fetch durations
   const restFetchEvents = events.filter(
     (e) =>
       e.message === "REST fetch completed" &&
@@ -24,7 +23,6 @@ export default function AnalyticsPage() {
     return total / restFetchEvents.length;
   }, [restFetchEvents]);
 
-  // Aggregate metrics for live mode latency events
   const liveLatencyEvents = events.filter(
     (e) =>
       e.message === "Live mode latency" &&
@@ -41,7 +39,6 @@ export default function AnalyticsPage() {
     return total / liveLatencyEvents.length;
   }, [liveLatencyEvents]);
 
-  // Aggregate metrics for data arrival frequency events (per minute)
   const frequencyEvents = events.filter(
     (e) =>
       e.message === "Data arrival frequency" &&

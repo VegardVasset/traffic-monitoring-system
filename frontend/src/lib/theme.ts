@@ -19,7 +19,6 @@ export const chartColors = [
   
   export const chartColorsOpacity = (opacity: number) =>
     chartColors.map((color) => {
-      // Replace opacity in the rgba color string
       return color.replace(/,\s*\d+\)/, `,${opacity})`);
     });
   

@@ -1,4 +1,3 @@
-// hooks/useIsMobile.ts
 import { useState, useEffect } from "react";
 import { MOBILE_MAX_WIDTH } from "@/config/config";
 

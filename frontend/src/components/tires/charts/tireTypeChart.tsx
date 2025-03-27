@@ -16,11 +16,10 @@ import {
 import { BaseEvent } from "@/context/DataContext";
 import { formatTimeBin } from "@/lib/timeFormattingUtils";
 
-// Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 interface TireEvent extends BaseEvent {
-  tireType?: string; // e.g. "vinterdekk" or "sommerdekk"
+  tireType?: string; 
 }
 
 interface TireTypeChartProps {
@@ -29,7 +28,6 @@ interface TireTypeChartProps {
 }
 
 export default function TireTypeChart({ data, binSize }: TireTypeChartProps) {
-  // Build trends based on binSize
   const tireTypeTrends = useMemo(() => {
     const trends: Record<string, { vinterdekk: number; sommerdekk: number }> = {};
 
@@ -39,7 +37,6 @@ export default function TireTypeChart({ data, binSize }: TireTypeChartProps) {
       const date = new Date(event.creationTime);
       if (isNaN(date.getTime())) return;
 
-      // Use the same bin key logic as before
       let key = "";
       switch (binSize) {
         case "hour":
@@ -49,7 +46,6 @@ export default function TireTypeChart({ data, binSize }: TireTypeChartProps) {
           key = date.toISOString().substring(0, 10);
           break;
         case "week":
-          // For simplicity, use the start-of-week key
           {
             const startOfWeek = new Date(date);
             startOfWeek.setHours(0, 0, 0, 0);
@@ -76,7 +72,6 @@ export default function TireTypeChart({ data, binSize }: TireTypeChartProps) {
       }
     });
 
-    // Sort keys chronologically
     const sortedKeys = Object.keys(trends).sort((a, b) => a.localeCompare(b));
     const formattedLabels = sortedKeys.map((key) => formatTimeBin(key, binSize));
 
@@ -87,7 +82,6 @@ export default function TireTypeChart({ data, binSize }: TireTypeChartProps) {
     };
   }, [data, binSize]);
 
-  // Build chart data
   const chartData = useMemo(() => ({
     labels: tireTypeTrends.labels,
     datasets: [
@@ -110,7 +104,6 @@ export default function TireTypeChart({ data, binSize }: TireTypeChartProps) {
     ],
   }), [tireTypeTrends]);
 
-  // Chart options with whole-number Y-axis
   const chartOptions: ChartOptions<"line"> = {
     responsive: true,
     maintainAspectRatio: false,

@@ -65,7 +65,6 @@ export default function DrillDownSheet({
                   binSize={getDrillDownBinSize()}
                   startDate={startDate}
                   disableForecast={true}
-                  // In drilldown mode, disable filtering by startDate so all weeks are shown.
                   applyDateFilter={false}
                 />
               </div>

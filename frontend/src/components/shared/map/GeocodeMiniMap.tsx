@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import useGeocode from "@/hooks/useGeocode";
 import "leaflet/dist/leaflet.css";
 
-// Dynamically import react-leaflet components with SSR disabled.
 const MapContainer = dynamic(
   () => import("react-leaflet").then((mod) => mod.MapContainer),
   { ssr: false }
@@ -33,12 +32,10 @@ interface GeocodedMiniMapProps {
 export default function GeocodedMiniMap({ cameraName, onClick }: GeocodedMiniMapProps) {
   const { location, loading, error } = useGeocode(cameraName);
 
-  // Configure Leaflet icons using assets from the public folder.
   useEffect(() => {
     if (typeof window !== "undefined") {
       import("leaflet").then((module) => {
         const L = module.default;
-        // Remove the _getIconUrl property from the default icon prototype.
         delete (L.Icon.Default.prototype as ExtendedIconDefault)._getIconUrl;
         L.Icon.Default.mergeOptions({
           iconRetinaUrl: "/marker-icon-2x.png",

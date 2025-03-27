@@ -1,5 +1,3 @@
-// src/config/domainConfig.ts
-
 import { NavItem } from "@/components/shared/layout/Sidebar";
 import { CameraIcon, ChartBarSquareIcon, TruckIcon } from "@heroicons/react/24/outline";
 

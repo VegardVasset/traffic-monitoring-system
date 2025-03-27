@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 
 interface HeaderProps {
   onToggleSidebar?: () => void;
-  hideHamburger?: boolean; // if true, do not show the hamburger on mobile
+  hideHamburger?: boolean; 
 }
 
 const topLevelNav = [

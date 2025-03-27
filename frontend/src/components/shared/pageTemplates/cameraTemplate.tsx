@@ -14,7 +14,6 @@ import {
 import GeocodedMiniMap from "@/components/shared/map/GeocodeMiniMap";
 import "leaflet/dist/leaflet.css";
 
-// Dynamically import react-leaflet components with SSR disabled.
 const MapContainer = dynamic(
   () => import("react-leaflet").then((mod) => mod.MapContainer),
   { ssr: false }
@@ -75,9 +74,7 @@ export default function CameraTemplate() {
   const [selectedLocation, setSelectedLocation] =
     useState<{ lat: number; lng: number } | null>(null);
 
-  // Aggregate cameras + passings count.
   const cameraRows: CameraRow[] = useMemo(() => {
-    // Build a map: cameraName -> passings.
     const cameraMap = new Map<string, number>();
 
     data.forEach((event) => {
@@ -87,7 +84,6 @@ export default function CameraTemplate() {
       }
     });
 
-    // Convert to an array of {cameraName, passings}.
     return Array.from(cameraMap.entries()).map(([cameraName, passings]) => ({
       cameraName,
       passings,

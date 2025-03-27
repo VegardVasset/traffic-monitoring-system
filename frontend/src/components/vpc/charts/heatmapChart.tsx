@@ -12,12 +12,11 @@ import {
 import { Chart } from "react-chartjs-2";
 import { MatrixController, MatrixElement } from "chartjs-chart-matrix";
 
-// Register Chart.js components and the matrix plugin.
 ChartJS.register(LinearScale, Tooltip, Legend, MatrixController, MatrixElement);
 
 export interface PassengerEvent {
   id: number;
-  creationTime: string; // e.g. "2025-03-13T10:12:43Z"
+  creationTime: string; 
   vehicleType: string;
   passengerCount: number;
 }
@@ -27,35 +26,28 @@ interface HeatmapChartProps {
   isMobile?: boolean;
 }
 
-/** 
- * Converts Sunday=0, Monday=1, etc. into Monday=0, Tuesday=1, ... Sunday=6.
- */
+
 function mapDayIndex(originalDay: number): number {
   const reorderMap = [6, 0, 1, 2, 3, 4, 5];
   return reorderMap[originalDay];
 }
 
-/** Represents one cell in the heatmap. */
 interface MatrixDataPoint {
-  x: string; // hour
-  y: string; // day label
-  v: number; // passenger sum
+  x: string; 
+  y: string; 
+  v: number; 
 }
 
-// Extracted constants
 const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const xLabels = Array.from({ length: 24 }, (_, i) => i.toString());
 const quantColors = ["#fef0d9", "#fdd49e", "#fdbb84", "#fc8d59", "#ef6548", "#d7301f", "#b30000"];
 const nBuckets = quantColors.length;
 
-/** 
- * Returns a discrete color based on thresholds derived from minValue..maxValue.
- */
+
 function createDiscreteColorFunc(minValue: number, maxValue: number) {
   let thresholds: number[] = [];
 
   if (maxValue === minValue) {
-    // Ensure color variance when all values are the same
     thresholds = Array.from({ length: nBuckets + 1 }, (_, i) => minValue + i);
   } else {
     const step = (maxValue - minValue) / nBuckets;
@@ -70,7 +62,7 @@ function createDiscreteColorFunc(minValue: number, maxValue: number) {
         return quantColors[i];
       }
     }
-    return quantColors[nBuckets - 1]; // Ensures last bucket catches all values
+    return quantColors[nBuckets - 1]; 
   };
 }
 
@@ -113,7 +105,7 @@ export default function HeatmapChart({ data, isMobile = false }: HeatmapChartPro
           label: "Passenger Count Heatmap",
           data: matrixData,
           width: ({ chart }: { chart: ChartJS }) =>
-            chart.chartArea ? chart.chartArea.width / 24 : 20, // Fallback to 20px
+            chart.chartArea ? chart.chartArea.width / 24 : 20, 
           height: ({ chart }: { chart: ChartJS }) =>
             chart.chartArea ? chart.chartArea.height / 7 : 20,
           backgroundColor: (ctx: ScriptableContext<"matrix">) => {

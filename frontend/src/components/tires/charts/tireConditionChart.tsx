@@ -15,11 +15,10 @@ import {
 } from "chart.js";
 import { BaseEvent } from "@/context/DataContext";
 
-// Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 interface TireEvent extends BaseEvent {
-  tireCondition?: number; // e.g. 1-5
+  tireCondition?: number; 
 }
 
 interface TireConditionChartProps {
@@ -27,7 +26,6 @@ interface TireConditionChartProps {
 }
 
 export default function TireConditionChart({ data }: TireConditionChartProps) {
-  // Tally up tireCondition counts
   const tireConditionCounts = useMemo(() => {
     const initial: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     data.forEach((evt) => {
@@ -43,7 +41,6 @@ export default function TireConditionChart({ data }: TireConditionChartProps) {
     return initial;
   }, [data]);
 
-  // Prepare bar chart data
   const chartData = useMemo(
     () => ({
       labels: [
@@ -64,11 +61,11 @@ export default function TireConditionChart({ data }: TireConditionChartProps) {
             tireConditionCounts[5],
           ],
           backgroundColor: [
-            "rgba(220, 53, 69, 0.6)", // Red
-            "rgba(255, 193, 7, 0.6)",  // Yellow
-            "rgba(40, 167, 69, 0.6)",  // Green
-            "rgba(0, 123, 255, 0.6)",  // Blue
-            "rgba(111, 66, 193, 0.6)", // Purple
+            "rgba(220, 53, 69, 0.6)", 
+            "rgba(255, 193, 7, 0.6)", 
+            "rgba(40, 167, 69, 0.6)",  
+            "rgba(0, 123, 255, 0.6)",  
+            "rgba(111, 66, 193, 0.6)", 
           ],
           borderColor: [
             "rgba(220, 53, 69, 1)",
@@ -84,7 +81,6 @@ export default function TireConditionChart({ data }: TireConditionChartProps) {
     [tireConditionCounts]
   );
 
-  // Optional plugin for data labels on top of bars
   const dataLabelsPlugin: Plugin<"bar"> = {
     id: "dataLabels",
     afterDatasetsDraw: (chart) => {
@@ -104,7 +100,6 @@ export default function TireConditionChart({ data }: TireConditionChartProps) {
     },
   };
 
-  // Chart options with integer Y-axis formatting
   const chartOptions: ChartOptions<"bar"> = {
     responsive: true,
     maintainAspectRatio: false,
