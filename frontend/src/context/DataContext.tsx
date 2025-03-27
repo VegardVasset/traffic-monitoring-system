@@ -48,10 +48,8 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
   const [socket, setSocket] = useState<Socket | null>(null);
   const [lastUpdateArrivalTime, setLastUpdateArrivalTime] = useState<number | null>(null);
 
-  // Ref to count new data events
   const newDataCountRef = useRef(0);
 
-  // Define a stable logEvent function with a specific type for its second parameter
   const logEvent = useCallback((message: string, data: Record<string, unknown>) => {
     console.log(message, data);
   }, []);
@@ -83,10 +81,8 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
     }
   }, [apiUrl, domain, logEvent]);
 
-  // updateEvent function now gets used in the context value
   const updateEvent = useCallback(async (updatedEvent: BaseEvent) => {
     try {
-      // Replace the URL with your actual endpoint for updating events.
       const res = await fetch(`${apiUrl}/${updatedEvent.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -95,7 +91,6 @@ export const DataProvider = ({ apiUrl, domain, children }: DataProviderProps) =>
       if (!res.ok) {
         throw new Error("Failed to update event");
       }
-      // Update local state once backend update is successful.
       setData((prev) =>
         prev.map((ev) => (ev.id === updatedEvent.id ? updatedEvent : ev))
       );

@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import PeriodFilter from "@/components/shared/periodFilter";
+import PeriodFilter from "@/components/shared/PeriodFilter";
 
 describe("PeriodFilter", () => {
   it("updates date range", () => {

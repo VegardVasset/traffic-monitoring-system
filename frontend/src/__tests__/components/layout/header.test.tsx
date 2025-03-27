@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import Header from "@/components/layout/header";
+import Header from "@/components/shared/layout/Header";
 import "@testing-library/jest-dom";
 
 // Make sure you import from the same path you mock

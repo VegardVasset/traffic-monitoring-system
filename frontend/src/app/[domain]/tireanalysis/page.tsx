@@ -2,12 +2,11 @@
 
 import { useParams } from "next/navigation";
 import { DataProvider } from "@/context/DataContext";
-import TireAnalysisTemplate from "@/components/shared/pageTemplates/tireAnalysisTemplate";
+import TireAnalysisTemplate from "@/components/tires/pageTemplates/TireAnalysisTemplate";
 
 export default function TireAnalysisPage() {
   const { domain } = useParams() as { domain: string };
 
-  // If you ONLY want to allow `/tires/analysis`:
   if (domain !== "tires") {
     return <p>Analysis is not available for domain &quot;{domain}&quot;.</p>;
   }

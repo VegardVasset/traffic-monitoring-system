@@ -1,8 +1,7 @@
-// app/layout.tsx
-import Header from "@/components/layout/header";
+import Header from "@/components/shared/layout/Header";
 import type { Metadata } from "next";
 import "./globals.css";
-import ClientProviders from "./clientProviders";
+import ClientProviders from "./ClientProviders";
 
 export const metadata: Metadata = {
   title: "Traffic Monitoring System",
@@ -14,7 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="bg-gray-100 text-gray-900">
         <ClientProviders>
-          <Header hideHamburger /> {/* Header appears on every page */}
+          <Header hideHamburger /> 
           <main className="p-0">{children}</main>
         </ClientProviders>
       </body>
