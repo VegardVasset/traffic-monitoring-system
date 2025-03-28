@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useData } from "@/context/DataContext";
 import DesktopFilters from "@/components/shared/DesktopFilters";
 import MobileFiltersSheet from "@/components/shared/MobileFiltersSheet";
+import { truncate } from "fs/promises";
 
 export default function TireAnalysisTemplate() {
   const { data, loading, isLive, setIsLive } = useData();
@@ -86,7 +87,7 @@ export default function TireAnalysisTemplate() {
         setBinSize={setBinSize}
         isLive={isLive}
         setIsLive={setIsLive}
-        showBinSize={false}
+        showBinSize={true}
       />
 
       <MobileFiltersSheet
