@@ -86,7 +86,7 @@ export default function TireAnalysisTemplate() {
         setBinSize={setBinSize}
         isLive={isLive}
         setIsLive={setIsLive}
-        showBinSize={false}
+        showBinSize={true}
       />
 
       <MobileFiltersSheet
