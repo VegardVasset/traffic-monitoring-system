@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { Profiler, useMemo, useState } from "react";
 import FilterPanel, { Camera } from "@/components/shared/FilterPanel";
 import PassingsTable from "@/components/shared/table/PassingsTable";
 import { useData, BaseEvent } from "@/context/DataContext";
+import { useAnalytics } from "@/context/AnalyticsContext";
 
 interface PassingsTemplateProps {
   domain: string;
@@ -15,6 +16,7 @@ export default function PassingsTemplate({ domain }: PassingsTemplateProps) {
   const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">("day");
 
   const { data, loading, isLive, setIsLive } = useData();
+  const { logEvent } = useAnalytics();
 
   const derivedCameras: Camera[] = useMemo(() => {
     const camMap = new Map<string, string>();
@@ -54,11 +56,23 @@ export default function PassingsTemplate({ domain }: PassingsTemplateProps) {
         useCardWrapper={true}
       />
       <div className="mt-4 overflow-x-auto">
-        <PassingsTable
-          domain={domain}
-          selectedCamera={selectedCamera}
-          selectedVehicleTypes={selectedVehicleTypes}
-        />
+        <Profiler
+          id="PassingsTable"
+          onRender={(id, phase, actualDuration) => {
+            if (phase === "mount") {
+              logEvent("Component mount time", {
+                component: id,
+                duration: actualDuration.toFixed(2),
+              });
+            }
+          }}
+        >
+          <PassingsTable
+            domain={domain}
+            selectedCamera={selectedCamera}
+            selectedVehicleTypes={selectedVehicleTypes}
+          />
+        </Profiler>
       </div>
     </div>
   );

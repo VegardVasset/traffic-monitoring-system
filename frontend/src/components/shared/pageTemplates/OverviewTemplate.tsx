@@ -1,6 +1,13 @@
+// src/components/shared/pageTemplates/OverviewTemplate.tsx
 "use client";
 
-import React, { useCallback, useMemo, useState, useEffect } from "react";
+import React, {
+  Profiler,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { MOBILE_MAX_WIDTH } from "@/config/config";
 import TimeSeriesChart from "@/components/shared/charts/timeSeriesChart/TimeSeriesChart";
 import VehicleDistributionChart from "@/components/shared/charts/VehicleDistributionChart";
@@ -10,6 +17,7 @@ import { useData } from "@/context/DataContext";
 import DesktopFilters from "@/components/shared/DesktopFilters";
 import MobileFiltersSheet from "@/components/shared/MobileFiltersSheet";
 import DrillDownSheet from "@/components/shared/DrillDownSheet";
+import { useAnalytics } from "@/context/AnalyticsContext";
 
 const OVERVIEW_TITLES: Record<string, string> = {
   dts: "DTS Scanner",
@@ -28,15 +36,18 @@ export default function OverviewTemplate({
   defaultBinSize = "day",
   children,
 }: OverviewTemplateProps) {
-  const domainTitle = OVERVIEW_TITLES[domain] || "Overview";
   const { data, loading, isLive, setIsLive, refetch } = useData();
+  const { logEvent } = useAnalytics();
 
+  const domainTitle = OVERVIEW_TITLES[domain] || "Overview";
   const [selectedCamera, setSelectedCamera] = useState<string>("all");
-  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>([]);
-  const [binSize, setBinSize] = useState<"hour" | "day" | "week" | "month">(defaultBinSize);
+  const [selectedVehicleTypes, setSelectedVehicleTypes] = useState<string[]>(
+    []
+  );
+  const [binSize, setBinSize] = useState<typeof defaultBinSize>(defaultBinSize);
 
   const today = new Date().toISOString().substring(0, 10);
-  const oneWeekAgo = new Date(new Date().setDate(new Date().getDate() - 7))
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     .toISOString()
     .substring(0, 10);
   const [startDate, setStartDate] = useState<string>(oneWeekAgo);
@@ -44,48 +55,46 @@ export default function OverviewTemplate({
 
   const derivedVehicleTypes = useMemo(() => {
     const types = new Set<string>();
-    data.forEach((event) => types.add(event.vehicleType));
+    data.forEach((evt) => types.add(evt.vehicleType));
     return Array.from(types);
   }, [data]);
 
   const derivedCameras = useMemo(() => {
     const cams = new Map<string, string>();
-    data.forEach((event) => cams.set(event.camera, event.camera));
+    data.forEach((evt) => cams.set(evt.camera, evt.camera));
     return Array.from(cams, ([id, name]) => ({ id, name }));
   }, [data]);
 
   const filteredData = useMemo(() => {
-    return data.filter((event) => {
-      const eventDate = event.creationTime.substring(0, 10);
-      const withinDateRange = eventDate >= startDate && eventDate <= endDate;
-      const matchCamera = selectedCamera === "all" || event.camera === selectedCamera;
-      const matchVehicle =
+    return data.filter((evt) => {
+      const dateStr = evt.creationTime.substring(0, 10);
+      const inRange = dateStr >= startDate && dateStr <= endDate;
+      const cameraOk = selectedCamera === "all" || evt.camera === selectedCamera;
+      const vehicleOk =
         selectedVehicleTypes.length === 0 ||
-        selectedVehicleTypes.includes(event.vehicleType);
-      return withinDateRange && matchCamera && matchVehicle;
+        selectedVehicleTypes.includes(evt.vehicleType);
+      return inRange && cameraOk && vehicleOk;
     });
-  }, [data, selectedCamera, selectedVehicleTypes, startDate, endDate]);
+  }, [data, startDate, endDate, selectedCamera, selectedVehicleTypes]);
 
   const filteredVehicleTypes = useMemo(() => {
     const types = new Set<string>();
-    filteredData.forEach((event) => types.add(event.vehicleType));
+    filteredData.forEach((evt) => types.add(evt.vehicleType));
     return Array.from(types);
   }, [filteredData]);
 
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
-    const handleResize = () => {
+    const onResize = () =>
       setIsMobile(window.innerWidth < MOBILE_MAX_WIDTH);
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   const [drillDownOpen, setDrillDownOpen] = useState(false);
   const [drillDownBinKey, setDrillDownBinKey] = useState<string | null>(null);
-
   const handleDataPointClick = useCallback((binKey: string) => {
     setDrillDownBinKey(binKey);
     setDrillDownOpen(true);
@@ -98,23 +107,23 @@ export default function OverviewTemplate({
     return "hour";
   }, [binSize]);
 
-
   const getDrillDownData = useCallback(() => {
     if (!drillDownBinKey) return [];
     if (binSize === "day") {
-      const dayString = drillDownBinKey.substring(0, 10);
-      return filteredData.filter(
-        (evt) => evt.creationTime.substring(0, 10) === dayString
+      return filteredData.filter((evt) =>
+        evt.creationTime.substring(0, 10) === drillDownBinKey
       );
-    } else if (binSize === "week") {
-      const startOfWeek = new Date(drillDownBinKey); 
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(endOfWeek.getDate() + 6);
+    }
+    if (binSize === "week") {
+      const start = new Date(drillDownBinKey);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 6);
       return filteredData.filter((evt) => {
-        const evtDate = new Date(evt.creationTime.substring(0, 10));
-        return evtDate >= startOfWeek && evtDate <= endOfWeek;
+        const d = new Date(evt.creationTime.substring(0, 10));
+        return d >= start && d <= end;
       });
-    } else if (binSize === "month") {
+    }
+    if (binSize === "month") {
       return filteredData.filter((evt) =>
         evt.creationTime.startsWith(drillDownBinKey)
       );
@@ -123,11 +132,10 @@ export default function OverviewTemplate({
   }, [binSize, drillDownBinKey, filteredData]);
 
   const drillDownData = getDrillDownData();
-
   const drillDownVehicleTypes = useMemo(() => {
-    const types = new Set<string>();
-    drillDownData.forEach((evt) => types.add(evt.vehicleType));
-    return Array.from(types);
+    const set = new Set<string>();
+    drillDownData.forEach((evt) => set.add(evt.vehicleType));
+    return Array.from(set);
   }, [drillDownData]);
 
   const isLoading = loading && !isLive;
@@ -140,10 +148,13 @@ export default function OverviewTemplate({
         <>
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4">
-              Overview
+              {domainTitle} Overview
             </h1>
             <div className="block lg:hidden">
-              <Button variant="outline" onClick={() => setMobileFilterOpen(true)}>
+              <Button
+                variant="outline"
+                onClick={() => setMobileFilterOpen(true)}
+              >
                 Open Filters
               </Button>
             </div>
@@ -200,12 +211,24 @@ export default function OverviewTemplate({
               style={{ aspectRatio: isMobile ? "1 / 1" : "1.5 / 1" }}
             >
               <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
-                <TimeSeriesChart
-                  data={filteredData}
-                  binSize={binSize}
-                  startDate={startDate}
-                  onDataPointClick={handleDataPointClick}
-                />
+                <Profiler
+                  id="TimeSeriesChart"
+                  onRender={(id, phase, actualDuration) => {
+                    if (phase === "mount") {
+                      logEvent("Component mount time", {
+                        component: id,
+                        duration: actualDuration.toFixed(2),
+                      });
+                    }
+                  }}
+                >
+                  <TimeSeriesChart
+                    data={filteredData}
+                    binSize={binSize}
+                    startDate={startDate}
+                    onDataPointClick={handleDataPointClick}
+                  />
+                </Profiler>
               </div>
             </div>
             <div

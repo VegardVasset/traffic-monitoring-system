@@ -13,6 +13,7 @@ const topLevelNav = [
   { id: "vpc", label: "Vehicle Passenger Counter", href: "/vpc" },
   { id: "dts", label: "Detailed Traffic Statistics", href: "/dts" },
   { id: "tires", label: "Tire Scanner", href: "/tires" },
+  { id: "analytics", label: "Analytics", href: "/analytics" },
 ];
 
 export default function Header({ onToggleSidebar, hideHamburger }: HeaderProps) {

@@ -103,6 +103,7 @@ export default function CameraTemplate() {
           <TableHeader>
             <TableRow className="bg-gray-100">
               <TableHead>Camera Name</TableHead>
+             
               <TableHead>Passings</TableHead>
               <TableHead>Location Preview</TableHead>
             </TableRow>
