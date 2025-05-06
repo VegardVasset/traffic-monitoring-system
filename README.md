@@ -19,7 +19,7 @@ npm install
 npm run dev
 ``` 
 
-## 🏗️ Production Mode
+## Production Mode
 
 To run the project in production mode, you need to build the frontend and start the backend server.
 ### Build backend and start backend  (runs on http://localhost:4000)
