@@ -52,7 +52,7 @@ function continuouslyAddMockData() {
     mockDatabase.vpc.push(newData.vpc);
     mockDatabase.tires.push(newData.tires);
     mockDatabase.dts.push(newData.dts);
-  }, 100000);
+  }, 10000);
 }
 
 io.on("connection", (socket) => {

@@ -8,7 +8,7 @@ export default async function Layout({
   children: React.ReactNode;
   params: { domain: string };
 }) {
-  const { domain } = await params;
+  const { domain } = params;
   const config = domainConfigs[domain] || domainConfigs.default;
 
   return (

@@ -28,10 +28,8 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { useData, BaseEvent } from "@/context/DataContext";
-import { useAnalytics } from "@/context/AnalyticsContext";
 import EditDialog from "./EditDialog";
 import { useFilteredData } from "./hooks/useFilteredData";
-import { useLiveLatencyLogger } from "./hooks/useLiveLatencyLogger";
 import { UsePassingsColumns } from "./hooks/UsePassingsColumns";
 
 interface PassingsTableProps {
@@ -46,19 +44,12 @@ export default function PassingsTable({
   selectedVehicleTypes,
 }: PassingsTableProps) {
 
-  const { data, loading, error, lastUpdateArrivalTime, updateEvent } = useData();
-  const { logEvent } = useAnalytics();
+  const { data, loading, error, updateEvent } = useData();
 
   const filteredData = useFilteredData({
     data,
     selectedCamera,
     selectedVehicleTypes,
-  });
-
-  useLiveLatencyLogger({
-    lastUpdateArrivalTime,
-    filteredDataLength: filteredData.length,
-    logEvent,
   });
 
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
