@@ -101,4 +101,8 @@ export const domainConfigs: Record<string, DomainConfig> = {
       },
     ],
   },
+  default: {
+    title: "Default Domain",
+    navItems: [],
+  },
 };

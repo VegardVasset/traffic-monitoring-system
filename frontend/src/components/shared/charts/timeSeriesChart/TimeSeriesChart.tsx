@@ -127,6 +127,9 @@ export default function TimeSeriesChart({
               ` ${tooltipItem.dataset.label}: ${tooltipItem.raw}`,
           },
         },
+        datalabels: {
+          display: false, 
+        },
       },
     }),
     [isMobile]
