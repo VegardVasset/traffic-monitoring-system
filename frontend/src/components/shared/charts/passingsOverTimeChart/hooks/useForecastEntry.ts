@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { AggregatedDataEntry } from "../TimeSeriesChart";
+import { AggregatedDataEntry } from "../PassingsOverTimeChart";
 import { calculateHoltForecast } from "../utils";
 
 type BinSize = "hour" | "day" | "week" | "month";

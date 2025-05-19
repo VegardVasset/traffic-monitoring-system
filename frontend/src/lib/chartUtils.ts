@@ -3,7 +3,7 @@ import { chartColors, chartColorsOpacity } from "@/lib/theme";
 export function getChartColor(index: number, opacity: number = 1): string {
   const baseColor = chartColors[index % chartColors.length];
 
-  // Apply alternating dark and light colors by checking if the index is even or odd
+  // Alternating dark and light colors by checking if the index is even or odd
   const isEvenIndex = index % 2 === 0;
 
   // Modify the color logic to alternate between dark and light variations

@@ -10,7 +10,7 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import TimeSeriesChart, { Event } from "@/components/shared/charts/timeSeriesChart/TimeSeriesChart";
+import PassingsOverTimeChart, { Event } from "@/components/shared/charts/passingsOverTimeChart/PassingsOverTimeChart";
 import { UnifiedLegend } from "@/components/shared/UnifiedLegend";
 
 export interface DrillDownSheetProps {
@@ -60,7 +60,7 @@ export default function DrillDownSheet({
                 Detailed breakdown for <b>{drillDownBinKey}</b> (bin size: {getDrillDownBinSize()})
               </p>
               <div className="flex-1 bg-white shadow rounded-lg p-2">
-                <TimeSeriesChart
+                <PassingsOverTimeChart
                   data={getDrillDownData()}
                   binSize={getDrillDownBinSize()}
                   startDate={startDate}

@@ -2,7 +2,7 @@
 
 import React, { useCallback, useMemo, useState, useEffect } from "react";
 import { MOBILE_MAX_WIDTH } from "@/config/config";
-import TimeSeriesChart from "@/components/shared/charts/timeSeriesChart/TimeSeriesChart";
+import PassingsOverTimeChart from "@/components/shared/charts/passingsOverTimeChart/PassingsOverTimeChart";
 import VehicleDistributionChart from "@/components/shared/charts/VehicleDistributionChart";
 import { UnifiedLegend } from "@/components/shared/UnifiedLegend";
 import { Button } from "@/components/ui/button";
@@ -200,7 +200,7 @@ export default function OverviewTemplate({
               style={{ aspectRatio: isMobile ? "1 / 1" : "1.5 / 1" }}
             >
               <div className="absolute inset-0 bg-white shadow rounded-lg p-2">
-                <TimeSeriesChart
+                <PassingsOverTimeChart
                   data={filteredData}
                   binSize={binSize}
                   startDate={startDate}

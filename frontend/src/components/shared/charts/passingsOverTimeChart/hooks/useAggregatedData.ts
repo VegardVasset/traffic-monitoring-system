@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Event, AggregatedDataEntry } from "../TimeSeriesChart";
+import { Event, AggregatedDataEntry } from "../PassingsOverTimeChart";
 import {
   getHourBinKey,
   getDayBinKey,

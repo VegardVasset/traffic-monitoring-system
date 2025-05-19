@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Line } from "react-chartjs-2";
-import TimeSeriesChartHeader from "./TimeSeriesChartHeader";
+import PassingsOverTimeChartHeader from "./PassingsOverTimeChartHeader";
 import useIsMobile from "./hooks/useIsMobile";
 import useAggregatedData from "./hooks/useAggregatedData";
 import useForecastEntry from "./hooks/useForecastEntry";
@@ -34,7 +34,7 @@ export interface AggregatedDataEntry {
   [vehicleType: string]: number | string;
 }
 
-export interface TimeSeriesChartProps {
+export interface PassingsOverTimeChartProps {
   data: Event[];
   binSize: "hour" | "day" | "week" | "month";
   startDate: string;  
@@ -43,14 +43,14 @@ export interface TimeSeriesChartProps {
   applyDateFilter?: boolean;
 }
 
-export default function TimeSeriesChart({
+export default function PassingsOverTimeChart({
   data,
   binSize,
   startDate,
   onDataPointClick,
   disableForecast = false,
   applyDateFilter = true,
-}: TimeSeriesChartProps) {
+}: PassingsOverTimeChartProps) {
   const isMobile = useIsMobile();
   const chartRef = useRef<ChartJS<"line"> | null>(null);
   const [showForecast, setShowForecast] = useState(false);
@@ -137,7 +137,7 @@ export default function TimeSeriesChart({
 
   return (
     <div className="flex flex-col w-full h-full">
-      <TimeSeriesChartHeader
+      <PassingsOverTimeChartHeader
         binSize={binSize}
         disableForecast={disableForecast}
         aggregatedDataLength={filteredAggregatedData.length}

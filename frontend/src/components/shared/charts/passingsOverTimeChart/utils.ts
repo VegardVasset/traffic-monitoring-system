@@ -1,6 +1,6 @@
 "use client";
 
-import { AggregatedDataEntry } from "./TimeSeriesChart"; 
+import { AggregatedDataEntry } from "./PassingsOverTimeChart"; 
 import { formatTimeBin } from "@/lib/timeFormattingUtils";
 
 

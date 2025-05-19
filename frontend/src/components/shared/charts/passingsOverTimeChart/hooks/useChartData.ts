@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { AggregatedDataEntry } from "../TimeSeriesChart";
+import { AggregatedDataEntry } from "../PassingsOverTimeChart";
 import { getChartColor } from "@/lib/chartUtils";
 import { ChartDataset } from "chart.js";
 

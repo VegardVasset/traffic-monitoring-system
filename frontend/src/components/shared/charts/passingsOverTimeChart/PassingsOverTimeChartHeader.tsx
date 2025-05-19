@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 
-interface TimeSeriesChartHeaderProps {
+interface PassingsOverTimeChartHeaderProps {
   binSize: string;
   disableForecast: boolean;
   aggregatedDataLength: number;
@@ -9,13 +9,13 @@ interface TimeSeriesChartHeaderProps {
   onToggleForecast: () => void;
 }
 
-export default function TimeSeriesChartHeader({
+export default function PassingsOverTimeChartHeader({
   binSize,
   disableForecast,
   aggregatedDataLength,
   showForecast,
   onToggleForecast,
-}: TimeSeriesChartHeaderProps) {
+}: PassingsOverTimeChartHeaderProps) {
   return (
     <div className="flex items-center justify-between px-2">
       <h2 className="text-xs md:text-xl font-semibold mb-4">
